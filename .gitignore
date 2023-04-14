@@ -29,3 +29,4 @@ module-operator/THIRD_PARTY_LICENSES.txt
 **/.vscode
 ATTRIBUTION-HELPER-DEPS
 **/.terraform
+go.work
