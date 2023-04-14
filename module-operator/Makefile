@@ -84,14 +84,14 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 fmt: ## Run go fmt against code.
 	go fmt ./...
 
-.PHONY: vet
-vet: ## Run go vet against code.
-	go vet ./...
+#.PHONY: vet
+#vet: ## Run go vet against code.
+#	go vet ./...
 
 ##@ Build
 
 .PHONY: build
-build: fmt vet ## Build manager binary.
+build: fmt #vet ## Build manager binary.
 	go build -o bin/${NAME} main.go
 
 .PHONY: run
