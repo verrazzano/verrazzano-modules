@@ -1,0 +1,31 @@
+# Copyright (c) 2023, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+.idea/
+*.iml
+vendor
+.idea
+**/*.iml
+bin
+dist
+archive
+latest
+known_licenses.txt
+no_licenses.txt
+thirdparty_licenses
+index.yaml
+coverage.cov
+coverageTmp.cov
+coverage.html
+coverage.xml
+coverage.raw.cov
+unit-test-coverage-number.txt
+out/
+**/test-report.xml
+**/*test-result.xml
+**/*-cluster-dump
+**/*.log
+module-operator/THIRD_PARTY_LICENSES.txt
+**/.DS_Store
+**/.vscode
+ATTRIBUTION-HELPER-DEPS
+**/.terraform
