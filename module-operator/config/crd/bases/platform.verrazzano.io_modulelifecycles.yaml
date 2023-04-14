@@ -1,0 +1,179 @@
+# Copyright (c) 2023, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: modulelifecycles.platform.verrazzano.io
+spec:
+  group: platform.verrazzano.io
+  names:
+    kind: ModuleLifecycle
+    listKind: ModuleLifecycleList
+    plural: modulelifecycles
+    shortNames:
+    - mlc
+    - mlcs
+    singular: modulelifecycle
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: State of Module reconciliation
+      jsonPath: .status.state
+      name: Status
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ModuleLifecycle defines the schema for a module lifecycle operation
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              installer:
+                description: ModuleInstaller Defines the installer information for
+                  a module; only one of the fields can be set
+                properties:
+                  helmRelease:
+                    properties:
+                      chart:
+                        properties:
+                          name:
+                            type: string
+                          path:
+                            type: string
+                          version:
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      overrides:
+                        items:
+                          description: Overrides identifies overrides for a component.
+                          properties:
+                            configMapRef:
+                              description: Selector for ConfigMap containing override
+                                data.
+                              properties:
+                                key:
+                                  description: The key to select.
+                                  type: string
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
+                                  type: string
+                                optional:
+                                  description: Specify whether the ConfigMap or its
+                                    key must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            secretRef:
+                              description: Selector for Secret containing override
+                                data.
+                              properties:
+                                key:
+                                  description: The key of the secret to select from.  Must
+                                    be a valid secret key.
+                                  type: string
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
+                                  type: string
+                                optional:
+                                  description: Specify whether the Secret or its key
+                                    must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            values:
+                              description: Configure overrides using inline YAML.
+                              x-kubernetes-preserve-unknown-fields: true
+                          type: object
+                        type: array
+                      repo:
+                        properties:
+                          credentialsSecret:
+                            type: string
+                          name:
+                            type: string
+                          uri:
+                            type: string
+                        required:
+                        - name
+                        - uri
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  istio:
+                    type: object
+                type: object
+            required:
+            - installer
+            type: object
+          status:
+            description: ModuleLifecycleStatus defines the observed state of Module
+            properties:
+              conditions:
+                items:
+                  description: ModuleLifecycleCondition describes current state of
+                    an installation.
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      type: string
+                    message:
+                      description: Human-readable message indicating details about
+                        last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              observedGeneration:
+                format: int64
+                type: integer
+              reconciledAt:
+                type: string
+              state:
+                description: Information about the current state of a component
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
