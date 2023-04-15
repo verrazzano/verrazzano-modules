@@ -39,32 +39,26 @@ type ReconcileContext struct {
 	ClientCtx context.Context
 }
 
-// DescribeController is an interface used by controllers that only update a single resource kind
-type DescribeController interface {
+// Reconciler is an interface used by controllers to reconcile a resource
+type Reconciler interface {
+	// Reconcile reconciles the resource
+	Reconcile(ReconcileContext, *unstructured.Unstructured) error
+
 	// GetReconcileObject returns the client object being reconciled
 	GetReconcileObject() client.Object
 }
 
-// ReconcileController is an interface used by controllers to reconcile a resource
-type ReconcileController interface {
-	// Reconcile reconciles the resource
-	Reconcile(ReconcileContext, *unstructured.Unstructured) error
-}
-
-// WatchController is an interface used by controllers that watch resources
-type WatchController interface {
+// Watcher is an interface used by controllers that watch resources
+type Watcher interface {
 	// GetWatchedKinds returns the list of object kinds being watched
 	GetWatchedKinds() []WatchedKind
 }
 
-// FinalizerController is an interface used by controllers to manage finalizers
-type FinalizerController interface {
-	// AddFinalizer adds a finalizer
-	AddFinalizer()
+// Finalizer is an interface used by controllers to manage finalizers
+type Finalizer interface {
+	// GetName returns the name of the finalizer
+	GetName()
 
-	// GarbageCollect garbage collects any related resources that were created by the controller
-	GarbageCollect()
-
-	// RemoveFinalizer removes a finalizer
-	RemoveFinalizer()
+	// Cleanup garbage collects any related resources that were created by the controller
+	Cleanup(ReconcileContext, *unstructured.Unstructured) error
 }

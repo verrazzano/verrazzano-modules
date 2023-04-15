@@ -17,10 +17,10 @@ import (
 
 // MicroControllerConfig specifies the config of the microcontroller using this basecontroller
 type MicroControllerConfig struct {
-	spi.DescribeController
-	spi.FinalizerController
-	spi.ReconcileController
-	spi.WatchController
+	spi.ControllerDescribe
+	spi.Finalizer
+	spi.Reconciler
+	spi.Watcher
 }
 
 // Reconciler contains data needed to reconcile a DNS object.
@@ -46,7 +46,7 @@ func InitBaseController(mgr controllerruntime.Manager, mcConfig MicroControllerC
 
 	var err error
 	r.Controller, err = ctrl.NewControllerManagedBy(mgr).
-		For(mcConfig.DescribeController.GetReconcileObject()).Build(&r)
+		For(mcConfig.ControllerDescribe.GetReconcileObject()).Build(&r)
 
 	if err != nil {
 		return nil, vzlog.DefaultLogger().ErrorfNewErr("Failed calling SetupWithManager for Istio Gateway controller: %v", err)

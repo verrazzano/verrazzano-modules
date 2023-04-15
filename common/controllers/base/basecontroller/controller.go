@@ -28,7 +28,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	cr.SetGroupVersionKind(gvk[0])
 	if err := r.Get(ctx, req.NamespacedName, cr); err != nil {
-		// If the resource is not found, that means all of the finalizers have been removed,
+		// If the resource is not found, that means all the finalizers have been removed,
 		// and the Verrazzano resource has been deleted, so there is nothing left to do.
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -42,7 +42,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		Namespace:      cr.GetNamespace(),
 		ID:             string(cr.GetUID()),
 		Generation:     cr.GetGeneration(),
-		ControllerName: r.DescribeController.GetReconcileObject().GetObjectKind().GroupVersionKind().Kind,
+		ControllerName: r.Reconciler.GetReconcileObject().GetObjectKind().GroupVersionKind().Kind,
 	})
 	if err != nil {
 		zap.S().Errorf("Failed to create controller logger for DNS controller", err)
@@ -54,17 +54,36 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		ClientCtx: ctx,
 	}
 
+	// Handle finalizer
+	if r.Finalizer != nil {
+		if !cr.GetDeletionTimestamp().IsZero() {
+			// Resource is getting deleted
+			if err := r.deleteWatches(); err != nil {
+				return newRequeueWithDelay(), nil
+			}
+			if err := r.Cleanup(rctx, cr); err != nil {
+				return newRequeueWithDelay(), nil
+			}
+			return ctrl.Result{}, nil
+		}
+		if err := r.ensureFinalizer(log); err != nil {
+			return newRequeueWithDelay(), nil
+		}
+	}
+
 	rctx.Log.Oncef("Reconciling Verrazzano resource %v", req.NamespacedName)
 	if !cr.GetDeletionTimestamp().IsZero() {
-		// TODO - handle finalizer - use FinalizerController interface
+		// TODO - handle finalizer - use Finalizer interface
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.initWatches(log, cr.GetNamespace(), cr.GetName()); err != nil {
-		return newRequeueWithDelay(), nil
+	if r.Watcher != nil {
+		if err := r.initWatches(log, cr.GetNamespace(), cr.GetName()); err != nil {
+			return newRequeueWithDelay(), nil
+		}
 	}
 
-	if err = r.ReconcileController.Reconcile(rctx, cr); err != nil {
+	if err = r.Reconciler.Reconcile(rctx, cr); err != nil {
 		return newRequeueWithDelay(), nil
 	}
 
@@ -73,14 +92,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, nil
 }
 
-// Create a new Result that will cause a reconcile requeue after a short delay
-func newRequeueWithDelay() ctrl.Result {
-	return vzctrl.NewRequeueWithDelay(1, 2, time.Second)
-}
-
-// Init the watch for this resource
+// Init the watches for this resource
 func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, namespace string, name string) error {
-	if r.WatchController == nil {
+	if r.Watcher == nil {
 		return nil
 	}
 
@@ -92,7 +106,7 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, namespace string, n
 
 	// Get all the kinds of objects that need to be watched
 	// For each object, create a watchContext and call the watcher to watch it
-	watchKinds := r.WatchController.GetWatchedKinds()
+	watchKinds := r.Watcher.GetWatchedKinds()
 	watchContexts := []watcher.WatchContext{}
 	for i, _ := range watchKinds {
 		w := watcher.WatchContext{
@@ -110,4 +124,23 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, namespace string, n
 
 	r.watcherMap[nsn] = watchContexts
 	return nil
+}
+
+// deleteWatches deletes the watches for this resource
+func (r *Reconciler) deleteWatches() error {
+
+	// TODO - must implement
+	return nil
+}
+
+// ensureFinalizer ensures that a finalizer exists and updates the CR if it doesn't
+func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger) error {
+
+	// TODO - must implement
+	return nil
+}
+
+// Create a new Result that will cause a reconciliation requeue after a short delay
+func newRequeueWithDelay() ctrl.Result {
+	return vzctrl.NewRequeueWithDelay(2, 3, time.Second)
 }
