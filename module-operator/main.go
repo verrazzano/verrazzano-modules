@@ -6,12 +6,12 @@ package main
 import (
 	"flag"
 	platformv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/platformctrl/modlifecycle"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modlifecycle"
 	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	"os"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 
-	modulectrl "github.com/verrazzano/verrazzano-modules/module-operator/controllers/platformctrl/module"
+	modulectrl "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
 	"go.uber.org/zap"
@@ -76,7 +76,7 @@ func main() {
 	}
 
 	// v1beta2 VerrazzanoModule controller
-	if err = (&modulectrl.VerrazzanoModuleReconciler{
+	if err = (&modulectrl.Reconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/platformctrl/common"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/common"
 	vzcontroller "github.com/verrazzano/verrazzano/pkg/controller"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	vzstring "github.com/verrazzano/verrazzano/pkg/string"
@@ -22,8 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// VerrazzanoModuleReconciler reconciles a Verrazzano Platform object
-type VerrazzanoModuleReconciler struct {
+// Reconciler reconciles a Verrazzano Platform object
+type Reconciler struct {
 	client.Client
 	Scheme     *runtime.Scheme
 	Controller controller.Controller
@@ -42,7 +42,7 @@ var (
 )
 
 // SetupWithManager creates a new controller and adds it to the manager
-func (r *VerrazzanoModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	r.Controller, err = ctrl.NewControllerManagedBy(mgr).
 		For(&modulesv1alpha1.Module{}).
@@ -56,7 +56,7 @@ func (r *VerrazzanoModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // Reconcile the Module CR
 // +kubebuilder:rbac:groups=install.verrazzano.io,resources=modules,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=install.verrazzano.io,resources=modules/status,verbs=get;update;patch
-func (r *VerrazzanoModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	// NOTE: Metrics setup
 
@@ -106,7 +106,7 @@ func (r *VerrazzanoModuleReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	return r.doReconcile(log, moduleInstance)
 }
 
-func (r *VerrazzanoModuleReconciler) doReconcile(log vzlog.VerrazzanoLogger, moduleInstance *modulesv1alpha1.Module) (ctrl.Result, error) {
+func (r *Reconciler) doReconcile(log vzlog.VerrazzanoLogger, moduleInstance *modulesv1alpha1.Module) (ctrl.Result, error) {
 	log.Infof("Reconciling Verrazzano module instance %s/%s", moduleInstance.Namespace, moduleInstance.Name)
 
 	sourceName, sourceURI := r.lookupModuleSource(moduleInstance)
@@ -132,7 +132,7 @@ func (r *VerrazzanoModuleReconciler) doReconcile(log vzlog.VerrazzanoLogger, mod
 	return ctrl.Result{}, nil
 }
 
-func (r *VerrazzanoModuleReconciler) reconcileModule(mod *modulesv1alpha1.Module, chartName string, chartNamespace string, moduleVersion string, sourceName string, sourceURI string) (*modulesv1alpha1.ModuleLifecycle, error) {
+func (r *Reconciler) reconcileModule(mod *modulesv1alpha1.Module, chartName string, chartNamespace string, moduleVersion string, sourceName string, sourceURI string) (*modulesv1alpha1.ModuleLifecycle, error) {
 	lifecycleResource, err := r.createLifecycleResource(sourceName, sourceURI, chartName, chartNamespace, moduleVersion,
 		modulesv1alpha1.Overrides{}, createOwnerRef(mod))
 	if err != nil {
@@ -144,7 +144,7 @@ func (r *VerrazzanoModuleReconciler) reconcileModule(mod *modulesv1alpha1.Module
 	return lifecycleResource, err
 }
 
-func (r *VerrazzanoModuleReconciler) createLifecycleResource(sourceName string, sourceURI string, chartName string, chartNamespace string, chartVersion string, overrides modulesv1alpha1.Overrides, ownerRef *metav1.OwnerReference) (*modulesv1alpha1.ModuleLifecycle, error) {
+func (r *Reconciler) createLifecycleResource(sourceName string, sourceURI string, chartName string, chartNamespace string, chartVersion string, overrides modulesv1alpha1.Overrides, ownerRef *metav1.OwnerReference) (*modulesv1alpha1.ModuleLifecycle, error) {
 
 	// Create a CR to manage the module installation
 	moduleInstaller := &modulesv1alpha1.ModuleLifecycle{
@@ -194,7 +194,7 @@ func ownerRefExists(moduleInstaller *modulesv1alpha1.ModuleLifecycle, ownerRef *
 	return false
 }
 
-func (r *VerrazzanoModuleReconciler) lookupModuleSource(mod *modulesv1alpha1.Module) (repoName, sourceURI string) {
+func (r *Reconciler) lookupModuleSource(mod *modulesv1alpha1.Module) (repoName, sourceURI string) {
 	source := mod.Spec.Source
 	if source == nil {
 		return defaultRepoName, defaultRepoURI
@@ -202,21 +202,21 @@ func (r *VerrazzanoModuleReconciler) lookupModuleSource(mod *modulesv1alpha1.Mod
 	return source.ChartRepo.Name, source.ChartRepo.URI
 }
 
-func (r *VerrazzanoModuleReconciler) lookupChartNamespace(mod *modulesv1alpha1.Module) string {
+func (r *Reconciler) lookupChartNamespace(mod *modulesv1alpha1.Module) string {
 	if len(mod.Spec.TargetNamespace) > 0 {
 		return mod.Spec.TargetNamespace
 	}
 	return mod.Namespace
 }
 
-func (r *VerrazzanoModuleReconciler) lookupChartName(moduleInstance *modulesv1alpha1.Module) string {
+func (r *Reconciler) lookupChartName(moduleInstance *modulesv1alpha1.Module) string {
 	if len(moduleInstance.Spec.Name) > 0 {
 		return moduleInstance.Spec.Name
 	}
 	return moduleInstance.Name
 }
 
-func (r *VerrazzanoModuleReconciler) lookupModuleVersion(log vzlog.VerrazzanoLogger, moduleInstance *modulesv1alpha1.Module, chartName string, repoName string, repoURI string) (string, error) {
+func (r *Reconciler) lookupModuleVersion(log vzlog.VerrazzanoLogger, moduleInstance *modulesv1alpha1.Module, chartName string, repoName string, repoURI string) (string, error) {
 	// Find target module version
 	// - declared in the Module instance
 	var modVersion string
@@ -233,7 +233,7 @@ func (r *VerrazzanoModuleReconciler) lookupModuleVersion(log vzlog.VerrazzanoLog
 	return modVersion, nil
 }
 
-func (r *VerrazzanoModuleReconciler) updateModuleInstanceState(instance *modulesv1alpha1.Module, lifecycleResource *modulesv1alpha1.ModuleLifecycle) error {
+func (r *Reconciler) updateModuleInstanceState(instance *modulesv1alpha1.Module, lifecycleResource *modulesv1alpha1.ModuleLifecycle) error {
 	installerState := lifecycleResource.Status.State
 	switch installerState {
 	case modulesv1alpha1.StateReady:

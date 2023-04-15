@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/platformctrl/common"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/platformctrl/modlifecycle/delegates"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/common"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modlifecycle/delegates"
 	"github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
