@@ -48,6 +48,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		zap.S().Errorf("Failed to create controller logger for DNS controller", err)
 	}
 
+	log.Oncef("Reconciling resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
+
 	// Create a new context for this reconcile loop
 	rctx := spi.ReconcileContext{
 		Log:       vzlog.DefaultLogger(),
@@ -69,12 +71,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if err := r.ensureFinalizer(log); err != nil {
 			return newRequeueWithDelay(), nil
 		}
-	}
-
-	rctx.Log.Oncef("Reconciling Verrazzano resource %v", req.NamespacedName)
-	if !cr.GetDeletionTimestamp().IsZero() {
-		// TODO - handle finalizer - use Finalizer interface
-		return reconcile.Result{}, nil
 	}
 
 	if r.Watcher != nil {

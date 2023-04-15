@@ -12,8 +12,8 @@ import (
 
 // Reconcile updates the Certificate
 func (r Reconciler) Reconcile(ctx spi.ReconcileContext, u *unstructured.Unstructured) error {
-	lifecycle := &vzplatform.ModuleLifecycle{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, lifecycle); err != nil {
+	cr := &vzplatform.ModuleLifecycle{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return err
 	}
 
