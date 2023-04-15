@@ -54,7 +54,7 @@ type Watcher interface {
 	GetWatchedKinds() []WatchedKind
 }
 
-// Finalizer is an interface used by controllers to manage finalizers
+// Finalizer is an interface used by controllers the use finalizers
 type Finalizer interface {
 	// GetName returns the name of the finalizer
 	GetName()

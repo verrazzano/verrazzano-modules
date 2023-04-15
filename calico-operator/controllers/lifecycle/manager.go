@@ -12,7 +12,6 @@ import (
 )
 
 // Specify the SPI interfaces that this controller implements
-var _ spi.ControllerDescribe = Reconciler{}
 var _ spi.Reconciler = Reconciler{}
 
 type Reconciler struct {
@@ -25,8 +24,7 @@ var controller Reconciler
 func InitController(mgr ctrlruntime.Manager) error {
 	// The config MUST contain both a Reconciler and a ControllerDescribe
 	mcConfig := basecontroller.MicroControllerConfig{
-		ControllerDescribe: &controller,
-		Reconciler:         &controller,
+		Reconciler: &controller,
 	}
 	br, err := basecontroller.InitBaseController(mgr, mcConfig)
 	if err != nil {
