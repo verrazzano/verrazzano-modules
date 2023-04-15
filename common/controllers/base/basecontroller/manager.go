@@ -15,9 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
-// MicroControllerConfig specifies the config of the microcontroller using this basecontroller
-type MicroControllerConfig struct {
-	spi.ControllerDescribe
+// ControllerConfig specifies the config of the controller using this base controller
+type ControllerConfig struct {
 	spi.Finalizer
 	spi.Reconciler
 	spi.Watcher
@@ -28,7 +27,7 @@ type Reconciler struct {
 	client.Client
 	Scheme     *runtime.Scheme
 	Controller controller.Controller
-	MicroControllerConfig
+	ControllerConfig
 
 	// watcherMap is needed to keep track of which CRs have been initialized
 	// key is the NSN of the Gateway
@@ -36,17 +35,17 @@ type Reconciler struct {
 }
 
 // InitBaseController inits the base controller
-func InitBaseController(mgr controllerruntime.Manager, mcConfig MicroControllerConfig) (*Reconciler, error) {
+func InitBaseController(mgr controllerruntime.Manager, controllerConfig ControllerConfig) (*Reconciler, error) {
 	r := Reconciler{
-		Client:                mgr.GetClient(),
-		Scheme:                mgr.GetScheme(),
-		MicroControllerConfig: mcConfig,
-		watcherMap:            make(map[string][]watcher.WatchContext),
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ControllerConfig: controllerConfig,
+		watcherMap:       make(map[string][]watcher.WatchContext),
 	}
 
 	var err error
 	r.Controller, err = ctrl.NewControllerManagedBy(mgr).
-		For(mcConfig.ControllerDescribe.GetReconcileObject()).Build(&r)
+		For(controllerConfig.Reconciler.GetReconcileObject()).Build(&r)
 
 	if err != nil {
 		return nil, vzlog.DefaultLogger().ErrorfNewErr("Failed calling SetupWithManager for Istio Gateway controller: %v", err)

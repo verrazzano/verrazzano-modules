@@ -5,15 +5,19 @@ package lifecycle
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	vzplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Reconcile updates the Certificate
 func (r Reconciler) Reconcile(ctx spi.ReconcileContext, u *unstructured.Unstructured) error {
-	//dns := &networkapi.DNS{}
-	//if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, dns); err != nil {
-	//	return err
-	//}
+	lifecycle := &vzplatform.ModuleLifecycle{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, lifecycle); err != nil {
+		return err
+	}
+
+	// TODO - process the lifecycle resource
 
 	return nil
 }
