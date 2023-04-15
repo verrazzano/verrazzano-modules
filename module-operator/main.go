@@ -11,9 +11,9 @@ import (
 	"os"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 
+	modulectrl "github.com/verrazzano/verrazzano-modules/module-operator/controllers/platformctrl/module"
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
-	modulectrl "github.com/verrazzano/verrazzano/platform-operator/experimental/controllers/platformctrl/module"
 	"go.uber.org/zap"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,7 +25,7 @@ import (
 var scheme = runtime.NewScheme()
 
 func init() {
-	platformv1alpha1.AddToScheme(scheme)
+	_ = platformv1alpha1.AddToScheme(scheme)
 
 	// Add K8S api-extensions so that we can list CustomResourceDefinitions during uninstall of VZ
 	_ = v1.AddToScheme(scheme)

@@ -4,6 +4,7 @@ package reconciler
 
 import (
 	"fmt"
+
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/platformctrl/modlifecycle/delegates"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,10 +21,10 @@ func New(mlc *modulesv1alpha1.ModuleLifecycle, sw client.StatusWriter) (delegate
 	if shimDelegate := newShimDelegate(mlc, sw); shimDelegate != nil {
 		return shimDelegate, nil
 	}
-	//if mlc.Spec.Installer.HelmRelease != nil {
-	//	// If an existing delegate does not exist, wrap it in a Helm adapter to just do helm stuff
-	//	return newHelmAdapter(mlc, sw), nil
-	//}
+	if mlc.Spec.Installer.HelmRelease != nil {
+		// If an existing delegate does not exist, wrap it in a Helm adapter to just do helm stuff
+		return newHelmAdapter(mlc, sw), nil
+	}
 	if mlc.Spec.Installer.Istio != nil {
 		return nil, fmt.Errorf("no installer implemented for Istio installer")
 	}
