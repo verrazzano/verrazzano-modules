@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/stretchr/testify v1.8.2
-	github.com/verrazzano/verrazzano-modules/common v0.0.0-20230415003155-54665013ca21
+	github.com/verrazzano/verrazzano-modules/common 15510a6910a882e28cbf4823633a045764e15163
 	github.com/verrazzano/verrazzano-modules/module-operator v0.0.0-20230414211931-291d0a2982a4
 	go.uber.org/zap v1.24.0
 	k8s.io/apiextensions-apiserver v0.27.0

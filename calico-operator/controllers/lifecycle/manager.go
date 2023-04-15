@@ -23,10 +23,10 @@ var controller Reconciler
 // InitController start the  controller
 func InitController(mgr ctrlruntime.Manager) error {
 	// The config MUST contain at least a Reconciler.  Other spi interfaces are optional.
-	mcConfig := basecontroller.ControllerConfig{
+	config := basecontroller.ControllerConfig{
 		Reconciler: &controller,
 	}
-	br, err := basecontroller.InitBaseController(mgr, mcConfig)
+	br, err := basecontroller.InitBaseController(mgr, config)
 	if err != nil {
 		return err
 	}
