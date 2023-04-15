@@ -5,6 +5,8 @@ module github.com/verrazzano/verrazzano-modules/module-operator
 
 go 1.19
 
+require github.com/verrazzano/verrazzano v0.17.1-0.20230414201321-73f1a8f85d15
+
 require (
 	github.com/stretchr/testify v1.8.0
 	github.com/verrazzano/verrazzano v0.17.1-0.20230414130230-43908c21553a

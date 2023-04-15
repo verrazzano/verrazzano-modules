@@ -4,15 +4,20 @@
 package reconciler
 
 import (
+	"context"
 	"fmt"
+	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/platformctrl/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/platformctrl/modlifecycle/delegates"
 	"github.com/verrazzano/verrazzano-modules/module-operator/pkg/controller"
+	vzlogInit "github.com/verrazzano/verrazzano/pkg/log"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
+	vzstring "github.com/verrazzano/verrazzano/pkg/string"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	"go.uber.org/zap"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"time"
 )
 
@@ -25,14 +30,14 @@ type helmDelegateReconciler struct {
 
 var _ delegates.DelegateLifecycleReconciler = &helmDelegateReconciler{}
 
-func (r *helmDelegateReconciler) Reconcile(log vzlog.VerrazzanoLogger, client client.Client, mlc *modulesv1beta2.ModuleLifecycle) (ctrl.Result, error) {
+func (r *helmDelegateReconciler) Reconcile(log vzlog.VerrazzanoLogger, client client.Client, mlc *modulesv1alpha1.ModuleLifecycle) (ctrl.Result, error) {
 	ctx, err := spi.NewMinimalContext(client, log)
 	if err != nil {
 		return newRequeueWithDelay(), err
 	}
 	// Delete underlying resources if it is being deleted
 	if mlc.IsBeingDeleted() {
-		if err := UpdateStatus(ctx.Client(), mlc, string(modulesv1beta2.CondUninstall), modulesv1beta2.CondUninstall); err != nil {
+		if err := UpdateStatus(ctx.Client(), mlc, string(modulesv1alpha1.CondUninstall), modulesv1alpha1.CondUninstall); err != nil {
 			return ctrl.Result{}, err
 		}
 		if err := r.Uninstall(ctx); err != nil {
@@ -58,7 +63,7 @@ func newRequeueWithDelay() ctrl.Result {
 	return controller.NewRequeueWithDelay(3, 10, time.Second)
 }
 
-func (r *helmDelegateReconciler) doReconcile(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle) error {
+func (r *helmDelegateReconciler) doReconcile(ctx spi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle) error {
 	log := ctx.Log()
 	// Initialize the module if this is the first time we are reconciling it
 	if err := initializeModule(ctx, mlc); err != nil {
@@ -66,33 +71,33 @@ func (r *helmDelegateReconciler) doReconcile(ctx spi.ComponentContext, mlc *modu
 	}
 	condition := mlc.Status.Conditions[len(mlc.Status.Conditions)-1].Type
 	switch condition {
-	case modulesv1beta2.CondPreInstall:
+	case modulesv1alpha1.CondPreInstall:
 		return r.handlePreInstall(ctx, mlc, log)
-	case modulesv1beta2.CondInstallStarted:
+	case modulesv1alpha1.CondInstallStarted:
 		return r.handleInstallStarted(ctx, mlc, log)
-	case modulesv1beta2.CondPreUpgrade:
+	case modulesv1alpha1.CondPreUpgrade:
 		return r.handlePreUpgrade(ctx, mlc, log)
-	case modulesv1beta2.CondInstallComplete, modulesv1beta2.CondUpgradeComplete:
+	case modulesv1alpha1.CondInstallComplete, modulesv1alpha1.CondUpgradeComplete:
 		return r.ReadyState(ctx, mlc)
-	case modulesv1beta2.CondUpgradeStarted:
+	case modulesv1alpha1.CondUpgradeStarted:
 		return r.handleUpgradeStarted(ctx, mlc, log)
 	}
 	return nil
 }
 
-func (r *helmDelegateReconciler) handleUpgradeStarted(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle, log vzlog.VerrazzanoLogger) error {
+func (r *helmDelegateReconciler) handleUpgradeStarted(ctx spi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle, log vzlog.VerrazzanoLogger) error {
 	if r.comp.IsReady(ctx) {
 		log.Progressf("Post-upgrade for %s is running", common.GetNamespacedName(mlc.ObjectMeta))
 		if err := r.comp.PostUpgrade(ctx); err != nil {
 			return err
 		}
 		mlc.Status.ObservedGeneration = mlc.Generation
-		return UpdateStatus(ctx.Client(), mlc, string(modulesv1beta2.CondUpgradeComplete), modulesv1beta2.CondUpgradeComplete)
+		return UpdateStatus(ctx.Client(), mlc, string(modulesv1alpha1.CondUpgradeComplete), modulesv1alpha1.CondUpgradeComplete)
 	}
 	return delegates.NotReadyErrorf("Upgrade for %s is not ready", common.GetNamespacedName(mlc.ObjectMeta))
 }
 
-func (r *helmDelegateReconciler) handlePreInstall(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle, log vzlog.VerrazzanoLogger) error {
+func (r *helmDelegateReconciler) handlePreInstall(ctx spi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle, log vzlog.VerrazzanoLogger) error {
 	log.Progressf("Pre-install for %s is running", common.GetNamespacedName(mlc.ObjectMeta))
 	if err := r.comp.PreInstall(ctx); err != nil {
 		return err
@@ -100,10 +105,10 @@ func (r *helmDelegateReconciler) handlePreInstall(ctx spi.ComponentContext, mlc 
 	if err := r.comp.Install(ctx); err != nil {
 		return err
 	}
-	return UpdateStatus(ctx.Client(), mlc, string(modulesv1beta2.CondInstallStarted), modulesv1beta2.CondInstallStarted)
+	return UpdateStatus(ctx.Client(), mlc, string(modulesv1alpha1.CondInstallStarted), modulesv1alpha1.CondInstallStarted)
 }
 
-func (r *helmDelegateReconciler) handlePreUpgrade(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle, log vzlog.VerrazzanoLogger) error {
+func (r *helmDelegateReconciler) handlePreUpgrade(ctx spi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle, log vzlog.VerrazzanoLogger) error {
 	log.Progressf("Pre-upgrade for %s is running", common.GetNamespacedName(mlc.ObjectMeta))
 	if err := r.comp.PreUpgrade(ctx); err != nil {
 		return err
@@ -111,10 +116,10 @@ func (r *helmDelegateReconciler) handlePreUpgrade(ctx spi.ComponentContext, mlc 
 	if err := r.comp.Upgrade(ctx); err != nil {
 		return err
 	}
-	return UpdateStatus(ctx.Client(), mlc, string(modulesv1beta2.CondUpgradeStarted), modulesv1beta2.CondUpgradeStarted)
+	return UpdateStatus(ctx.Client(), mlc, string(modulesv1alpha1.CondUpgradeStarted), modulesv1alpha1.CondUpgradeStarted)
 }
 
-func (r *helmDelegateReconciler) handleInstallStarted(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle, log vzlog.VerrazzanoLogger) error {
+func (r *helmDelegateReconciler) handleInstallStarted(ctx spi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle, log vzlog.VerrazzanoLogger) error {
 	if r.comp.IsReady(ctx) {
 		log.Progressf("Post-install for %s is running", common.GetNamespacedName(mlc.ObjectMeta))
 		if err := r.comp.PostInstall(ctx); err != nil {
@@ -122,15 +127,15 @@ func (r *helmDelegateReconciler) handleInstallStarted(ctx spi.ComponentContext, 
 		}
 		mlc.Status.ObservedGeneration = mlc.Generation
 		ctx.Log().Infof("%s is ready", common.GetNamespacedName(mlc.ObjectMeta))
-		return UpdateStatus(ctx.Client(), mlc, string(modulesv1beta2.CondInstallComplete), modulesv1beta2.CondInstallComplete)
+		return UpdateStatus(ctx.Client(), mlc, string(modulesv1alpha1.CondInstallComplete), modulesv1alpha1.CondInstallComplete)
 	}
 	return delegates.NotReadyErrorf("Install for %s is not ready", common.GetNamespacedName(mlc.ObjectMeta))
 }
 
 // ReadyState reconciles put the Module back to pending state if the generation has changed
-func (r *helmDelegateReconciler) ReadyState(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle) error {
+func (r *helmDelegateReconciler) ReadyState(ctx spi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle) error {
 	if needsReconcile(mlc) {
-		return UpdateStatus(ctx.Client(), mlc, string(modulesv1beta2.CondPreUpgrade), modulesv1beta2.CondPreUpgrade)
+		return UpdateStatus(ctx.Client(), mlc, string(modulesv1alpha1.CondPreUpgrade), modulesv1alpha1.CondPreUpgrade)
 	}
 	return nil
 }
@@ -149,7 +154,7 @@ func (r *helmDelegateReconciler) Uninstall(ctx spi.ComponentContext) error {
 	return nil
 }
 
-func initializeModule(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle) error {
+func initializeModule(ctx spi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle) error {
 	if err := addFinalizer(ctx, mlc); err != nil {
 		return err
 	}
@@ -157,16 +162,16 @@ func initializeModule(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecy
 	return nil
 }
 
-func initializeModuleStatus(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle) {
+func initializeModuleStatus(ctx spi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle) {
 	if len(mlc.Status.State) == 0 {
-		mlc.SetState(modulesv1beta2.StatePreinstall)
-		mlc.Status.Conditions = []modulesv1beta2.ModuleLifecycleCondition{
-			NewCondition(string(modulesv1beta2.StatePreinstall), modulesv1beta2.CondPreInstall),
+		mlc.SetState(modulesv1alpha1.StatePreinstall)
+		mlc.Status.Conditions = []modulesv1alpha1.ModuleLifecycleCondition{
+			NewCondition(string(modulesv1alpha1.StatePreinstall), modulesv1alpha1.CondPreInstall),
 		}
 	}
 }
 
-func addFinalizer(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle) error {
+func addFinalizer(ctx spi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle) error {
 	if needsFinalizer(mlc) {
 		mlc.Finalizers = append(mlc.Finalizers, FinalizerName)
 		err := ctx.Client().Update(context.TODO(), mlc)
@@ -176,11 +181,11 @@ func addFinalizer(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle)
 	return nil
 }
 
-func needsFinalizer(mlc *modulesv1beta2.ModuleLifecycle) bool {
+func needsFinalizer(mlc *modulesv1alpha1.ModuleLifecycle) bool {
 	return mlc.GetDeletionTimestamp().IsZero() && !vzstring.SliceContainsString(mlc.Finalizers, FinalizerName)
 }
 
-func removeFinalizer(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecycle) error {
+func removeFinalizer(ctx spi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle) error {
 	if needsFinalizerRemoval(mlc) {
 		mlc.Finalizers = vzstring.RemoveStringFromSlice(mlc.Finalizers, FinalizerName)
 		err := ctx.Client().Update(context.TODO(), mlc)
@@ -189,6 +194,6 @@ func removeFinalizer(ctx spi.ComponentContext, mlc *modulesv1beta2.ModuleLifecyc
 	return nil
 }
 
-func needsFinalizerRemoval(mlc *modulesv1beta2.ModuleLifecycle) bool {
+func needsFinalizerRemoval(mlc *modulesv1alpha1.ModuleLifecycle) bool {
 	return !needsFinalizer(mlc)
 }
