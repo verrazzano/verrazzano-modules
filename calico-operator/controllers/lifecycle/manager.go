@@ -6,7 +6,7 @@ package lifecycle
 import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/basecontroller"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
-	vzmod "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	vzplatformapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,5 +36,5 @@ func InitController(mgr ctrlruntime.Manager) error {
 
 // GetReconcileObject returns the kind of object being reconciled
 func (r Reconciler) GetReconcileObject() client.Object {
-	return &vzmod.ModuleLifecycle{}
+	return &vzplatformapi.ModuleLifecycle{}
 }

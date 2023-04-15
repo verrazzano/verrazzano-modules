@@ -281,8 +281,8 @@ github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ
 github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/verrazzano/verrazzano v0.17.1-0.20230414201321-73f1a8f85d15 h1:+8uCgz8g0Vh1Z5reo0G3qKqo2SBb1iqIhQ7QXLQMC0w=
 github.com/verrazzano/verrazzano v0.17.1-0.20230414201321-73f1a8f85d15/go.mod h1:F6yDVd69Esqmscf/8vddv9GLAKfe1AuXlgIz44qXBtg=
-github.com/verrazzano/verrazzano-modules/common v0.0.0-20230414232440-a3e9a4665948 h1:12HU+rW5YNnloAfpeAyv8QjtQLfBMplzP21sm58fqzM=
-github.com/verrazzano/verrazzano-modules/common v0.0.0-20230414232440-a3e9a4665948/go.mod h1:+qfF7TuSAYNqlKZeqAq49sLF1jS5vOdV7SFVFJ1iQ6E=
+github.com/verrazzano/verrazzano-modules/common v0.0.0-20230415003155-54665013ca21 h1:AIVTyx1n8dSbHXx1VgRK9y5YAo7olGjX4VGtZb/VQA4=
+github.com/verrazzano/verrazzano-modules/common v0.0.0-20230415003155-54665013ca21/go.mod h1:+qfF7TuSAYNqlKZeqAq49sLF1jS5vOdV7SFVFJ1iQ6E=
 github.com/verrazzano/verrazzano-modules/module-operator v0.0.0-20230414211931-291d0a2982a4 h1:XyCEMzaSuvnwuKS38gLBnWaty8+OfO5HYeZQ/pfMK6o=
 github.com/verrazzano/verrazzano-modules/module-operator v0.0.0-20230414211931-291d0a2982a4/go.mod h1:Lq6PNY7IiIRHexzi1cvVwEcP5drs4d2geB0cN5BayS0=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
