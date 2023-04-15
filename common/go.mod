@@ -3,7 +3,7 @@ module github.com/verrazzano/verrazzano-modules/common
 go 1.19
 
 require (
-	github.com/verrazzano/verrazzano v0.17.1-0.20230414201321-73f1a8f85d15
+	github.com/verrazzano/verrazzano v1.5.2
 	go.uber.org/zap v1.24.0
 	k8s.io/apimachinery v0.27.0
 	sigs.k8s.io/controller-runtime v0.14.6

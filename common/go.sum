@@ -279,8 +279,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
 github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/verrazzano/verrazzano v0.17.1-0.20230414201321-73f1a8f85d15 h1:+8uCgz8g0Vh1Z5reo0G3qKqo2SBb1iqIhQ7QXLQMC0w=
-github.com/verrazzano/verrazzano v0.17.1-0.20230414201321-73f1a8f85d15/go.mod h1:F6yDVd69Esqmscf/8vddv9GLAKfe1AuXlgIz44qXBtg=
+github.com/verrazzano/verrazzano v1.5.2 h1:iTJpw3lNp8k/yGv8ooFuG9vSpEW79lWmEm1DmgweNo4=
+github.com/verrazzano/verrazzano v1.5.2/go.mod h1:EAv9EJlrW6zYk5QnJA+cE5k+0Le5TDipJrS8AO9KN9s=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
 github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415/go.mod h1:GwrjFmJcFw6At/Gs6z4yjiIwzuJ1/+UwLxMQDVQXShQ=
 github.com/xeipuuv/gojsonschema v1.2.0/go.mod h1:anYRn/JVcOK2ZgGU+IjEV4nwlhoK5sQluxsYJ78Id3Y=
