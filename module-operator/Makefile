@@ -95,7 +95,7 @@ build: fmt #vet ## Build manager binary.
 	go build -o bin/${NAME} main.go
 
 .PHONY: run
-run: manifests generate fmt vet ## Run a controller from your host.
+run: ## Run a controller from your host.
 	go run ./main.go
 
 # If you wish built the manager image targeting other platforms you can use the --platform flag.
