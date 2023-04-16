@@ -96,7 +96,7 @@ fmt: ## Run go fmt against code.
 # Go build related tasks
 #
 .PHONY: go-build
-go-build: 
+go-build:
 	$(GO) build \
 		-ldflags "${GO_LDFLAGS}" \
 		-o bin/$(shell uname)_$(shell uname -m)/${NAME} \
