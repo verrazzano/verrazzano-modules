@@ -14,13 +14,17 @@ type OperatorConfig struct {
 
 	// LeaderElectionEnabled  enables/disables ensuring that there is only one active controller manager
 	LeaderElectionEnabled bool
+
+	// LeaderElectionNamespace the namespace to use for leader election
+	LeaderElectionNamespace string
 }
 
 // The singleton instance of the operator config
 var instance = OperatorConfig{
-	CertDir:               "/etc/webhook/certs",
-	MetricsAddr:           ":8080",
-	LeaderElectionEnabled: false,
+	CertDir:                 "/etc/webhook/certs",
+	MetricsAddr:             ":8080",
+	LeaderElectionEnabled:   false,
+	LeaderElectionNamespace: "verrazzano-install",
 }
 
 // Set saves the operator config.  This should only be called at operator startup and during unit tests
