@@ -37,19 +37,42 @@ func NewComponent(chartDir string) compspi.LifecycleComponent {
 
 // Init initializes the component with Helm chart information
 func (h *helmComponentAdapter) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo) error {
-	//	chartURL := fmt.Sprintf("%s/%s", installer.HelmRelease.Repository.URI, HelmInfo.Path)
-
-	hc := helmcomp.HelmComponent{
+	h.HelmComponent = helmcomp.HelmComponent{
 		ReleaseName:             HelmInfo.ReleaseName,
 		ChartDir:                h.chartDir,
 		ChartNamespace:          HelmInfo.ChartNamespace,
 		IgnoreNamespaceOverride: true,
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
+
 	h.HelmInfo = HelmInfo
-	h.HelmComponent = hc
+
+	//	chartURL := fmt.Sprintf("%s/%s", installer.HelmRelease.Repository.URI, HelmInfo.Path)
 
 	return nil
+}
+
+// Install installs the component using Helm
+func (h helmComponentAdapter) Install(context spi.ComponentContext) error {
+	// Perform a Helm install using the helm upgrade --install command
+	helmRelease := h.HelmInfo.HelmRelease
+	helmOverrides, err := ConvertToHelmOverrides(context.Log(), context.Client(), helmRelease.Name, helmRelease.Namespace, helmRelease.Overrides)
+	if err != nil {
+		return err
+	}
+	var opts = &HelmReleaseOpts{
+		//		RepoURL:      h.RepositoryURL,
+		ReleaseName:  h.ReleaseName,
+		Namespace:    h.ChartNamespace,
+		ChartPath:    helmRelease.ChartInfo.Name,
+		ChartVersion: helmRelease.ChartInfo.Version,
+		Overrides:    helmOverrides,
+		// TBD -- pull from a secret ref?
+		//Username:     "",
+		//Password:     "",
+	}
+	_, err = upgradeFunc(context.Log(), opts, h.WaitForInstall, context.IsDryRun())
+	return err
 }
 
 func (h helmComponentAdapter) Upgrade(context spi.ComponentContext) error {

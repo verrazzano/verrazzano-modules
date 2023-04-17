@@ -91,8 +91,8 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 }
 
 func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, mlc *modplatform.ModuleLifecycle, tracker *installTracker, chartInfo compspi.HelmInfo) (ctrl.Result, error) {
-	compName := r.comp.Name()
-	compContext := spiCtx.Init(compName).Operation(vzconst.InstallOperation)
+	compName := common.GetNamespacedNameString(mlc.ObjectMeta)
+	compContext := spiCtx.Init("component").Operation(vzconst.InstallOperation)
 	compLog := compContext.Log()
 
 	for tracker.state != string(compStateInstallEnd) {
@@ -110,7 +110,7 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, mlc *modplatf
 			tracker.state = string(compStatePreInstall)
 
 		case compStatePreInstall:
-			if err := r.comp.Install(compContext); err != nil {
+			if err := r.comp.PreInstall(compContext); err != nil {
 				return ctrl.Result{}, err
 			}
 			tracker.state = string(compStateInstall)

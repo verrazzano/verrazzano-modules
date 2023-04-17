@@ -3,6 +3,73 @@
 
 package main
 
-func main() {
+import (
+	"flag"
+	helm "github.com/verrazzano/verrazzano-modules/common/component/helm"
+	lifecycle "github.com/verrazzano/verrazzano-modules/common/controllers/lifecycle"
 
+	platformapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano/pkg/k8sutil"
+	vzlog "github.com/verrazzano/verrazzano/pkg/log"
+	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	controllerruntime "sigs.k8s.io/controller-runtime"
+	kzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+)
+
+func main() {
+	log := initLog()
+
+	// Use the same controller runtime.Manager for all the controllers, since the manager has the cluster cache and we
+	// want the cache to be shared across all the controllers.
+	mgr, err := controllerruntime.NewManager(k8sutil.GetConfigOrDieFromController(), controllerruntime.Options{
+		Scheme: initScheme(),
+		Port:   8080,
+	})
+	if err != nil {
+		log.Errorf("Failed to create a controller-runtime manager", err)
+		return
+	}
+
+	// init calico lifecycle controller
+	chartDir := "foo"
+	if err := lifecycle.InitController(mgr, helm.NewComponent(chartDir)); err != nil {
+		log.Errorf("Failed to start Isio Gateway controller", err)
+		return
+	}
+
+	// +kubebuilder:scaffold:builder
+	log.Info("Starting controller-runtime manager")
+	if err := mgr.Start(controllerruntime.SetupSignalHandler()); err != nil {
+		log.Errorf("Failed to start controller-runtime manager", err)
+		return
+	}
+
+}
+
+// initScheme returns the all the schemes used by the controllers.  The controller runtime uses
+// a generic go client that can do operations on any object type, but it needs to know the schemes.
+func initScheme() *runtime.Scheme {
+	// Create a scheme then add each GKV group to the scheme
+	scheme := runtime.NewScheme()
+
+	// Verrazzano security
+	utilruntime.Must(platformapi.AddToScheme(scheme))
+
+	//+kubebuilder:scaffold:scheme
+
+	return scheme
+}
+
+func initLog() *zap.SugaredLogger {
+	// Add the zap logger flag set to the CLI.
+	opts := kzap.Options{}
+	opts.BindFlags(flag.CommandLine)
+
+	flag.Parse()
+	kzap.UseFlagOptions(&opts)
+	vzlog.InitLogs(opts)
+
+	return zap.S()
 }
