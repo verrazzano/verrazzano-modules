@@ -4,13 +4,9 @@
 package lifecycle
 
 import (
-	"fmt"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	"github.com/verrazzano/verrazzano-modules/common/k8s"
 	vzplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	vzlogInit "github.com/verrazzano/verrazzano/pkg/log"
-	vzstring "github.com/verrazzano/verrazzano/pkg/string"
-	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,12 +15,10 @@ import (
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modlifecycle/delegates"
-	"github.com/verrazzano/verrazzano-modules/module-operator/pkg/controller"
+	vzctrl "github.com/verrazzano/verrazzano-modules/module-operator/pkg/controller"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
-
-var _ delegates.DelegateLifecycleReconciler = &Reconciler{}
 
 // Reconcile updates the Certificate
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
@@ -49,7 +43,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 }
 
 func newRequeueWithDelay() ctrl.Result {
-	return controller.NewRequeueWithDelay(3, 10, time.Second)
+	return vzctrl.NewRequeueWithDelay(3, 10, time.Second)
 }
 
 func (r *Reconciler) doReconcile(ctx vzspi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle) error {
@@ -129,7 +123,7 @@ func (r *Reconciler) ReadyState(ctx vzspi.ComponentContext, mlc *modulesv1alpha1
 	return nil
 }
 
-// Uninstall cleans up the Helm Chart and removes the Module finalizer so Kubernetes can clean the resource
+// Uninstall cleans up the component and removes the Module finalizer so Kubernetes can clean the resource
 func (r *Reconciler) Uninstall(ctx vzspi.ComponentContext) error {
 	if err := r.comp.PreUninstall(ctx); err != nil {
 		return err
@@ -144,9 +138,6 @@ func (r *Reconciler) Uninstall(ctx vzspi.ComponentContext) error {
 }
 
 func initializeModule(ctx vzspi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle) error {
-	if err := addFinalizer(ctx, mlc); err != nil {
-		return err
-	}
 	initializeModuleStatus(ctx, mlc)
 	return nil
 }
@@ -158,18 +149,4 @@ func initializeModuleStatus(ctx vzspi.ComponentContext, mlc *modulesv1alpha1.Mod
 			NewCondition(string(modulesv1alpha1.StatePreinstall), modulesv1alpha1.CondPreInstall),
 		}
 	}
-}
-
-func addFinalizer(ctx vzspi.ComponentContext, mlc *modulesv1alpha1.ModuleLifecycle) error {
-	if needsFinalizer(mlc) {
-		mlc.Finalizers = append(mlc.Finalizers, FinalizerName)
-		err := ctx.Client().Update(context.TODO(), mlc)
-		_, err = vzlogInit.IgnoreConflictWithLog(fmt.Sprintf("Failed to add finalizer to ingress trait %s", mlc.Name), err, zap.S())
-		return err
-	}
-	return nil
-}
-
-func needsFinalizer(mlc *modulesv1alpha1.ModuleLifecycle) bool {
-	return mlc.GetDeletionTimestamp().IsZero() && !vzstring.SliceContainsString(mlc.Finalizers, FinalizerName)
 }

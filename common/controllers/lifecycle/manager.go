@@ -4,10 +4,10 @@
 package lifecycle
 
 import (
+	compspi "github.com/verrazzano/verrazzano-modules/common/component/spi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/basecontroller"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	spi "github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	vzplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -17,16 +17,16 @@ var _ spi.Reconciler = Reconciler{}
 
 type Reconciler struct {
 	Client client.Client
-	comp vzspi.Component
+	comp   compspi.LifecycleComponent
 }
 
 var _ spi.Reconciler = Reconciler{}
 
-
 var controller Reconciler
 
 // InitController start the  controller
-func InitController(mgr ctrlruntime.Manager) error {
+func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent) error {
+	// Initialze the base controller
 	// The config MUST contain at least a Reconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
 		Reconciler: &controller,
@@ -35,7 +35,9 @@ func InitController(mgr ctrlruntime.Manager) error {
 	if err != nil {
 		return err
 	}
+	// init rest of comntroller
 	controller.Client = br.Client
+	controller.comp = comp
 	return nil
 }
 
