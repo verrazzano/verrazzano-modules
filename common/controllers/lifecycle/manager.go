@@ -26,8 +26,7 @@ var controller Reconciler
 
 // InitController start the  controller
 func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent) error {
-	// Initialze the base controller
-	// The config MUST contain at least a Reconciler.  Other spi interfaces are optional.
+	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
 		Reconciler: &controller,
 	}
@@ -35,7 +34,8 @@ func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent) er
 	if err != nil {
 		return err
 	}
-	// init rest of comntroller
+
+	// init other controller fields
 	controller.Client = br.Client
 	controller.comp = comp
 	return nil

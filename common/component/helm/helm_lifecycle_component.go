@@ -16,7 +16,8 @@ import (
 
 type helmComponentAdapter struct {
 	helmcomp.HelmComponent
-	chartInfo *compspi.ChartInfo
+	HelmInfo *compspi.HelmInfo
+	chartDir string
 }
 
 // upgradeFuncSig is a function needed for unit test override
@@ -28,22 +29,24 @@ var (
 	upgradeFunc upgradeFuncSig = UpgradeRelease
 )
 
-func NewComponent() compspi.LifecycleComponent {
-	return &helmComponentAdapter{}
+func NewComponent(chartDir string) compspi.LifecycleComponent {
+	return &helmComponentAdapter{
+		chartDir: chartDir,
+	}
 }
 
 // Init initializes the component with Helm chart information
-func (h *helmComponentAdapter) Init(_ spi.ComponentContext, chartInfo *compspi.ChartInfo) error {
-	//	chartURL := fmt.Sprintf("%s/%s", installer.HelmRelease.Repository.URI, chartInfo.Path)
+func (h *helmComponentAdapter) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo) error {
+	//	chartURL := fmt.Sprintf("%s/%s", installer.HelmRelease.Repository.URI, HelmInfo.Path)
 
 	hc := helmcomp.HelmComponent{
-		ReleaseName:             chartInfo.ReleaseName,
-		ChartDir:                chartInfo.ChartDir,
-		ChartNamespace:          chartInfo.ChartNamespace,
+		ReleaseName:             HelmInfo.ReleaseName,
+		ChartDir:                h.chartDir,
+		ChartNamespace:          HelmInfo.ChartNamespace,
 		IgnoreNamespaceOverride: true,
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
-	h.chartInfo = chartInfo
+	h.HelmInfo = HelmInfo
 	h.HelmComponent = hc
 
 	return nil
@@ -59,7 +62,7 @@ func (h helmComponentAdapter) releaseVersionMatches(log vzlog.VerrazzanoLogger) 
 		log.ErrorfThrottled("Error occurred getting release chart version: %v", err.Error())
 		return false
 	}
-	return h.chartInfo.ChartVersion == releaseChartVersion
+	return h.HelmInfo.ChartInfo.Version == releaseChartVersion
 }
 
 // IsEnabled ModuleLifecycle objects are always enabled; if a Module is disabled the ModuleLifecycle resource doesn't exist
