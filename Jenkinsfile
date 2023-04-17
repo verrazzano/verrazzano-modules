@@ -133,17 +133,17 @@ pipeline {
             }
         }
 
-        stage('Generate operator.yaml') {
-            when { not { buildingTag() } }
-            steps {
-                generateOperatorYaml("${DOCKER_IMAGE_TAG}")
-            }
-            post {
-                success {
-                    archiveArtifacts artifacts: "generated-operator.yaml", allowEmptyArchive: true
-                }
-            }
-        }
+        //stage('Generate operator.yaml') {
+        //    when { not { buildingTag() } }
+        //    steps {
+        //        generateOperatorYaml("${DOCKER_IMAGE_TAG}")
+        //    }
+        //    post {
+        //        success {
+        //            archiveArtifacts artifacts: "generated-operator.yaml", allowEmptyArchive: true
+        //        }
+        //    }
+        //}
 
         stage('Check Repo Clean') {
             steps {
