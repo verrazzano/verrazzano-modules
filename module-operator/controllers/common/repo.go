@@ -4,6 +4,8 @@ package common
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"helm.sh/helm/v3/pkg/action"
@@ -11,7 +13,6 @@ import (
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
-	"strings"
 )
 
 const (
