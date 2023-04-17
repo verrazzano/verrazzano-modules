@@ -42,6 +42,7 @@ pipeline {
         CREATE_LATEST_TAG = "${env.BRANCH_NAME == 'main' ? '1' : '0'}"
         GOPATH = '/home/opc/go'
         GO_REPO_PATH = "${GOPATH}/src/github.com/verrazzano"
+        GIT_REPO_DIR = "verrazzano-modules"
         DOCKER_CREDS = credentials('github-packages-credentials-rw')
         DOCKER_EMAIL = credentials('github-packages-email')
         DOCKER_REPO = 'ghcr.io'
@@ -176,7 +177,7 @@ pipeline {
                     steps {
                         sh """
                             echo "Not implemented"
-                            #cd ${GO_REPO_PATH}/verrazzano-modules
+                            #cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
                             #make precommit
                             #make unit-test-coverage-ratcheting
                         """
@@ -272,16 +273,16 @@ def isPagerDutyEnabled() {
 // Called in Stage Clean workspace and checkout steps
 def moveContentToGoRepoPath() {
     sh """
-        rm -rf ${GO_REPO_PATH}/verrazzano
-        mkdir -p ${GO_REPO_PATH}/verrazzano
-        tar cf - . | (cd ${GO_REPO_PATH}/verrazzano/ ; tar xf -)
+        rm -rf ${GO_REPO_PATH}/${GIT_REPO_DIR}
+        mkdir -p ${GO_REPO_PATH}/${GIT_REPO_DIR}
+        tar cf - . | (cd ${GO_REPO_PATH}/${GIT_REPO_DIR}/ ; tar xf -)
     """
 }
 
 def checkRepoClean() {
     sh """
         echo "Not implemented"
-        #cd ${GO_REPO_PATH}/verrazzano-modules
+        #cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
         #echo 'Check for forgotten manifest/generate actions...'
         #(cd platform-operator; make check-repo-clean)
         #(cd application-operator; make check-repo-clean)
@@ -293,17 +294,17 @@ def checkRepoClean() {
 // Makes target docker push for application/platform operator and analysis
 def buildImages(dockerImageTag) {
     sh """
-        cd ${GO_REPO_PATH}/verrazzano-modules
+        cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
         echo 'Building container images...'
         make docker-push DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} CREATE_LATEST_TAG=${CREATE_LATEST_TAG}
-        #${GO_REPO_PATH}/verrazzano-modules/tools/scripts/generate_image_list.sh $WORKSPACE/generated-verrazzano-bom.json $WORKSPACE/verrazzano_images.txt
+        #${GO_REPO_PATH}/${GIT_REPO_DIR}/tools/scripts/generate_image_list.sh $WORKSPACE/generated-verrazzano-bom.json $WORKSPACE/verrazzano_images.txt
     """
 }
 
 // Called in Stage Generate operator.yaml steps
 def generateOperatorYaml(dockerImageTag) {
     sh """
-        cd ${GO_REPO_PATH}/verrazzano-modules/module-operator
+        cd ${GO_REPO_PATH}/${GIT_REPO_DIR}/module-operator
         case "${env.BRANCH_NAME}" in
             main|release-*)
                 ;;
