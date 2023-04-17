@@ -1,0 +1,62 @@
+# Copyright (C) 2023, Oracle and/or its affiliates.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "verrazzano-module-operator.name" . }}
+  labels:
+    {{- include "verrazzano-module-operator.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "verrazzano-module-operator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ include "verrazzano-module-operator.name" . }}
+        {{- include "verrazzano-module-operator.selectorLabels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 0
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "verrazzano-module-operator.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --zap-log-level={{ .Values.logLevel }}
+            - --enable-leader-election={{ .Values.leaderElection.enabled }}
+            - --leader-election-namespace={{ .Release.Namespace }}
+          ports:
+            - containerPort: 9100
+              name: http-metric
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

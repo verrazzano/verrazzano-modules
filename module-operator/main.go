@@ -37,10 +37,13 @@ func main() {
 	// config will hold the entire operator config
 	config := internalconfig.Get()
 
-	flag.StringVar(&config.MetricsAddr, "metrics-addr", config.MetricsAddr, "The address the metric endpoint binds to.")
+	flag.StringVar(&config.MetricsAddr, "metrics-addr", config.MetricsAddr,
+		"The address the metric endpoint binds to.")
 	flag.BoolVar(&config.LeaderElectionEnabled, "enable-leader-election", config.LeaderElectionEnabled,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&config.LeaderElectionNamespace, "leader-election-namespace", config.LeaderElectionNamespace,
+		"The leader election namespace.")
 
 	// Add the zap logger flag set to the CLI.
 	opts := kzap.Options{}
@@ -54,11 +57,12 @@ func main() {
 	log := zap.S()
 
 	mgr, err := controllerruntime.NewManager(k8sutil.GetConfigOrDieFromController(), controllerruntime.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: config.MetricsAddr,
-		Port:               8080,
-		LeaderElection:     config.LeaderElectionEnabled,
-		LeaderElectionID:   "3ec4d290.verrazzano.io",
+		Scheme:                  scheme,
+		MetricsBindAddress:      config.MetricsAddr,
+		Port:                    8080,
+		LeaderElection:          config.LeaderElectionEnabled,
+		LeaderElectionNamespace: config.LeaderElectionNamespace,
+		LeaderElectionID:        "d607cb6.verrazzano.io",
 	})
 	if err != nil {
 		log.Errorf("Failed to create a controller-runtime manager: %v", err)
@@ -90,4 +94,5 @@ func main() {
 		log.Errorf("Failed starting controller-runtime manager: %v", err)
 		os.Exit(1)
 	}
+	log.Infof("Exiting")
 }
