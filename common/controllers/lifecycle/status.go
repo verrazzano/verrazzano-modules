@@ -16,8 +16,10 @@ import (
 // UpdateStatus configures the Module's status based on the passed in state and then updates the Module on the cluster
 func UpdateStatus(client client.Client, mlc *modulesv1alpha1.ModuleLifecycle, msg string, condition modulesv1alpha1.LifecycleCondition) error {
 	state := modulesv1alpha1.LifecycleState(condition)
+
 	// Update the Module's State
 	mlc.SetState(state)
+
 	// Append a new condition, if applicable
 	AppendCondition(mlc, msg, condition)
 
