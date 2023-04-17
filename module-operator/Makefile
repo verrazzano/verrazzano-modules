@@ -1,5 +1,7 @@
-# Copyright (C) 2020, 2023, Oracle and/or its affiliates.
+# Copyright (C) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+include ../make/retry.mk
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -46,8 +48,6 @@ endif
 DOCKER_IMAGE_TAG ?= local-$(shell git rev-parse --short HEAD)
 
 SHORT_COMMIT_HASH ?= $(shell git rev-parse --short=8 HEAD)
-
-OPERATOR_IMAGE ?= ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
 
 .PHONY: all
 all: build
@@ -139,12 +139,30 @@ run: ## Run a controller from your host.
 # (i.e. docker build --platform linux/arm64 ). However, you must enable docker buildKit for it.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
-docker-build: go-build-linux ## Build docker image with the manager.
-	docker build -t ${OPERATOR_IMAGE} .
+docker-build: go-build-linux docker-build-common
+
+.PHONY: docker-build-common
+docker-build-common:
+	@echo Building verrazzano-module-operator image ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+	# the TPL file needs to be copied into this dir so it is in the docker build context
+	#cp ../THIRD_PARTY_LICENSES.txt .
+	docker build --pull -f Dockerfile \
+		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
 
 .PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${OPERATOR_IMAGE}
+docker-push: docker-build docker-push-common
+
+.PHONY: docker-push-debug
+docker-push-debug: docker-build-debug docker-push-common
+
+.PHONY: docker-push-common
+docker-push-common:
+	docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
+	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG})
+ifeq ($(CREATE_LATEST_TAG), "1")
+	docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:latest;
+	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:latest);
+endif
 
 # find or download controller-gen
 CONTROLLER_GEN_PATH := $(shell eval go env GOPATH)
