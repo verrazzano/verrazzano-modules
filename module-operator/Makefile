@@ -96,7 +96,7 @@ fmt: ## Run go fmt against code.
 # Go build related tasks
 #
 .PHONY: go-build
-go-build:
+go-build: 
 	$(GO) build \
 		-ldflags "${GO_LDFLAGS}" \
 		-o bin/$(shell uname)_$(shell uname -m)/${NAME} \
@@ -139,7 +139,7 @@ run: ## Run a controller from your host.
 # (i.e. docker build --platform linux/arm64 ). However, you must enable docker buildKit for it.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
-docker-build: go-build ## Build docker image with the manager.
+docker-build: go-build-linux ## Build docker image with the manager.
 	docker build -t ${OPERATOR_IMAGE} .
 
 .PHONY: docker-push

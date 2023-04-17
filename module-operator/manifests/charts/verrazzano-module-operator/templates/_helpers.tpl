@@ -47,7 +47,7 @@ Selector labels
 */}}
 {{- define "verrazzano-module-operator.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "verrazzano-module-operator.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/instance: {{ include "verrazzano-module-operator.name" . }}
 {{- end }}
 
 {{/*
