@@ -4,8 +4,10 @@
 package install
 
 import (
+	"github.com/verrazzano/verrazzano-modules/common/pkg/controllerutils"
+	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/action_spi"
 	"github.com/verrazzano/verrazzano-modules/common/helm_component/helm"
-	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
+
 	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -116,11 +118,16 @@ func (h Component) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result
 		context.Log().ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
 		return false, ctrl.Result{}, err
 	}
+	if !deployed {
+		return false, controllerutils.NewRequeueWithShortDelay(), nil
+	}
+	// check if helm release at the correct version
+	if !h.releaseVersionMatches(context.Log()) {
+		return false, controllerutils.NewRequeueWithShortDelay(), nil
+	}
 
-	releaseMatches := h.releaseVersionMatches(context.Log())
-
-	// The helm release exists and is at the correct version
-	return deployed && releaseMatches, ctrl.Result{}, nil
+	// TODO check if release is ready (check deployments)
+	return true, ctrl.Result{}, err
 }
 
 // PostAction does installation pre-action

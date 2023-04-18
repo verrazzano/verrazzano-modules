@@ -5,12 +5,12 @@ package lifecycle
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
-	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
-	"github.com/verrazzano/verrazzano-modules/common/k8s"
+	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/action_spi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/controllerutils"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"time"
 
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
@@ -85,12 +85,12 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 
 	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
 	if err != nil {
-		return newRequeueWithDelay(), err
+		return controllerutils.NewRequeueWithShortDelay(), err
 	}
 
 	if cr.Generation == cr.Status.ObservedGeneration {
 		spictx.Log.Debugf("Skipping reconcile for %v, observed generation has not change", nsn)
-		return newRequeueWithDelay(), err
+		return controllerutils.NewRequeueWithShortDelay(), err
 	}
 
 	helmInfo := loadHelmInfo(cr)
@@ -140,14 +140,14 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 		case stateActionNotNeededUpdate:
 			cond := s.action.GetStatusConditions().NotNeeded
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return newRequeueWithDelay()
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateEnd
 
 		case stateStartPreActionUpdate:
 			cond := s.action.GetStatusConditions().PreAction
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return newRequeueWithDelay()
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = statePreAction
 
@@ -164,14 +164,14 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 				return res2
 			}
 			if !done {
-				return newRequeueWithDelay()
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateStartActionUpdate
 
 		case stateStartActionUpdate:
 			cond := s.action.GetStatusConditions().DoAction
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return newRequeueWithDelay()
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateAction
 
@@ -188,7 +188,7 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 				return res2
 			}
 			if !done {
-				return newRequeueWithDelay()
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = statePostAction
 
@@ -205,23 +205,19 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 				return res2
 			}
 			if !done {
-				return newRequeueWithDelay()
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateCompleteUpdate
 
 		case stateCompleteUpdate:
 			cond := s.action.GetStatusConditions().Completed
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return newRequeueWithDelay()
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateEnd
 		}
 	}
 	return ctrl.Result{}
-}
-
-func newRequeueWithDelay() ctrl.Result {
-	return vzctrl.NewRequeueWithDelay(3, 10, time.Second)
 }
 
 func loadHelmInfo(cr *moduleplatform.ModuleLifecycle) compspi.HelmInfo {
@@ -247,10 +243,13 @@ func (r *Reconciler) getAction(action moduleplatform.ActionType) compspi.Lifecyc
 
 func procResult(res ctrl.Result, err error) ctrl.Result {
 	if vzctrl.ShouldRequeue(res) {
+		if res.RequeueAfter == 0 {
+			return controllerutils.NewRequeueWithShortDelay()
+		}
 		return res
 	}
 	if err != nil {
-		return newRequeueWithDelay()
+		return controllerutils.NewRequeueWithShortDelay()
 	}
 	return res
 }
