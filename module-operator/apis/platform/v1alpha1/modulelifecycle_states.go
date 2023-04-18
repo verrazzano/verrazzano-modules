@@ -10,11 +10,12 @@ const (
 	StatePreinstall   ModuleLifecycleState = "PreInstalling"
 	StateInstalling   ModuleLifecycleState = "Installing"
 	StateUninstalling ModuleLifecycleState = "Uninstalling"
-	StateCompleted    ModuleLifecycleState = "Completed"
 	StatePreUpgrade   ModuleLifecycleState = "PreUpgrading"
 	StateUpgrading    ModuleLifecycleState = "Upgrading"
 	StateFailed       ModuleLifecycleState = "Failed"
 	StateIgnored      ModuleLifecycleState = "Ignored"
+	StateReady        ModuleLifecycleState = "Ready"
+	StateCompleted    ModuleLifecycleState = "Completed"
 )
 
 type LifecycleCondition string
@@ -64,7 +65,7 @@ func LifecycleState(condition LifecycleCondition) ModuleLifecycleState {
 		return StateIgnored
 	case CondFailed:
 		return StateFailed
-	default: // CondUpgradeComplete, CondInstallComplete
-		return StateIgnored
+	default:
+		return StateReady
 	}
 }
