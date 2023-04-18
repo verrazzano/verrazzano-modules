@@ -63,8 +63,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			if err := r.deleteWatches(); err != nil {
 				return newRequeueWithDelay(), nil
 			}
-			if err := r.Cleanup(rctx, cr); err != nil {
+
+			res, err := r.Cleanup(rctx, cr)
+			if err != nil {
 				return newRequeueWithDelay(), nil
+			}
+			if err != nil {
+				return newRequeueWithDelay(), nil
+			}
+			if vzctrl.ShouldRequeue(res) {
+				return res, nil
 			}
 			return ctrl.Result{}, nil
 		}
@@ -79,12 +87,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
-	if err = r.Reconciler.Reconcile(rctx, cr); err != nil {
+	res, err := r.Reconciler.Reconcile(rctx, cr)
+	if err != nil {
 		return newRequeueWithDelay(), nil
+	}
+	if vzctrl.ShouldRequeue(res) {
+		return res, nil
 	}
 
 	// The resource has been reconciled.
-	log.Oncef("Successfully reconciled Gateway resource %v", req.NamespacedName)
+	log.Oncef("Successfully reconciled resource %v", req.NamespacedName)
 	return ctrl.Result{}, nil
 }
 

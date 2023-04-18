@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -42,7 +43,7 @@ type ReconcileContext struct {
 // Reconciler is an interface used by controllers to reconcile a resource
 type Reconciler interface {
 	// Reconcile reconciles the resource
-	Reconcile(ReconcileContext, *unstructured.Unstructured) error
+	Reconcile(ReconcileContext, *unstructured.Unstructured) (ctrl.Result, error)
 
 	// GetReconcileObject returns the client object being reconciled
 	GetReconcileObject() client.Object
@@ -57,8 +58,8 @@ type Watcher interface {
 // Finalizer is an interface used by controllers the use finalizers
 type Finalizer interface {
 	// GetName returns the name of the finalizer
-	GetName()
+	GetName() string
 
 	// Cleanup garbage collects any related resources that were created by the controller
-	Cleanup(ReconcileContext, *unstructured.Unstructured) error
+	Cleanup(ReconcileContext, *unstructured.Unstructured) (ctrl.Result, error)
 }

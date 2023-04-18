@@ -8,16 +8,17 @@ import (
 	vzplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // Reconcile updates the Certificate
-func (r Reconciler) Reconcile(ctx spi.ReconcileContext, u *unstructured.Unstructured) error {
+func (r Reconciler) Reconcile(ctx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &vzplatform.ModuleLifecycle{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
-		return err
+		return ctrl.Result{}, err
 	}
 
 	// TODO - process the lifecycle resource
 
-	return nil
+	return ctrl.Result{}, nil
 }
