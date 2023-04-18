@@ -53,7 +53,7 @@ pipeline {
 
         POST_DUMP_FAILED_FILE = "${WORKSPACE}/post_dump_failed_file.tmp"
         TESTS_EXECUTED_FILE = "${WORKSPACE}/tests_executed_file.tmp"
-        KUBECONFIG = "${WORKSPACE}/test_kubeconfig"
+        //KUBECONFIG = "${WORKSPACE}/test_kubeconfig"
         OCR_CREDS = credentials('ocr-pull-and-push-account')
         OCR_REPO = 'container-registry.oracle.com'
         IMAGE_PULL_SECRET = 'verrazzano-container-registry'
@@ -146,7 +146,7 @@ pipeline {
                     when { not { buildingTag() } }
                     steps {
                         script {
-                            buildImages("${DOCKER_IMAGE_TAG}")
+                            //buildImages("${DOCKER_IMAGE_TAG}")
                             generateOperatorYaml("${DOCKER_IMAGE_TAG}")
                         }
                     }
@@ -155,7 +155,7 @@ pipeline {
                             echo "Saving generated files"
                             saveGeneratedFiles()
                             script {
-                                archiveArtifacts artifacts: "${WORKSPACE}/generated/verrazzano-module-operator.yaml,${WORKSPACE}/generated/*.tgz,verrazzano_images.txt", allowEmptyArchive: true
+                                archiveArtifacts artifacts: "generated/verrazzano-module-operator.yaml,generated/*.tgz,verrazzano_images.txt", allowEmptyArchive: true
                             }
                         }
                     }
