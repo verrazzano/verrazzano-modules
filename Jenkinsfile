@@ -141,7 +141,7 @@ pipeline {
             }
             post {
                 success {
-                    archiveArtifacts artifacts: "generated-operator.yaml", allowEmptyArchive: true
+                    archiveArtifacts artifacts: "**/*.yaml,**/*.tvz", allowEmptyArchive: true
                 }
             }
         }
