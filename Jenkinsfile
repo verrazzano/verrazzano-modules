@@ -317,15 +317,16 @@ def generateOperatorYaml(dockerImageTag) {
 }
 
 // Called in Stage Save Generated Files steps
-//def saveGeneratedFiles() {
-//    sh """
-//        cd ${GO_REPO_PATH}/verrazzano
+def saveGeneratedFiles() {
+    sh """
+        cd ${GO_REPO_PATH}/verrazzano-modules
+        echo "Saving generated files"
 //        oci --region us-phoenix-1 os object put --force --namespace ${OCI_OS_NAMESPACE} -bn ${OCI_OS_BUCKET} --name ${env.BRANCH_NAME}/operator.yaml --file $WORKSPACE/generated-operator.yaml
 //        oci --region us-phoenix-1 os object put --force --namespace ${OCI_OS_NAMESPACE} -bn ${OCI_OS_COMMIT_BUCKET} --name ephemeral/${env.BRANCH_NAME}/${SHORT_COMMIT_HASH}/operator.yaml --file $WORKSPACE/generated-operator.yaml
 //        oci --region us-phoenix-1 os object put --force --namespace ${OCI_OS_NAMESPACE} -bn ${OCI_OS_BUCKET} --name ${env.BRANCH_NAME}/generated-verrazzano-bom.json --file $WORKSPACE/generated-verrazzano-bom.json
 //        oci --region us-phoenix-1 os object put --force --namespace ${OCI_OS_NAMESPACE} -bn ${OCI_OS_COMMIT_BUCKET} --name ephemeral/${env.BRANCH_NAME}/${SHORT_COMMIT_HASH}/generated-verrazzano-bom.json --file $WORKSPACE/generated-verrazzano-bom.json
-//    """
-//}
+    """
+}
 
 // Called in Stage Clean workspace and checkout steps
 @NonCPS
