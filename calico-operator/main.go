@@ -51,7 +51,6 @@ func initScheme() *runtime.Scheme {
 	// Create a scheme then add each GKV group to the scheme
 	scheme := runtime.NewScheme()
 
-	// Verrazzano security
 	utilruntime.Must(platformapi.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
