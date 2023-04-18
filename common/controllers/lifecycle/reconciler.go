@@ -141,8 +141,8 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			if vzctrl.ShouldRequeue(res) {
 				return res, nil
 			}
-			if done {
-				return ctrl.Result{}, nil
+			if !done {
+				return newRequeueWithDelay(), nil
 			}
 			s.tracker.state = stateStartActionUpdate
 
@@ -170,10 +170,10 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			if vzctrl.ShouldRequeue(res) {
 				return res, nil
 			}
-			if done {
-				return ctrl.Result{}, nil
+			if !done {
+				return newRequeueWithDelay(), nil
 			}
-			s.tracker.state = stateStartActionUpdate
+			s.tracker.state = statePostAction
 
 		case statePostAction:
 			res, err := s.action.PostAction(compContext)
@@ -193,8 +193,8 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			if vzctrl.ShouldRequeue(res) {
 				return res, nil
 			}
-			if done {
-				return ctrl.Result{}, nil
+			if !done {
+				return newRequeueWithDelay(), nil
 			}
 			s.tracker.state = stateCompleteUpdate
 

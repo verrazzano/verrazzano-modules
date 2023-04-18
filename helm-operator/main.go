@@ -5,8 +5,8 @@ package main
 
 import (
 	"flag"
-	"github.com/verrazzano/verrazzano-modules/common/component/helm"
 	lifecycle "github.com/verrazzano/verrazzano-modules/common/controllers/lifecycle"
+	"github.com/verrazzano/verrazzano-modules/common/helm_component/lifecycle/factory"
 	platformapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
@@ -32,8 +32,7 @@ func main() {
 	}
 
 	// init helm lifecycle controller
-	chartDir := ""
-	if err := lifecycle.InitController(mgr, helm.NewComponent(chartDir)); err != nil {
+	if err := lifecycle.InitController(mgr, factory.NewLifeCycleComponent()); err != nil {
 		log.Errorf("Failed to start Isio Gateway controller", err)
 		return
 	}
