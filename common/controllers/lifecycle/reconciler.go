@@ -85,11 +85,18 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	helmInfo := loadHelmInfo(cr)
 	tracker := getTracker(cr.ObjectMeta, stateInit)
 
+	action := r.getAction(cr.Spec.Action)
+	if action == nil {
+		spictx.Log.Errorf("Invalid ModuleLifecycle CR action %s", cr.Spec.Action)
+		// Dont requeue, this is a fatal error
+		return ctrl.Result{}, nil
+	}
+
 	smc := stateMachineContext{
 		cr:        cr,
 		tracker:   tracker,
 		chartInfo: &helmInfo,
-		action:    r.getAction("install"),
+		action:    action,
 	}
 
 	res, err := r.doStateMachine(ctx, smc)
@@ -103,7 +110,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 }
 
 func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachineContext) (ctrl.Result, error) {
-	compContext := spiCtx.Init("component").Operation("install") // TODO don't hard code this
+	compContext := spiCtx.Init("component").Operation(string(s.cr.Spec.Action))
 
 	for s.tracker.state != stateEnd {
 		switch s.tracker.state {
@@ -219,6 +226,16 @@ func loadHelmInfo(cr *modplatform.ModuleLifecycle) compspi.HelmInfo {
 	return helmInfo
 }
 
-func (r *Reconciler) getAction(action string) compspi.LifecycleAction {
-	return r.comp.InstallAction
+func (r *Reconciler) getAction(action modulesv1alpha1.ActionType) compspi.LifecycleAction {
+	switch action {
+	case modulesv1alpha1.InstallAction:
+		return r.comp.InstallAction
+	case modulesv1alpha1.UninstallAction:
+		return r.comp.UninstallAction
+	case modulesv1alpha1.UpdateAction:
+		return r.comp.UpdateAction
+	case modulesv1alpha1.UpgradeAction:
+		return r.comp.UpgradeAction
+	}
+	return nil
 }
