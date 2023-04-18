@@ -43,7 +43,6 @@ func main() {
 		log.Errorf("Failed to start controller-runtime manager", err)
 		return
 	}
-
 }
 
 // initScheme returns the all the schemes used by the controllers.  The controller runtime uses
