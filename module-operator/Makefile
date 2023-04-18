@@ -73,7 +73,7 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=manifests/charts/verrazzano-module-operator/crd
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=manifests/charts/verrazzano-module-operator/crds
 	# Add copyright headers to the kubebuilder generated CRDs
 	./hack/add-crd-header.sh
 	./hack/update-codegen.sh "platform:v1alpha1" "boilerplate.go.txt"

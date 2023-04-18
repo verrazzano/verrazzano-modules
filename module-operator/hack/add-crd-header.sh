@@ -10,7 +10,7 @@ set -o nounset
 set -o pipefail
 
 SCRIPT_DIR=$(cd $(dirname "$0"); pwd -P)
-GENERATED_CRDS_DIR=$SCRIPT_DIR/../manifests/charts/verrazzano-module-operator/crd
+GENERATED_CRDS_DIR=$SCRIPT_DIR/../manifests/charts/verrazzano-module-operator/crds
 
 # The following two steps are required to handle the cases of running "make manifests" when there
 # are and are not api changes.  This is necessary because fix-copyright currently cannot handle both
