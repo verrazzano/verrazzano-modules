@@ -7,7 +7,7 @@ go 1.19
 
 require (
 	github.com/verrazzano/verrazzano v0.17.1-0.20230414130230-43908c21553a
-	github.com/verrazzano/verrazzano-modules/module-operator v0.0.0-20230418165428-caba5e956c47
+	github.com/verrazzano/verrazzano-modules/module-operator v0.0.0-20230418173828-872605397ec3
 	go.uber.org/zap v1.21.0
 	helm.sh/helm/v3 v3.10.3
 	k8s.io/api v0.25.2
