@@ -1,6 +1,0 @@
-go 1.19
-
-use ./common
-use ./calico-operator
-use ./helm-operator
-use ./module-operator
