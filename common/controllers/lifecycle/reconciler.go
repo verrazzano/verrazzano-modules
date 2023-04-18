@@ -70,13 +70,19 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
+	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
+
+	// This is an imperative command, don't rerun it
+	if cr.Status.State == modulesv1alpha1.StateReady {
+		spictx.Log.Oncef("Resource %v already ready, nothing to do", nsn)
+		return ctrl.Result{}, nil
+	}
 
 	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
 	if err != nil {
 		return newRequeueWithDelay(), err
 	}
 
-	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
 	if cr.Generation == cr.Status.ObservedGeneration {
 		spictx.Log.Debugf("Skipping reconcile for %v, observed generation has not change", nsn)
 		return newRequeueWithDelay(), err

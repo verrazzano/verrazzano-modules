@@ -62,6 +62,15 @@ func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Res
 
 // DoAction installs the component using Helm
 func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
+	if err != nil {
+		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
+		return ctrl.Result{}, err
+	}
+	if installed {
+		return ctrl.Result{}, err
+	}
+
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.HelmInfo.HelmRelease
 	helmOverrides, err := helm.ConvertToHelmOverrides(context.Log(), context.Client(), helmRelease.Name, helmRelease.Namespace, helmRelease.Overrides)
