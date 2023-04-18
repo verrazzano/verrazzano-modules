@@ -4,7 +4,6 @@
 package config
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,39 +15,11 @@ import (
 //	WHEN I call New
 //	THEN the value returned are correct defaults
 func TestConfigDefaults(t *testing.T) {
-	// Reset singleton
-	instance = nil
-
 	asserts := assert.New(t)
 	conf := Get()
 	asserts.Equal("/etc/webhook/certs", conf.CertDir, "CertDir is incorrect")
-	asserts.True(conf.LeaderElectionEnabled, "LeaderElectionEnabled is incorrect")
+	asserts.False(conf.LeaderElectionEnabled, "LeaderElectionEnabled is incorrect")
 	asserts.Equal(":8080", conf.MetricsAddr, "MetricsAddr is incorrect")
-	asserts.Equal("default", conf.LeaderElectionNamespace, "LeaderElectionNamespace default is not correct")
-}
-
-// TestConfigLeaderElectionNamespace tests the config default values
-// GIVEN a new OperatorConfig object with a leader election namespace env var set
-//
-//	WHEN I call New
-//	THEN the value returned are correct LE namespace
-func TestConfigLeaderElectionNamespace(t *testing.T) {
-	asserts := assert.New(t)
-
-	// Reset singleton
-	instance = nil
-
-	leNamespace := "verrazzano-install"
-	os.Setenv(leaderElectionNamespaceVarName, leNamespace)
-	defer func() {
-		os.Unsetenv(leaderElectionNamespaceVarName)
-	}()
-
-	conf := Get()
-	asserts.Equal("/etc/webhook/certs", conf.CertDir, "CertDir is incorrect")
-	asserts.True(conf.LeaderElectionEnabled, "LeaderElectionEnabled is incorrect")
-	asserts.Equal(":8080", conf.MetricsAddr, "MetricsAddr is incorrect")
-	asserts.Equal(leNamespace, conf.LeaderElectionNamespace, "LeaderElectionNamespace default is not correct")
 }
 
 // TestSetConfig tests setting config values
@@ -58,19 +29,14 @@ func TestConfigLeaderElectionNamespace(t *testing.T) {
 //		THEN Get returns the correct values
 //	    Able to override variables
 func TestSetConfig(t *testing.T) {
-	// Reset singleton
-	instance = nil
-
 	asserts := assert.New(t)
 	Set(OperatorConfig{
-		CertDir:                 "/test/certs",
-		MetricsAddr:             "1111",
-		LeaderElectionEnabled:   false,
-		LeaderElectionNamespace: "myns",
+		CertDir:               "/test/certs",
+		MetricsAddr:           "1111",
+		LeaderElectionEnabled: true,
 	})
 	conf := Get()
 	asserts.Equal("/test/certs", conf.CertDir, "CertDir is incorrect")
-	asserts.False(conf.LeaderElectionEnabled, "LeaderElectionEnabled is incorrect")
+	asserts.True(conf.LeaderElectionEnabled, "LeaderElectionEnabled is incorrect")
 	asserts.Equal("1111", conf.MetricsAddr, "MetricsAddr is incorrect")
-	asserts.Equal("myns", conf.LeaderElectionNamespace, "LeaderElectionNamespace is not correct")
 }

@@ -301,8 +301,7 @@ def generateOperatorYaml(dockerImageTag) {
                 echo "Adding image pull secrets to operator.yaml for non main/release branch"
                 export IMAGE_PULL_SECRETS=verrazzano-container-registry
         esac
-        echo "Generating operator manifest and versioned Chart"
-        DOCKER_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} BUILD_DEPLOY=${WORKSPACE}/generated make generate-operator-artifacts
+        DOCKER_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} BUILD_DEPLOY=${WORKSPACE}/generated make generate-operator-yaml
     """
 }
 

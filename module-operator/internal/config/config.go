@@ -3,10 +3,6 @@
 
 package config
 
-import "os"
-
-const leaderElectionNamespaceVarName = "LEADER_ELECTION_NAMESPACE"
-
 // OperatorConfig specifies the Verrazzano Platform Operator Config
 type OperatorConfig struct {
 
@@ -24,31 +20,19 @@ type OperatorConfig struct {
 }
 
 // The singleton instance of the operator config
-var instance *OperatorConfig
+var instance = OperatorConfig{
+	CertDir:                 "/etc/webhook/certs",
+	MetricsAddr:             ":8080",
+	LeaderElectionEnabled:   false,
+	LeaderElectionNamespace: "verrazzano-install",
+}
 
 // Set saves the operator config.  This should only be called at operator startup and during unit tests
 func Set(config OperatorConfig) {
-	instance = &OperatorConfig{}
-	*instance = config
+	instance = config
 }
 
 // Get returns the singleton instance of the operator config
 func Get() OperatorConfig {
-	if instance == nil {
-		instance = &OperatorConfig{
-			CertDir:                 "/etc/webhook/certs",
-			MetricsAddr:             ":8080",
-			LeaderElectionEnabled:   true,
-			LeaderElectionNamespace: GetWorkingNamespace(),
-		}
-	}
-	return *instance
-}
-
-func GetWorkingNamespace() string {
-	workingNamespace, found := os.LookupEnv(leaderElectionNamespaceVarName)
-	if !found {
-		return "default"
-	}
-	return workingNamespace
+	return instance
 }
