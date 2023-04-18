@@ -4,6 +4,9 @@
 
 replicaCount: 1
 
+createNamespace: true
+namespaceLabelKey: verrazzano.io/namespace
+
 image:
   repository: verrazzano/verrazzano-module-operator
   pullPolicy: IfNotPresent

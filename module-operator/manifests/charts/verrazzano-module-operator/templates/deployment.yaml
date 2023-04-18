@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "verrazzano-module-operator.name" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "verrazzano-module-operator.labels" . | nindent 4 }}
 spec:

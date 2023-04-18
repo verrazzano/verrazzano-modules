@@ -5,6 +5,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "verrazzano-module-operator.name" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ include "verrazzano-module-operator.name" . }}
 spec:
@@ -20,6 +21,7 @@ spec:
 #kind: Service
 #metadata:
 #  name: {{ include "verrazzano-module-operator.name" . }}-webhook
+#  namespace: {{ .Release.Namespace }}
 #  labels:
 #    app: {{ include "verrazzano-module-operator.name" . }}-webhook
 #spec:
