@@ -5,13 +5,14 @@ package factory
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/helm_component/lifecycle/install"
+	"github.com/verrazzano/verrazzano-modules/common/helm_component/lifecycle/uninstall"
 	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
 )
 
 func NewLifeCycleComponent() compspi.LifecycleComponent {
 	return compspi.LifecycleComponent{
 		InstallAction:   install.NewComponent(),
-		UninstallAction: install.NewComponent(),
+		UninstallAction: uninstall.NewComponent(),
 		UpdateAction:    install.NewComponent(),
 		UpgradeAction:   install.NewComponent(),
 	}

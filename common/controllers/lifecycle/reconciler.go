@@ -61,7 +61,7 @@ type stateMachineContext struct {
 	cr        *modplatform.ModuleLifecycle
 	tracker   *stateTracker
 	chartInfo *compspi.HelmInfo
-	action    compspi.LifecycleAction
+	action    compspi.LifecycleActionHandler
 }
 
 // Reconcile updates the Certificate
@@ -85,11 +85,18 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	helmInfo := loadHelmInfo(cr)
 	tracker := getTracker(cr.ObjectMeta, stateInit)
 
+	action := r.getAction(cr.Spec.Action)
+	if action == nil {
+		spictx.Log.Errorf("Invalid ModuleLifecycle CR action %s", cr.Spec.Action)
+		// Dont requeue, this is a fatal error
+		return ctrl.Result{}, nil
+	}
+
 	smc := stateMachineContext{
 		cr:        cr,
 		tracker:   tracker,
 		chartInfo: &helmInfo,
-		action:    r.getAction("install"),
+		action:    action,
 	}
 
 	res, err := r.doStateMachine(ctx, smc)
@@ -103,7 +110,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 }
 
 func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachineContext) (ctrl.Result, error) {
-	compContext := spiCtx.Init("component").Operation("install") // TODO don't hard code this
+	compContext := spiCtx.Init("component").Operation(string(s.cr.Spec.Action))
 
 	for s.tracker.state != stateEnd {
 		switch s.tracker.state {
@@ -186,7 +193,7 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = statePostActionWaitDone
 
 		case statePostActionWaitDone:
-			done, res, err := s.action.IsPreActionDone(compContext)
+			done, res, err := s.action.IsPostActionDone(compContext)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -199,7 +206,7 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = stateCompleteUpdate
 
 		case stateCompleteUpdate:
-			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondUpgradeComplete), modulesv1alpha1.CondUpgradeComplete); err != nil {
+			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondInstallComplete), modulesv1alpha1.CondInstallComplete); err != nil {
 				return ctrl.Result{}, err
 			}
 			s.tracker.state = stateEnd
@@ -219,6 +226,16 @@ func loadHelmInfo(cr *modplatform.ModuleLifecycle) compspi.HelmInfo {
 	return helmInfo
 }
 
-func (r *Reconciler) getAction(action string) compspi.LifecycleAction {
-	return r.comp.InstallAction
+func (r *Reconciler) getAction(action modulesv1alpha1.ActionType) compspi.LifecycleActionHandler {
+	switch action {
+	case modulesv1alpha1.InstallAction:
+		return r.comp.InstallAction
+	case modulesv1alpha1.UninstallAction:
+		return r.comp.UninstallAction
+	case modulesv1alpha1.UpdateAction:
+		return r.comp.UpdateAction
+	case modulesv1alpha1.UpgradeAction:
+		return r.comp.UpgradeAction
+	}
+	return nil
 }

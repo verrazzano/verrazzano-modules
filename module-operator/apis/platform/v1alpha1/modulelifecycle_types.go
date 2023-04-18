@@ -34,6 +34,7 @@ type ModuleLifecycleList struct {
 }
 
 type ModuleLifecycleSpec struct {
+	Action    ActionType      `json:"action"`
 	Installer ModuleInstaller `json:"installer"`
 }
 
@@ -82,6 +83,22 @@ type ModuleLifecycleCondition struct {
 	// +optional
 	Message string `json:"message,omitempty"`
 }
+
+type ActionType string
+
+const (
+	// InstallAction indicates the ModuleLifecycle CR is for an install action
+	InstallAction ActionType = "install"
+
+	// UninstallAction indicates the ModuleLifecycle CR is for an uninstall action
+	UninstallAction ActionType = "uninstall"
+
+	// UpdateAction indicates the ModuleLifecycle CR is for an update action
+	UpdateAction ActionType = "update"
+
+	// UpgradeAction indicates the ModuleLifecycle CR is for an upgrade action
+	UpgradeAction ActionType = "upgrade"
+)
 
 func init() {
 	SchemeBuilder.Register(&ModuleLifecycle{}, &ModuleLifecycleList{})

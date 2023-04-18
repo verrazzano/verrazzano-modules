@@ -44,6 +44,8 @@ spec:
             type: object
           spec:
             properties:
+              action:
+                type: string
               installer:
                 description: ModuleInstaller Defines the installer information for
                   a module; only one of the fields can be set
@@ -134,6 +136,7 @@ spec:
                     type: object
                 type: object
             required:
+            - action
             - installer
             type: object
           status:
