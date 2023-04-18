@@ -31,7 +31,7 @@ const (
 
 	// stateStartActionUpdate is the state when the status is updated to start action
 	stateStartActionUpdate componentState = "stateStartActionUpdate"
-	
+
 	// statePreAction is the state when a component does a pre-action
 	statePreAction componentState = "statePreAction"
 
