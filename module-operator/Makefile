@@ -164,7 +164,7 @@ ifeq ($(CREATE_LATEST_TAG), "1")
 	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:latest);
 endif
 
-BUILD_DEPLOY = build/deploy
+BUILD_DEPLOY ?= build/deploy
 OPERATOR_YAML ?= ${BUILD_DEPLOY}/verrazzano-module-operator.yaml
 
 .PHONY: generate-operator-yaml
