@@ -146,7 +146,7 @@ pipeline {
                     when { not { buildingTag() } }
                     steps {
                         script {
-                            //buildImages("${DOCKER_IMAGE_TAG}")
+                            buildImages("${DOCKER_IMAGE_TAG}")
                             generateOperatorYaml("${DOCKER_IMAGE_TAG}")
                         }
                     }
