@@ -21,14 +21,16 @@ type LifecycleCondition string
 const (
 	ConditionArrayLimit = 5
 
-	CondPreInstall      LifecycleCondition = "PreInstall"
-	CondInstallStarted  LifecycleCondition = "InstallStarted"
-	CondInstallComplete LifecycleCondition = "InstallComplete"
-	CondUninstall       LifecycleCondition = "Uninstall"
-	CondPreUpgrade      LifecycleCondition = "PreUpgrade"
-	CondUpgradeStarted  LifecycleCondition = "UpgradeStarted"
-	CondUpgradeComplete LifecycleCondition = "UpgradeComplete"
-	CondFailed          LifecycleCondition = "Failed"
+	CondPreInstall        LifecycleCondition = "PreInstall"
+	CondInstallStarted    LifecycleCondition = "InstallStarted"
+	CondInstallComplete   LifecycleCondition = "InstallComplete"
+	CondPreUninstall      LifecycleCondition = "PreUninstall"
+	CondUninstallStarted  LifecycleCondition = "UninstallStarted"
+	CondUninstallComplete LifecycleCondition = "UninstallComplete"
+	CondPreUpgrade        LifecycleCondition = "PreUpgrade"
+	CondUpgradeStarted    LifecycleCondition = "UpgradeStarted"
+	CondUpgradeComplete   LifecycleCondition = "UpgradeComplete"
+	CondFailed            LifecycleCondition = "Failed"
 )
 
 func (m *ModuleLifecycle) SetState(state ModuleLifecycleState) {
@@ -41,7 +43,7 @@ func LifecycleState(condition LifecycleCondition) ModuleLifecycleState {
 		return StatePreinstall
 	case CondInstallStarted:
 		return StateInstalling
-	case CondUninstall:
+	case CondUninstallStarted:
 		return StateUninstalling
 	case CondPreUpgrade:
 		return StatePreUpgrade

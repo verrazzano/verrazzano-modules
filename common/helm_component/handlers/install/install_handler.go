@@ -15,6 +15,8 @@ import (
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+
 )
 
 type Component struct {
@@ -34,6 +36,16 @@ var (
 
 func NewComponent() compspi.LifecycleActionHandler {
 	return &Component{}
+}
+
+
+// GetStatusConditions returns the CR status conditions for various lifecycle stages
+func (h *Component) GetStatusConditions() compspi.StatusConditions {
+	return compspi.StatusConditions{
+		PreAction: moduleplatform.CondPreInstall,
+		DoAction:  moduleplatform.CondInstallStarted,
+		Completed: moduleplatform.CondInstallComplete,
+	}
 }
 
 // Init initializes the component with Helm chart information

@@ -38,7 +38,7 @@ func (r *helmDelegateReconciler) Reconcile(log vzlog.VerrazzanoLogger, client cl
 	}
 	// Delete underlying resources if it is being deleted
 	if mlc.IsBeingDeleted() {
-		if err := UpdateStatus(ctx.Client(), mlc, string(modulesv1alpha1.CondUninstall), modulesv1alpha1.CondUninstall); err != nil {
+		if err := UpdateStatus(ctx.Client(), mlc, string(modulesv1alpha1.CondUninstallStarted), modulesv1alpha1.CondUninstallStarted); err != nil {
 			return ctrl.Result{}, err
 		}
 		if err := r.Uninstall(ctx); err != nil {

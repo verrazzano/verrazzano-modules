@@ -13,6 +13,12 @@ type HelmInfo struct {
 	*modulesv1alpha1.HelmRelease
 }
 
+type StatusConditions struct {
+	PreAction modulesv1alpha1.LifecycleCondition
+	DoAction  modulesv1alpha1.LifecycleCondition
+	Completed modulesv1alpha1.LifecycleCondition
+}
+
 type LifecycleComponent struct {
 	InstallAction   LifecycleActionHandler
 	UninstallAction LifecycleActionHandler
@@ -21,7 +27,10 @@ type LifecycleComponent struct {
 }
 
 type LifecycleActionHandler interface {
-	// Init initializes the component helm information
+	// GetStatusConditions returns the CR status conditions for various lifecycle stages
+	GetStatusConditions() StatusConditions
+
+	// Init initializes the component Hekn information
 	Init(context vzspi.ComponentContext, chartInfo *HelmInfo) (ctrl.Result, error)
 
 	// PreAction does lifecycle pre-Action

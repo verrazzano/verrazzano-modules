@@ -12,8 +12,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
-	modplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
 	vzctrl "github.com/verrazzano/verrazzano-modules/module-operator/pkg/controller"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -58,7 +57,7 @@ const (
 )
 
 type stateMachineContext struct {
-	cr        *modplatform.ModuleLifecycle
+	cr        *moduleplatform.ModuleLifecycle
 	tracker   *stateTracker
 	chartInfo *compspi.HelmInfo
 	action    compspi.LifecycleActionHandler
@@ -66,14 +65,14 @@ type stateMachineContext struct {
 
 // Reconcile updates the Certificate
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
-	cr := &modplatform.ModuleLifecycle{}
+	cr := &moduleplatform.ModuleLifecycle{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
 	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
 
 	// This is an imperative command, don't rerun it
-	if cr.Status.State == modulesv1alpha1.StateReady {
+	if cr.Status.State == moduleplatform.StateReady {
 		spictx.Log.Oncef("Resource %v already ready, nothing to do", nsn)
 		return ctrl.Result{}, nil
 	}
@@ -131,7 +130,8 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = stateStartPreActionUpdate
 
 		case stateStartPreActionUpdate:
-			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondPreInstall), modulesv1alpha1.CondPreInstall); err != nil {
+			cond := s.action.GetStatusConditions().PreAction
+			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
 				return ctrl.Result{}, err
 			}
 			s.tracker.state = statePreAction
@@ -160,7 +160,8 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = stateStartActionUpdate
 
 		case stateStartActionUpdate:
-			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondInstallStarted), modulesv1alpha1.CondInstallStarted); err != nil {
+			cond := s.action.GetStatusConditions().DoAction
+			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
 				return ctrl.Result{}, err
 			}
 			s.tracker.state = stateAction
@@ -212,7 +213,8 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = stateCompleteUpdate
 
 		case stateCompleteUpdate:
-			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondInstallComplete), modulesv1alpha1.CondInstallComplete); err != nil {
+			cond := s.action.GetStatusConditions().Completed
+			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
 				return ctrl.Result{}, err
 			}
 			s.tracker.state = stateEnd
@@ -225,22 +227,22 @@ func newRequeueWithDelay() ctrl.Result {
 	return vzctrl.NewRequeueWithDelay(3, 10, time.Second)
 }
 
-func loadHelmInfo(cr *modplatform.ModuleLifecycle) compspi.HelmInfo {
+func loadHelmInfo(cr *moduleplatform.ModuleLifecycle) compspi.HelmInfo {
 	helmInfo := compspi.HelmInfo{
 		HelmRelease: cr.Spec.Installer.HelmRelease,
 	}
 	return helmInfo
 }
 
-func (r *Reconciler) getAction(action modulesv1alpha1.ActionType) compspi.LifecycleActionHandler {
+func (r *Reconciler) getAction(action moduleplatform.ActionType) compspi.LifecycleActionHandler {
 	switch action {
-	case modulesv1alpha1.InstallAction:
+	case moduleplatform.InstallAction:
 		return r.comp.InstallAction
-	case modulesv1alpha1.UninstallAction:
+	case moduleplatform.UninstallAction:
 		return r.comp.UninstallAction
-	case modulesv1alpha1.UpdateAction:
+	case moduleplatform.UpdateAction:
 		return r.comp.UpdateAction
-	case modulesv1alpha1.UpgradeAction:
+	case moduleplatform.UpgradeAction:
 		return r.comp.UpgradeAction
 	}
 	return nil

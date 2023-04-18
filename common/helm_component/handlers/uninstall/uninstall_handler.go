@@ -5,6 +5,7 @@ package uninstall
 
 import (
 	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
@@ -24,6 +25,15 @@ var _ compspi.LifecycleActionHandler = &Component{}
 
 func NewComponent() compspi.LifecycleActionHandler {
 	return &Component{}
+}
+
+// GetStatusConditions returns the CR status conditions for various lifecycle stages
+func (h *Component) GetStatusConditions() compspi.StatusConditions {
+	return compspi.StatusConditions{
+		PreAction: moduleplatform.CondPreUninstall,
+		DoAction:  moduleplatform.CondUninstallStarted,
+		Completed: moduleplatform.CondUninstallComplete,
+	}
 }
 
 // Init initializes the component with Helm chart information
@@ -52,7 +62,7 @@ func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Res
 
 // DoAction installs the component using Helm
 func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
-	installed, err :=  vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
 	if err != nil {
 		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
 		return ctrl.Result{}, err
