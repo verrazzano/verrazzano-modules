@@ -8,44 +8,47 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// installTracker has the Install context for the Verrazzano Install
-// This tracker keeps an in-memory Install state for Verrazzano and the components that
-// are being Install.
-type installTracker struct {
-	state   string
+// stateTracker keeps an in-memory state for a component doing actions
+type stateTracker struct {
+	state   componentState
 	gen     int64
 	compMap map[string]*componentTrackerContext
 }
 
-// installTrackerMap has a map of InstallTrackers with key from VZ name, namespace, and UID
-var installTrackerMap = make(map[string]*installTracker)
+// componentTrackerContext has the component context stateTracker
+type componentTrackerContext struct {
+	actionState componentState
+}
 
-// getTrackerKey gets the tracker key for the Verrazzano resource
+// trackerMap has a map of trackers with key from VZ name, namespace, and UID
+var trackerMap = make(map[string]*stateTracker)
+
+// getTrackerKey gets the stateTracker key for the Verrazzano resource
 func getTrackerKey(cr metav1.ObjectMeta) string {
 	return fmt.Sprintf("%s-%s-%s", cr.Namespace, cr.Name, string(cr.UID))
 }
 
-// getInstallTracker gets the install tracker for Verrazzano
-func getInstallTracker(cr metav1.ObjectMeta, initialState string) *installTracker {
+// getTracker gets the install stateTracker for Verrazzano
+func getTracker(cr metav1.ObjectMeta, initialState componentState) *stateTracker {
 	key := getTrackerKey(cr)
-	vuc, ok := installTrackerMap[key]
+	vuc, ok := trackerMap[key]
 	// If the entry is missing or the generation is different create a new entry
 	if !ok || vuc.gen != cr.Generation {
-		vuc = &installTracker{
+		vuc = &stateTracker{
 			state:   initialState,
 			gen:     cr.Generation,
 			compMap: make(map[string]*componentTrackerContext),
 		}
-		installTrackerMap[key] = vuc
+		trackerMap[key] = vuc
 	}
 	return vuc
 }
 
-// deleteInstallTracker deletes the install tracker for the Verrazzano resource
-func deleteInstallTracker(cr metav1.ObjectMeta) {
+// deleteTracker deletes the stateTracker for the Verrazzano resource
+func deleteTracker(cr metav1.ObjectMeta) {
 	key := getTrackerKey(cr)
-	_, ok := installTrackerMap[key]
+	_, ok := trackerMap[key]
 	if ok {
-		delete(installTrackerMap, key)
+		delete(trackerMap, key)
 	}
 }

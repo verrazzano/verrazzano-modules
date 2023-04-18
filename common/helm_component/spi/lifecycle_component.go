@@ -14,13 +14,13 @@ type HelmInfo struct {
 }
 
 type LifecycleComponent struct {
-	InstallAction   ActionLifecycle
-	UninstallAction ActionLifecycle
-	UpdateAction    ActionLifecycle
-	UpgradeAction   ActionLifecycle
+	InstallAction   LifecycleAction
+	UninstallAction LifecycleAction
+	UpdateAction    LifecycleAction
+	UpgradeAction   LifecycleAction
 }
 
-type ActionLifecycle interface {
+type LifecycleAction interface {
 	// Init initializes the component helm information
 	Init(context vzspi.ComponentContext, chartInfo *HelmInfo) (ctrl.Result, error)
 

@@ -4,15 +4,12 @@
 package uninstall
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/helm_component/helm"
 	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
-	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 )
@@ -23,16 +20,9 @@ type helmComponentAdapter struct {
 	chartDir string
 }
 
-// upgradeFuncSig is a function needed for unit test override
-type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
+var _ compspi.LifecycleAction = &helmComponentAdapter{}
 
-var (
-	_ compspi.ActionLifecycle = &helmComponentAdapter{}
-
-	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
-)
-
-func NewComponent() compspi.ActionLifecycle {
+func NewComponent() compspi.LifecycleAction {
 	return &helmComponentAdapter{}
 }
 
@@ -62,24 +52,7 @@ func (h helmComponentAdapter) IsPreActionDone(context spi.ComponentContext) (boo
 
 // DoAction installs the component using Helm
 func (h helmComponentAdapter) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
-	// Perform a Helm install using the helm upgrade --install command
-	helmRelease := h.HelmInfo.HelmRelease
-	helmOverrides, err := helm.ConvertToHelmOverrides(context.Log(), context.Client(), helmRelease.Name, helmRelease.Namespace, helmRelease.Overrides)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	var opts = &helm.HelmReleaseOpts{
-		RepoURL:      helmRelease.Repository.URI,
-		ReleaseName:  h.ReleaseName,
-		Namespace:    h.ChartNamespace,
-		ChartPath:    helmRelease.ChartInfo.Path,
-		ChartVersion: helmRelease.ChartInfo.Version,
-		Overrides:    helmOverrides,
-		// TBD -- pull from a secret ref?
-		//Username:     "",
-		//Password:     "",
-	}
-	_, err = upgradeFunc(context.Log(), opts, h.WaitForInstall, context.IsDryRun())
+	err := vzhelm.Uninstall(context.Log(), h.ReleaseName, h.ChartNamespace, context.IsDryRun())
 	return ctrl.Result{}, err
 }
 

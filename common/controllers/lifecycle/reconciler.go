@@ -4,8 +4,8 @@
 package lifecycle
 
 import (
-	compspi "github.com/verrazzano/verrazzano-modules/common/component/spi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
 	"github.com/verrazzano/verrazzano-modules/common/k8s"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,48 +16,58 @@ import (
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
 	vzctrl "github.com/verrazzano/verrazzano-modules/module-operator/pkg/controller"
-	vzconst "github.com/verrazzano/verrazzano/platform-operator/constants"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
-// componentInstallState identifies the state of a component during install
-type componentInstallState string
+// componentState identifies the state of a component during action
+type componentState string
 
 const (
-	// compStateInstallInitDetermineComponentState is the state when a component is initialized
-	compStateInstallInit componentInstallState = "componentStateInit"
+	// stateInit is the state when a component is initialized
+	stateInit componentState = "componentStateInit"
 
-	// compStateInstallingUpdate is the state when the status is updated to installing
-	compStateInstallingUpdate componentInstallState = "compStateInstallingUpdate"
+	// stateStartPreActionUpdate is the state when the status is updated to start pre action
+	stateStartPreActionUpdate componentState = "stateStartPreActionUpdate"
 
-	// compStatePreInstall is the state when a component does a pre-install
-	compStatePreInstall componentInstallState = "compStatePreInstall"
+	// stateStartActionUpdate is the state when the status is updated to start action
+	stateStartActionUpdate componentState = "stateStartActionUpdate"
+	
+	// statePreAction is the state when a component does a pre-action
+	statePreAction componentState = "statePreAction"
 
-	// compStateInstall is the state where a component does an install
-	compStateInstall componentInstallState = "compStateInstall"
+	// statePreActionWaitDone is the state when a component is waiting for pre-action to be done
+	statePreActionWaitDone componentState = "statePreActionWaitDone"
 
-	// compStateInstallWaitReady is the state when a component is waiting for install to be ready
-	compStateInstallWaitReady componentInstallState = "compStateInstallWaitReady"
+	// stateAction is the state where a component does an action
+	stateAction componentState = "stateAction"
 
-	// compStatePostInstall is the state when a component is doing a post-install
-	compStatePostInstall componentInstallState = "compStatePostInstall"
+	// stateActionWaitDone is the state when a component is waiting for action to be done
+	stateActionWaitDone componentState = "stateActionWaitDone"
 
-	// compStateInstallCompleteUpdate is the state when component writes the Install Complete status
-	compStateInstallCompleteUpdate componentInstallState = "compStateInstallCompleteUpdate"
+	// statePostAction is the state when a component does a post-action
+	statePostAction componentState = "statePostAction"
 
-	// compStateInstallEnd is the terminal state
-	compStateInstallEnd componentInstallState = "compStateInstallEnd"
+	// statePostActionWaitDone is the state when a component is waiting for post-action to be done
+	statePostActionWaitDone componentState = "statePostActionWaitDone"
+
+	// stateCompleteUpdate is the state when the status is updated to completed
+	stateCompleteUpdate componentState = "stateCompleteUpdate"
+
+	// stateEnd is the terminal state
+	stateEnd componentState = "stateEnd"
 )
 
-// componentTrackerContext has the component context tracker
-type componentTrackerContext struct {
-	installState componentInstallState
+type stateMachineContext struct {
+	cr        *modplatform.ModuleLifecycle
+	tracker   *stateTracker
+	chartInfo *compspi.HelmInfo
+	action    compspi.LifecycleAction
 }
 
 // Reconcile updates the Certificate
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
-	mlc := &modplatform.ModuleLifecycle{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, mlc); err != nil {
+	cr := &modplatform.ModuleLifecycle{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -66,16 +76,23 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 		return newRequeueWithDelay(), err
 	}
 
-	nsn := k8s.GetNamespacedName(mlc.ObjectMeta)
-	if mlc.Generation == mlc.Status.ObservedGeneration {
+	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
+	if cr.Generation == cr.Status.ObservedGeneration {
 		spictx.Log.Debugf("Skipping reconcile for %v, observed generation has not change", nsn)
 		return newRequeueWithDelay(), err
 	}
 
-	helmInfo := loadHelmInfo(mlc)
-	tracker := getInstallTracker(mlc.ObjectMeta, string(compStateInstallInit))
+	helmInfo := loadHelmInfo(cr)
+	tracker := getTracker(cr.ObjectMeta, stateInit)
 
-	res, err := r.doStateMachine(ctx, mlc, tracker, helmInfo)
+	smc := stateMachineContext{
+		cr:        cr,
+		tracker:   tracker,
+		chartInfo: &helmInfo,
+		action:    r.getAction("install"),
+	}
+
+	res, err := r.doStateMachine(ctx, smc)
 	if err != nil {
 		return newRequeueWithDelay(), err
 	}
@@ -85,57 +102,107 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, mlc *modplatform.ModuleLifecycle, tracker *installTracker, chartInfo compspi.HelmInfo) (ctrl.Result, error) {
-	compName := k8s.GetNamespacedNameString(mlc.ObjectMeta)
-	compContext := spiCtx.Init("component").Operation(vzconst.InstallOperation)
-	compLog := compContext.Log()
+func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachineContext) (ctrl.Result, error) {
+	compContext := spiCtx.Init("component").Operation("install") // TODO don't hard code this
 
-	for tracker.state != string(compStateInstallEnd) {
-		switch componentInstallState(tracker.state) {
-		case compStateInstallInit:
-			if err := r.comp.Init(compContext, &chartInfo); err != nil {
+	for s.tracker.state != stateEnd {
+		switch s.tracker.state {
+		case stateInit:
+			res, err := s.action.Init(compContext, s.chartInfo)
+			if err != nil {
 				return ctrl.Result{}, err
 			}
-			tracker.state = string(compStateInstallingUpdate)
+			if vzctrl.ShouldRequeue(res) {
+				return res, nil
+			}
+			s.tracker.state = stateStartPreActionUpdate
 
-		case compStateInstallingUpdate:
-			if err := UpdateStatus(r.Client, mlc, string(modulesv1alpha1.CondInstallStarted), modulesv1alpha1.CondInstallStarted); err != nil {
+		case stateStartPreActionUpdate:
+			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondPreInstall), modulesv1alpha1.CondPreInstall); err != nil {
 				return ctrl.Result{}, err
 			}
-			tracker.state = string(compStatePreInstall)
+			s.tracker.state = statePreAction
 
-		case compStatePreInstall:
-			if err := r.comp.PreInstall(compContext); err != nil {
+		case statePreAction:
+			res, err := s.action.PreAction(compContext)
+			if err != nil {
 				return ctrl.Result{}, err
 			}
-			tracker.state = string(compStateInstall)
+			if vzctrl.ShouldRequeue(res) {
+				return res, nil
+			}
+			s.tracker.state = statePreActionWaitDone
 
-		case compStateInstall:
-			if err := r.comp.Install(compContext); err != nil {
+		case statePreActionWaitDone:
+			done, res, err := s.action.IsPreActionDone(compContext)
+			if err != nil {
 				return ctrl.Result{}, err
 			}
-			tracker.state = string(compStateInstallWaitReady)
-
-		case compStateInstallWaitReady:
-			if !r.comp.IsReady(compContext) {
-				compLog.Progressf("Component %s has been installed. Waiting for the component to be ready", compName)
-				return newRequeueWithDelay(), nil
+			if vzctrl.ShouldRequeue(res) {
+				return res, nil
 			}
-			compLog.Oncef("Component %s successfully installed and is ready", r.comp.Name())
-			tracker.state = string(compStatePostInstall)
+			if done {
+				return ctrl.Result{}, nil
+			}
+			s.tracker.state = stateStartActionUpdate
 
-		case compStatePostInstall:
-			compLog.Oncef("Component %s post-install running", compName)
-			if err := r.comp.PostInstall(compContext); err != nil {
+		case stateStartActionUpdate:
+			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondInstallStarted), modulesv1alpha1.CondInstallStarted); err != nil {
 				return ctrl.Result{}, err
 			}
-			tracker.state = string(compStateInstallCompleteUpdate)
+			s.tracker.state = stateAction
 
-		case compStateInstallCompleteUpdate:
-			if err := UpdateStatus(r.Client, mlc, string(modulesv1alpha1.CondUpgradeComplete), modulesv1alpha1.CondUpgradeComplete); err != nil {
+		case stateAction:
+			res, err := s.action.DoAction(compContext)
+			if err != nil {
 				return ctrl.Result{}, err
 			}
-			tracker.state = string(compStateInstallEnd)
+			if vzctrl.ShouldRequeue(res) {
+				return res, nil
+			}
+			s.tracker.state = stateActionWaitDone
+
+		case stateActionWaitDone:
+			done, res, err := s.action.IsActionDone(compContext)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			if vzctrl.ShouldRequeue(res) {
+				return res, nil
+			}
+			if done {
+				return ctrl.Result{}, nil
+			}
+			s.tracker.state = stateStartActionUpdate
+
+		case statePostAction:
+			res, err := s.action.PostAction(compContext)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			if vzctrl.ShouldRequeue(res) {
+				return res, nil
+			}
+			s.tracker.state = statePostActionWaitDone
+
+		case statePostActionWaitDone:
+			done, res, err := s.action.IsPreActionDone(compContext)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			if vzctrl.ShouldRequeue(res) {
+				return res, nil
+			}
+			if done {
+				return ctrl.Result{}, nil
+			}
+			s.tracker.state = stateCompleteUpdate
+
+		case stateCompleteUpdate:
+			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondUpgradeComplete), modulesv1alpha1.CondUpgradeComplete); err != nil {
+				return ctrl.Result{}, err
+			}
+			s.tracker.state = stateEnd
 		}
 	}
 	return ctrl.Result{}, nil
@@ -145,9 +212,13 @@ func newRequeueWithDelay() ctrl.Result {
 	return vzctrl.NewRequeueWithDelay(3, 10, time.Second)
 }
 
-func loadHelmInfo(mlc *modplatform.ModuleLifecycle) compspi.HelmInfo {
+func loadHelmInfo(cr *modplatform.ModuleLifecycle) compspi.HelmInfo {
 	helmInfo := compspi.HelmInfo{
-		HelmRelease: mlc.Spec.Installer.HelmRelease,
+		HelmRelease: cr.Spec.Installer.HelmRelease,
 	}
 	return helmInfo
+}
+
+func (r *Reconciler) getAction(action string) compspi.LifecycleAction {
+	return r.comp.InstallAction
 }

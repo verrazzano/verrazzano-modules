@@ -27,12 +27,12 @@ type helmComponentAdapter struct {
 type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
 
 var (
-	_ compspi.ActionLifecycle = &helmComponentAdapter{}
+	_ compspi.LifecycleAction = &helmComponentAdapter{}
 
 	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
 )
 
-func NewComponent() compspi.ActionLifecycle {
+func NewComponent() compspi.LifecycleAction {
 	return &helmComponentAdapter{}
 }
 
