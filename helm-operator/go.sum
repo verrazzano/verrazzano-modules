@@ -587,8 +587,8 @@ github.com/verrazzano/crossplane-runtime v0.17.0-1 h1:juTCAYMWDWITX9vFTdNnF97+Sl
 github.com/verrazzano/oam-kubernetes-runtime v0.3.3-3 h1:bxHzLJ7CtPOQ8RKVEGbxb3q1Zoq7wMH60AF6vSEXdEo=
 github.com/verrazzano/verrazzano v0.17.1-0.20230414130230-43908c21553a h1:Q/Q1VOUVbMvNobdbQre3YchRALYUcbYrrAcp3GQONs8=
 github.com/verrazzano/verrazzano v0.17.1-0.20230414130230-43908c21553a/go.mod h1:F6yDVd69Esqmscf/8vddv9GLAKfe1AuXlgIz44qXBtg=
-github.com/verrazzano/verrazzano-modules/common v0.0.0-20230418003120-079f3c6f7f94 h1:+ZOCB/THAKDGV4vIJnu/nNwXF8XZIDZcEoNfozuzINc=
-github.com/verrazzano/verrazzano-modules/common v0.0.0-20230418003120-079f3c6f7f94/go.mod h1:EVe+Tn5k0cNfF7B+NBuFfgPikWAI0YxoM9NECAW7kC4=
+github.com/verrazzano/verrazzano-modules/common v0.0.0-20230418010346-022b61c59411 h1:wvxHRSUiF2TMEwUbNDW3rloqCSAxYEJY2vuWpymtwuQ=
+github.com/verrazzano/verrazzano-modules/common v0.0.0-20230418010346-022b61c59411/go.mod h1:EVe+Tn5k0cNfF7B+NBuFfgPikWAI0YxoM9NECAW7kC4=
 github.com/verrazzano/verrazzano-modules/module-operator v0.0.0-20230417134803-98499c04dc9e h1:9R5rodkaEJiOiMmHHVHiE7ePtiqXuYTi8D7Mhd1IG50=
 github.com/verrazzano/verrazzano-modules/module-operator v0.0.0-20230417134803-98499c04dc9e/go.mod h1:BVUj5yzZ8X4pbDE2zZBlwUy54AfwYigS1TnxjgBYDtg=
 github.com/verrazzano/verrazzano-monitoring-operator v0.0.31-0.20230201202534-ac5ebe880e95 h1:+kHIXVr+itVlN7lT0166/LgcaoupkE8tEq/VbXxZio4=
