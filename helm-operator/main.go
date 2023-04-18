@@ -6,7 +6,7 @@ package main
 import (
 	"flag"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/lifecycle"
-	"github.com/verrazzano/verrazzano-modules/common/helm_component/lifecycle/factory"
+	"github.com/verrazzano/verrazzano-modules/common/helm_component/handlers/factory"
 	platformapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"

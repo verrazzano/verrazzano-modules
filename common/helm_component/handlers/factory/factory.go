@@ -4,8 +4,8 @@
 package factory
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/helm_component/lifecycle/install"
-	"github.com/verrazzano/verrazzano-modules/common/helm_component/lifecycle/uninstall"
+	"github.com/verrazzano/verrazzano-modules/common/helm_component/handlers/install"
+	"github.com/verrazzano/verrazzano-modules/common/helm_component/handlers/uninstall"
 	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
 )
 
