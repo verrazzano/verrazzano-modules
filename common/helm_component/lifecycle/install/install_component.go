@@ -7,6 +7,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/helm_component/helm"
 	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
 	"helm.sh/helm/v3/pkg/release"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -14,7 +15,6 @@ import (
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type helmComponentAdapter struct {
@@ -27,19 +27,17 @@ type helmComponentAdapter struct {
 type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
 
 var (
-	_ compspi.LifecycleComponent = &helmComponentAdapter{}
+	_ compspi.ActionLifecycle = &helmComponentAdapter{}
 
 	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
 )
 
-func NewComponent(chartDir string) compspi.LifecycleComponent {
-	return &helmComponentAdapter{
-		chartDir: chartDir,
-	}
+func NewComponent() compspi.ActionLifecycle {
+	return &helmComponentAdapter{}
 }
 
 // Init initializes the component with Helm chart information
-func (h *helmComponentAdapter) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo) error {
+func (h *helmComponentAdapter) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo) (ctrl.Result, error) {
 	h.HelmComponent = helmcomp.HelmComponent{
 		ReleaseName:             HelmInfo.HelmRelease.Name,
 		ChartDir:                h.chartDir,
@@ -52,16 +50,35 @@ func (h *helmComponentAdapter) Init(_ spi.ComponentContext, HelmInfo *compspi.He
 
 	//	chartURL := fmt.Sprintf("%s/%s", installer.HelmRelease.Repository.URI, HelmInfo.Path)
 
-	return nil
+	return ctrl.Result{}, nil
 }
 
-// Install installs the component using Helm
-func (h helmComponentAdapter) Install(context spi.ComponentContext) error {
+//Init(context vzspi.ComponentContext, chartInfo *HelmInfo) error
+//PreAction(context vzspi.ComponentContext) (ctrl.Result, error)
+//IsPreActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+//DoAction(context vzspi.ComponentContext) (ctrl.Result, error)
+//IsActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+//PostAction(context vzspi.ComponentContext) (ctrl.Result, error)
+//IsPostActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+//IsActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+
+// PreAction does installation pre-action
+func (h helmComponentAdapter) PreAction(context spi.ComponentContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// IsPreActionDone returns true if pre-action done
+func (h helmComponentAdapter) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
+	return true, ctrl.Result{}, nil
+}
+
+// DoAction installs the component using Helm
+func (h helmComponentAdapter) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.HelmInfo.HelmRelease
 	helmOverrides, err := helm.ConvertToHelmOverrides(context.Log(), context.Client(), helmRelease.Name, helmRelease.Namespace, helmRelease.Overrides)
 	if err != nil {
-		return err
+		return ctrl.Result{}, err
 	}
 	var opts = &helm.HelmReleaseOpts{
 		RepoURL:      helmRelease.Repository.URI,
@@ -75,42 +92,34 @@ func (h helmComponentAdapter) Install(context spi.ComponentContext) error {
 		//Password:     "",
 	}
 	_, err = upgradeFunc(context.Log(), opts, h.WaitForInstall, context.IsDryRun())
-	return err
+	return ctrl.Result{}, err
 }
 
-// IsReady Indicates whether a component is available and ready
-func (h helmComponentAdapter) IsReady(context spi.ComponentContext) bool {
+// IsActionDone Indicates whether a component is installed and ready
+func (h helmComponentAdapter) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
 	if context.IsDryRun() {
 		context.Log().Debugf("IsReady() dry run for %s", h.ReleaseName)
-		return true
+		return true, ctrl.Result{}, nil
 	}
 
 	deployed, err := vzhelm.IsReleaseDeployed(h.ReleaseName, h.ChartNamespace)
 	if err != nil {
 		context.Log().ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
-		return false
+		return false, ctrl.Result{}, err
 	}
 
 	releaseMatches := h.releaseVersionMatches(context.Log())
 
 	// The helm release exists and is at the correct version
-	return deployed && releaseMatches
+	return deployed && releaseMatches, ctrl.Result{}, nil
 }
 
-func (h helmComponentAdapter) Upgrade(context spi.ComponentContext) error {
-	return h.Install(context)
+// PostAction does installation pre-action
+func (h helmComponentAdapter) PostAction(context spi.ComponentContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
 }
 
-func (h helmComponentAdapter) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {
-	releaseChartVersion, err := helm.GetReleaseChartVersion(h.ReleaseName, h.ChartNamespace)
-	if err != nil {
-		log.ErrorfThrottled("Error occurred getting release chart version: %v", err.Error())
-		return false
-	}
-	return h.HelmInfo.ChartInfo.Version == releaseChartVersion
-}
-
-// IsEnabled ModuleLifecycle objects are always enabled; if a Module is disabled the ModuleLifecycle resource doesn't exist
-func (h helmComponentAdapter) IsEnabled(_ runtime.Object) bool {
-	return true
+// IsPostActionDone returns true if post-action done
+func (h helmComponentAdapter) IsPostActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
+	return true, ctrl.Result{}, nil
 }

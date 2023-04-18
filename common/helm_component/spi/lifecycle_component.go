@@ -9,21 +9,36 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-type LifecycleComponent interface {
-	vzspi.Component
-	Init(context vzspi.ComponentContext, chartInfo *HelmInfo) error
-}
-
 type HelmInfo struct {
 	*modulesv1alpha1.HelmRelease
 }
 
+type LifecycleComponent struct {
+	InstallAction   ActionLifecycle
+	UninstallAction ActionLifecycle
+	UpdateAction    ActionLifecycle
+	UpgradeAction   ActionLifecycle
+}
+
 type ActionLifecycle interface {
-	PreWork(context vzspi.ComponentContext) (ctrl.Result, error)
-	IsPreWorkDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
-	DoWork(context vzspi.ComponentContext) (ctrl.Result, error)
-	IsWorkDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
-	PostWork(context vzspi.ComponentContext) (ctrl.Result, error)
-	IsPostWorkDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+	// Init initializes the component helm information
+	Init(context vzspi.ComponentContext, chartInfo *HelmInfo) (ctrl.Result, error)
+
+	// PreAction does lifecycle pre-Action
+	PreAction(context vzspi.ComponentContext) (ctrl.Result, error)
+
+	// IsPreActionDone returns true if pre-Action done
+	IsPreActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+
+	// DoAction does the lifecycle Action
+	DoAction(context vzspi.ComponentContext) (ctrl.Result, error)
+
+	// IsActionDone returns true if action is done
 	IsActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+
+	// PostAction does lifecycle post-Action
+	PostAction(context vzspi.ComponentContext) (ctrl.Result, error)
+
+	// IsPostActionDone returns true if action is done
+	IsPostActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
 }
