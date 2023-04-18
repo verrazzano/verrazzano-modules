@@ -134,17 +134,17 @@ pipeline {
             }
         }
 
-        //stage('Generate operator.yaml') {
-        //    when { not { buildingTag() } }
-        //    steps {
-        //        generateOperatorYaml("${DOCKER_IMAGE_TAG}")
-        //    }
-        //    post {
-        //        success {
-        //            archiveArtifacts artifacts: "generated-operator.yaml", allowEmptyArchive: true
-        //        }
-        //    }
-        //}
+        stage('Generate operator.yaml') {
+            when { not { buildingTag() } }
+            steps {
+                generateOperatorYaml("${DOCKER_IMAGE_TAG}")
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: "generated-operator.yaml", allowEmptyArchive: true
+                }
+            }
+        }
 
         stage('Check Repo Clean') {
             steps {
@@ -296,7 +296,7 @@ def buildImages(dockerImageTag) {
     sh """
         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
         echo 'Building container images...'
-        make docker-push VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_PLATFORM_IMAGE_NAME} DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} CREATE_LATEST_TAG=${CREATE_LATEST_TAG}
+        make docker-push VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} CREATE_LATEST_TAG=${CREATE_LATEST_TAG}
         #${GO_REPO_PATH}/${GIT_REPO_DIR}/tools/scripts/generate_image_list.sh $WORKSPACE/generated-verrazzano-bom.json $WORKSPACE/verrazzano_images.txt
     """
 }
