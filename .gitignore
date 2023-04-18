@@ -25,6 +25,8 @@ out/
 **/*-cluster-dump
 **/*.log
 module-operator/THIRD_PARTY_LICENSES.txt
+module-operator/build
+.txt
 **/.DS_Store
 **/.vscode
 ATTRIBUTION-HELPER-DEPS

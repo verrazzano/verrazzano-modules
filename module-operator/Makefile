@@ -164,6 +164,18 @@ ifeq ($(CREATE_LATEST_TAG), "1")
 	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:latest);
 endif
 
+BUILD_DEPLOY = build/deploy
+OPERATOR_YAML ?= ${BUILD_DEPLOY}/verrazzano-module-operator.yaml
+
+.PHONY: generate-operator-yaml
+generate-operator-yaml:
+	mkdir -p $${BUILD_DEPLOY} ; \
+	env DOCKER_IMAGE_FULLNAME=${DOCKER_IMAGE_FULLNAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} \
+		IMAGE_PULL_SECRETS=${IMAGE_PULL_SECRETS} \
+		BUILD_OUT=${BUILD_DEPLOY} \
+		OPERATOR_YAML=${OPERATOR_YAML} \
+		./tools/scripts/generate_chart_artifacts.sh
+
 # find or download controller-gen
 CONTROLLER_GEN_PATH := $(shell eval go env GOPATH)
 .PHONY: controller-gen
