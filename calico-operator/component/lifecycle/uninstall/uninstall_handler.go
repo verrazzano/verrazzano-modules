@@ -20,9 +20,9 @@ type helmComponentAdapter struct {
 	chartDir string
 }
 
-var _ compspi.LifecycleAction = &helmComponentAdapter{}
+var _ compspi.LifecycleActionHandler = &helmComponentAdapter{}
 
-func NewComponent() compspi.LifecycleAction {
+func NewComponent() compspi.LifecycleActionHandler {
 	return &helmComponentAdapter{}
 }
 

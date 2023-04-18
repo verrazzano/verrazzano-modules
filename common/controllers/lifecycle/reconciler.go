@@ -61,7 +61,7 @@ type stateMachineContext struct {
 	cr        *modplatform.ModuleLifecycle
 	tracker   *stateTracker
 	chartInfo *compspi.HelmInfo
-	action    compspi.LifecycleAction
+	action    compspi.LifecycleActionHandler
 }
 
 // Reconcile updates the Certificate
@@ -193,7 +193,7 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = statePostActionWaitDone
 
 		case statePostActionWaitDone:
-			done, res, err := s.action.IsPreActionDone(compContext)
+			done, res, err := s.action.IsPostActionDone(compContext)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -206,7 +206,7 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = stateCompleteUpdate
 
 		case stateCompleteUpdate:
-			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondUpgradeComplete), modulesv1alpha1.CondUpgradeComplete); err != nil {
+			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondInstallComplete), modulesv1alpha1.CondInstallComplete); err != nil {
 				return ctrl.Result{}, err
 			}
 			s.tracker.state = stateEnd
@@ -226,7 +226,7 @@ func loadHelmInfo(cr *modplatform.ModuleLifecycle) compspi.HelmInfo {
 	return helmInfo
 }
 
-func (r *Reconciler) getAction(action modulesv1alpha1.ActionType) compspi.LifecycleAction {
+func (r *Reconciler) getAction(action modulesv1alpha1.ActionType) compspi.LifecycleActionHandler {
 	switch action {
 	case modulesv1alpha1.InstallAction:
 		return r.comp.InstallAction
