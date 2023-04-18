@@ -38,10 +38,14 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: LEADER_ELECTION_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
           args:
             - --zap-log-level={{ .Values.logLevel }}
             - --enable-leader-election={{ .Values.leaderElection.enabled }}
-            - --leader-election-namespace={{ .Release.Namespace }}
           ports:
             - containerPort: 9100
               name: http-metric

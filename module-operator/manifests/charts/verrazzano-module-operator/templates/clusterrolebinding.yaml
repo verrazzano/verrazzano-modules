@@ -11,4 +11,3 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ include "verrazzano-module-operator.name" . }}
-    namespace: {{ .Release.Namespace }}
