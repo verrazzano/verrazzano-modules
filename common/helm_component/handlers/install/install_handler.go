@@ -12,11 +12,10 @@ import (
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-
 )
 
 type Component struct {
@@ -38,10 +37,10 @@ func NewComponent() compspi.LifecycleActionHandler {
 	return &Component{}
 }
 
-
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
 func (h *Component) GetStatusConditions() compspi.StatusConditions {
 	return compspi.StatusConditions{
+		NotNeeded: moduleplatform.CondAlreadyInstalled,
 		PreAction: moduleplatform.CondPreInstall,
 		DoAction:  moduleplatform.CondInstallStarted,
 		Completed: moduleplatform.CondInstallComplete,
@@ -62,6 +61,16 @@ func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo) (ct
 	return ctrl.Result{}, nil
 }
 
+// IsActionNeeded returns true if install is needed
+func (h Component) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
+	if err != nil {
+		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
+		return true, ctrl.Result{}, err
+	}
+	return !installed, ctrl.Result{}, err
+}
+
 // PreAction does installation pre-action
 func (h Component) PreAction(context spi.ComponentContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
@@ -74,15 +83,6 @@ func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Res
 
 // DoAction installs the component using Helm
 func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
-	if err != nil {
-		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
-		return ctrl.Result{}, err
-	}
-	if installed {
-		return ctrl.Result{}, err
-	}
-
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.HelmInfo.HelmRelease
 	helmOverrides, err := helm.ConvertToHelmOverrides(context.Log(), context.Client(), helmRelease.Name, helmRelease.Namespace, helmRelease.Overrides)

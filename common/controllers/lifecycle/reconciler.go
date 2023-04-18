@@ -25,6 +25,12 @@ const (
 	// stateInit is the state when a component is initialized
 	stateInit componentState = "componentStateInit"
 
+	// stateCheckActionNeeded is the state to check if action is needed
+	stateCheckActionNeeded componentState = "stateCheckActionNeeded"
+
+	// stateActionNotNeededUpdate is the state when the status is updated to not needed
+	stateActionNotNeededUpdate componentState = "stateActionNotNeededUpdate"
+
 	// stateStartPreActionUpdate is the state when the status is updated to start pre action
 	stateStartPreActionUpdate componentState = "stateStartPreActionUpdate"
 
@@ -72,8 +78,8 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
 
 	// This is an imperative command, don't rerun it
-	if cr.Status.State == moduleplatform.StateReady {
-		spictx.Log.Oncef("Resource %v already ready, nothing to do", nsn)
+	if cr.Status.State == moduleplatform.StateReady || cr.Status.State == moduleplatform.StateIgnored {
+		spictx.Log.Oncef("Resource %v has already been processed, nothing to do", nsn)
 		return ctrl.Result{}, nil
 	}
 
@@ -104,123 +110,114 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 		action:    action,
 	}
 
-	res, err := r.doStateMachine(ctx, smc)
-	if err != nil {
-		return newRequeueWithDelay(), err
-	}
-	if vzctrl.ShouldRequeue(res) {
-		return res, nil
-	}
-	return ctrl.Result{}, nil
+	res := r.doStateMachine(ctx, smc)
+	return res, nil
 }
 
-func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachineContext) (ctrl.Result, error) {
+func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachineContext) ctrl.Result {
 	compContext := spiCtx.Init("component").Operation(string(s.cr.Spec.Action))
 
 	for s.tracker.state != stateEnd {
 		switch s.tracker.state {
 		case stateInit:
 			res, err := s.action.Init(compContext, s.chartInfo)
-			if err != nil {
-				return ctrl.Result{}, err
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			s.tracker.state = stateCheckActionNeeded
+
+		case stateCheckActionNeeded:
+			needed, res, err := s.action.IsActionNeeded(compContext)
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
-			s.tracker.state = stateStartPreActionUpdate
+			if needed {
+				s.tracker.state = stateStartPreActionUpdate
+			} else {
+				s.tracker.state = stateActionNotNeededUpdate
+			}
+
+		case stateActionNotNeededUpdate:
+			cond := s.action.GetStatusConditions().NotNeeded
+			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
+				return newRequeueWithDelay()
+			}
+			s.tracker.state = stateEnd
 
 		case stateStartPreActionUpdate:
 			cond := s.action.GetStatusConditions().PreAction
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return ctrl.Result{}, err
+				return newRequeueWithDelay()
 			}
 			s.tracker.state = statePreAction
 
 		case statePreAction:
 			res, err := s.action.PreAction(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			s.tracker.state = statePreActionWaitDone
 
 		case statePreActionWaitDone:
 			done, res, err := s.action.IsPreActionDone(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			if !done {
-				return newRequeueWithDelay(), nil
+				return newRequeueWithDelay()
 			}
 			s.tracker.state = stateStartActionUpdate
 
 		case stateStartActionUpdate:
 			cond := s.action.GetStatusConditions().DoAction
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return ctrl.Result{}, err
+				return newRequeueWithDelay()
 			}
 			s.tracker.state = stateAction
 
 		case stateAction:
 			res, err := s.action.DoAction(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			s.tracker.state = stateActionWaitDone
 
 		case stateActionWaitDone:
 			done, res, err := s.action.IsActionDone(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			if !done {
-				return newRequeueWithDelay(), nil
+				return newRequeueWithDelay()
 			}
 			s.tracker.state = statePostAction
 
 		case statePostAction:
 			res, err := s.action.PostAction(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			s.tracker.state = statePostActionWaitDone
 
 		case statePostActionWaitDone:
 			done, res, err := s.action.IsPostActionDone(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			if !done {
-				return newRequeueWithDelay(), nil
+				return newRequeueWithDelay()
 			}
 			s.tracker.state = stateCompleteUpdate
 
 		case stateCompleteUpdate:
 			cond := s.action.GetStatusConditions().Completed
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return ctrl.Result{}, err
+				return newRequeueWithDelay()
 			}
 			s.tracker.state = stateEnd
 		}
 	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{}
 }
 
 func newRequeueWithDelay() ctrl.Result {
@@ -246,4 +243,14 @@ func (r *Reconciler) getAction(action moduleplatform.ActionType) compspi.Lifecyc
 		return r.comp.UpgradeAction
 	}
 	return nil
+}
+
+func procResult(res ctrl.Result, err error) ctrl.Result {
+	if vzctrl.ShouldRequeue(res) {
+		return res
+	}
+	if err != nil {
+		return newRequeueWithDelay()
+	}
+	return res
 }

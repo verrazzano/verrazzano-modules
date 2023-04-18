@@ -14,6 +14,7 @@ type HelmInfo struct {
 }
 
 type StatusConditions struct {
+	NotNeeded modulesv1alpha1.LifecycleCondition
 	PreAction modulesv1alpha1.LifecycleCondition
 	DoAction  modulesv1alpha1.LifecycleCondition
 	Completed modulesv1alpha1.LifecycleCondition
@@ -32,6 +33,9 @@ type LifecycleActionHandler interface {
 
 	// Init initializes the component Hekn information
 	Init(context vzspi.ComponentContext, chartInfo *HelmInfo) (ctrl.Result, error)
+
+	// IsActionNeeded returns true if action is needed
+	IsActionNeeded(context vzspi.ComponentContext) (bool, ctrl.Result, error)
 
 	// PreAction does lifecycle pre-Action
 	PreAction(context vzspi.ComponentContext) (ctrl.Result, error)

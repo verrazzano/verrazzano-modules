@@ -30,6 +30,7 @@ func NewComponent() compspi.LifecycleActionHandler {
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
 func (h *Component) GetStatusConditions() compspi.StatusConditions {
 	return compspi.StatusConditions{
+		NotNeeded: moduleplatform.CondAlreadyUninstalled,
 		PreAction: moduleplatform.CondPreUninstall,
 		DoAction:  moduleplatform.CondUninstallStarted,
 		Completed: moduleplatform.CondUninstallComplete,
@@ -48,6 +49,16 @@ func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo) (ct
 
 	h.HelmInfo = HelmInfo
 	return ctrl.Result{}, nil
+}
+
+// IsActionNeeded returns true if uninstall is needed
+func (h Component) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
+	if err != nil {
+		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
+		return true, ctrl.Result{}, err
+	}
+	return installed, ctrl.Result{}, err
 }
 
 // PreAction does installation pre-action

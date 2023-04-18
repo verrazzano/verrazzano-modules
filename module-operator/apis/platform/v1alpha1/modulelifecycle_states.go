@@ -14,6 +14,7 @@ const (
 	StatePreUpgrade   ModuleLifecycleState = "PreUpgrading"
 	StateUpgrading    ModuleLifecycleState = "Upgrading"
 	StateFailed       ModuleLifecycleState = "Failed"
+	StateIgnored      ModuleLifecycleState = "Ignored"
 )
 
 type LifecycleCondition string
@@ -21,16 +22,18 @@ type LifecycleCondition string
 const (
 	ConditionArrayLimit = 5
 
-	CondPreInstall        LifecycleCondition = "PreInstall"
-	CondInstallStarted    LifecycleCondition = "InstallStarted"
-	CondInstallComplete   LifecycleCondition = "InstallComplete"
-	CondPreUninstall      LifecycleCondition = "PreUninstall"
-	CondUninstallStarted  LifecycleCondition = "UninstallStarted"
-	CondUninstallComplete LifecycleCondition = "UninstallComplete"
-	CondPreUpgrade        LifecycleCondition = "PreUpgrade"
-	CondUpgradeStarted    LifecycleCondition = "UpgradeStarted"
-	CondUpgradeComplete   LifecycleCondition = "UpgradeComplete"
-	CondFailed            LifecycleCondition = "Failed"
+	CondAlreadyInstalled   LifecycleCondition = "AlreadyInstalled"
+	CondAlreadyUninstalled LifecycleCondition = "AlreadyUninstalled"
+	CondPreInstall         LifecycleCondition = "PreInstall"
+	CondInstallStarted     LifecycleCondition = "InstallStarted"
+	CondInstallComplete    LifecycleCondition = "InstallComplete"
+	CondPreUninstall       LifecycleCondition = "PreUninstall"
+	CondUninstallStarted   LifecycleCondition = "UninstallStarted"
+	CondUninstallComplete  LifecycleCondition = "UninstallComplete"
+	CondPreUpgrade         LifecycleCondition = "PreUpgrade"
+	CondUpgradeStarted     LifecycleCondition = "UpgradeStarted"
+	CondUpgradeComplete    LifecycleCondition = "UpgradeComplete"
+	CondFailed             LifecycleCondition = "Failed"
 )
 
 func (m *ModuleLifecycle) SetState(state ModuleLifecycleState) {
@@ -49,6 +52,10 @@ func LifecycleState(condition LifecycleCondition) ModuleLifecycleState {
 		return StatePreUpgrade
 	case CondUpgradeStarted:
 		return StateUpgrading
+	case CondAlreadyInstalled:
+		return StateIgnored
+	case CondAlreadyUninstalled:
+		return StateIgnored
 	case CondFailed:
 		return StateFailed
 	default: // CondUpgradeComplete, CondInstallComplete
