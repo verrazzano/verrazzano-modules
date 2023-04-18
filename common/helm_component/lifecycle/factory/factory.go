@@ -3,13 +3,16 @@
 
 package factory
 
-import 	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
+import (
+	"github.com/verrazzano/verrazzano-modules/common/helm_component/lifecycle/install"
+	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
+)
 
 func NewLifeCycleComponent() compspi.LifecycleComponent {
 	return compspi.LifecycleComponent{
-		InstallAction: nil,
-		UninstallAction: nil,
-		UpdateAction: nil,
-		UpgradeAction: nil,
+		InstallAction:   install.NewComponent(),
+		UninstallAction: install.NewComponent(),
+		UpdateAction:    install.NewComponent(),
+		UpgradeAction:   install.NewComponent(),
 	}
 }

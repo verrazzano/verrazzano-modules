@@ -47,20 +47,8 @@ func (h *helmComponentAdapter) Init(_ spi.ComponentContext, HelmInfo *compspi.He
 	}
 
 	h.HelmInfo = HelmInfo
-
-	//	chartURL := fmt.Sprintf("%s/%s", installer.HelmRelease.Repository.URI, HelmInfo.Path)
-
 	return ctrl.Result{}, nil
 }
-
-//Init(context vzspi.ComponentContext, chartInfo *HelmInfo) error
-//PreAction(context vzspi.ComponentContext) (ctrl.Result, error)
-//IsPreActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
-//DoAction(context vzspi.ComponentContext) (ctrl.Result, error)
-//IsActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
-//PostAction(context vzspi.ComponentContext) (ctrl.Result, error)
-//IsPostActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
-//IsActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
 
 // PreAction does installation pre-action
 func (h helmComponentAdapter) PreAction(context spi.ComponentContext) (ctrl.Result, error) {
