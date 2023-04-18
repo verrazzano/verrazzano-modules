@@ -33,10 +33,8 @@ if [ -n "${IMAGE_PULL_SECRETS}" ] ; then
     IMAGE_PULL_SECRET_ARG="--set imagePullSecrets={${IMAGE_PULL_SECRETS}}"
 fi
 
-set -x
 CHARTS_OUT=${BUILD_OUT}/charts
 rm -rf ${CHARTS_OUT}
-mkdir -p ${BUILD_OUT}
 cp -pr $SCRIPT_DIR/../../manifests/charts ${BUILD_OUT}
 TARGET_CHART=${CHARTS_OUT}/verrazzano-module-operator
 TARGET_VALUES=${TARGET_CHART}/values.yaml
