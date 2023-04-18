@@ -8,8 +8,8 @@ go 1.19
 require (
 	github.com/stretchr/testify v1.8.1
 	github.com/verrazzano/verrazzano v0.17.1-0.20230414130230-43908c21553a
-	github.com/verrazzano/verrazzano-modules/common v0.0.0-20230418165428-caba5e956c47
-	github.com/verrazzano/verrazzano-modules/module-operator v0.0.0-20230418165428-caba5e956c47
+	github.com/verrazzano/verrazzano-modules/common v0.0.0-20230418174128-0a1baa4fdacd
+	github.com/verrazzano/verrazzano-modules/module-operator v0.0.0-20230418174128-0a1baa4fdacd
 	go.uber.org/zap v1.24.0
 	k8s.io/apimachinery v0.27.0
 	sigs.k8s.io/controller-runtime v0.12.3
