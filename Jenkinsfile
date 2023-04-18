@@ -141,7 +141,7 @@ pipeline {
             }
             post {
                 success {
-                    archiveArtifacts artifacts: "**/*.yaml,**/*.tvz", allowEmptyArchive: true
+                    archiveArtifacts artifacts: "${WORKSPACE}/generated/verrazzano-module-operator.yaml,${WORKSPACE}/generated/*.tgz", allowEmptyArchive: true
                 }
             }
         }
@@ -166,7 +166,7 @@ pipeline {
                             echo "Saving generated files"
                             saveGeneratedFiles()
                             script {
-                                archiveArtifacts artifacts: "generated-verrazzano-bom.json,verrazzano_images.txt", allowEmptyArchive: true
+                                archiveArtifacts artifacts: "verrazzano_images.txt", allowEmptyArchive: true
                             }
                         }
                     }
@@ -312,7 +312,7 @@ def generateOperatorYaml(dockerImageTag) {
                 echo "Adding image pull secrets to operator.yaml for non main/release branch"
                 export IMAGE_PULL_SECRETS=verrazzano-container-registry
         esac
-        echo "DOCKER_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} BUILD_DEPLOY=$WORKSPACE make generate-operator-yaml"
+        echo "DOCKER_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} BUILD_DEPLOY=${WORKSPACE}/generated make generate-operator-yaml"
     """
 }
 
@@ -320,7 +320,6 @@ def generateOperatorYaml(dockerImageTag) {
 def saveGeneratedFiles() {
     sh """
         cd ${GO_REPO_PATH}/verrazzano-modules
-        echo "Saving generated files"
         #oci --region us-phoenix-1 os object put --force --namespace ${OCI_OS_NAMESPACE} -bn ${OCI_OS_BUCKET} --name ${env.BRANCH_NAME}/operator.yaml --file $WORKSPACE/generated-operator.yaml
         #oci --region us-phoenix-1 os object put --force --namespace ${OCI_OS_NAMESPACE} -bn ${OCI_OS_COMMIT_BUCKET} --name ephemeral/${env.BRANCH_NAME}/${SHORT_COMMIT_HASH}/operator.yaml --file $WORKSPACE/generated-operator.yaml
         #oci --region us-phoenix-1 os object put --force --namespace ${OCI_OS_NAMESPACE} -bn ${OCI_OS_BUCKET} --name ${env.BRANCH_NAME}/generated-verrazzano-bom.json --file $WORKSPACE/generated-verrazzano-bom.json
