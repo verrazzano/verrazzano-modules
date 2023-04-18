@@ -134,18 +134,6 @@ pipeline {
             }
         }
 
-        stage('Generate operator.yaml') {
-            when { not { buildingTag() } }
-            steps {
-                generateOperatorYaml("${DOCKER_IMAGE_TAG}")
-            }
-            post {
-                success {
-                    archiveArtifacts artifacts: "${WORKSPACE}/generated/verrazzano-module-operator.yaml,${WORKSPACE}/generated/*.tgz", allowEmptyArchive: true
-                }
-            }
-        }
-
         stage('Check Repo Clean') {
             steps {
                 checkRepoClean()
@@ -159,6 +147,7 @@ pipeline {
                     steps {
                         script {
                             buildImages("${DOCKER_IMAGE_TAG}")
+                            generateOperatorYaml("${DOCKER_IMAGE_TAG}")
                         }
                     }
                     post {
@@ -166,7 +155,7 @@ pipeline {
                             echo "Saving generated files"
                             saveGeneratedFiles()
                             script {
-                                archiveArtifacts artifacts: "verrazzano_images.txt", allowEmptyArchive: true
+                                archiveArtifacts artifacts: "${WORKSPACE}/generated/verrazzano-module-operator.yaml,${WORKSPACE}/generated/*.tgz,verrazzano_images.txt", allowEmptyArchive: true
                             }
                         }
                     }
@@ -312,7 +301,7 @@ def generateOperatorYaml(dockerImageTag) {
                 echo "Adding image pull secrets to operator.yaml for non main/release branch"
                 export IMAGE_PULL_SECRETS=verrazzano-container-registry
         esac
-        echo "DOCKER_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} BUILD_DEPLOY=${WORKSPACE}/generated make generate-operator-yaml"
+        DOCKER_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} BUILD_DEPLOY=${WORKSPACE}/generated make generate-operator-yaml
     """
 }
 
