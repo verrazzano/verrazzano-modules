@@ -33,10 +33,8 @@ if [ -n "${IMAGE_PULL_SECRETS}" ] ; then
     IMAGE_PULL_SECRET_ARG="--set imagePullSecrets={${IMAGE_PULL_SECRETS}}"
 fi
 
-set -x
 CHARTS_OUT=${BUILD_OUT}/charts
 rm -rf ${CHARTS_OUT}
-mkdir -p ${BUILD_OUT}
 cp -pr $SCRIPT_DIR/../../manifests/charts ${BUILD_OUT}
 TARGET_CHART=${CHARTS_OUT}/verrazzano-module-operator
 TARGET_VALUES=${TARGET_CHART}/values.yaml
@@ -48,6 +46,6 @@ yq -i eval '.image.repository = env(DOCKER_IMAGE_FULLNAME)'  ${TARGET_VALUES}
 yq -i eval '.image.tag = env(DOCKER_IMAGE_TAG)' ${TARGET_VALUES}
 helm package ${TARGET_CHART} -d ${BUILD_OUT}
 
-helm template --include-crds ${TARGET_CHART} > ${OPERATOR_YAML}
+helm template --include-crds ${TARGET_CHART} -n "verrazzano-install" > ${OPERATOR_YAML}
 
 exit $?
