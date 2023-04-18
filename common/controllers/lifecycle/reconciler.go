@@ -14,7 +14,6 @@ import (
 
 	modplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/common"
 
 	vzctrl "github.com/verrazzano/verrazzano-modules/module-operator/pkg/controller"
 	vzconst "github.com/verrazzano/verrazzano/platform-operator/constants"
@@ -87,7 +86,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 }
 
 func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, mlc *modplatform.ModuleLifecycle, tracker *installTracker, chartInfo compspi.HelmInfo) (ctrl.Result, error) {
-	compName := common.GetNamespacedNameString(mlc.ObjectMeta)
+	compName := k8s.GetNamespacedNameString(mlc.ObjectMeta)
 	compContext := spiCtx.Init("component").Operation(vzconst.InstallOperation)
 	compLog := compContext.Log()
 

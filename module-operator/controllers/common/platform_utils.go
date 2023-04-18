@@ -3,7 +3,6 @@
 package common
 
 import (
-	"fmt"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -13,8 +12,4 @@ func GetNamespacedName(meta v1.ObjectMeta) types.NamespacedName {
 		Namespace: meta.Namespace,
 		Name:      meta.Name,
 	}
-}
-
-func GetNamespacedNameString(meta v1.ObjectMeta) string {
-	return fmt.Sprintf("%s/%s", GetNamespacedName(meta))
 }
