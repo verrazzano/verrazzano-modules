@@ -5,7 +5,6 @@ package spi
 
 import (
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
@@ -15,6 +14,5 @@ type LifecycleComponent interface {
 }
 
 type HelmInfo struct {
-	helmcomp.HelmComponent
 	*modulesv1alpha1.HelmRelease
 }

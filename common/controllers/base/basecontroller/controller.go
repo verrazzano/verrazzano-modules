@@ -96,7 +96,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// The resource has been reconciled.
-	log.Oncef("Successfully reconciled Gateway resource %v", req.NamespacedName)
+	log.Oncef("Successfully reconciled resource %v", req.NamespacedName)
 	return ctrl.Result{}, nil
 }
 

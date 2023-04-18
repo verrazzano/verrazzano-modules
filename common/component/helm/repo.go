@@ -45,10 +45,13 @@ func UpgradeRelease(log vzlog.VerrazzanoLogger, releaseOpts *HelmReleaseOpts, wa
 		Password: releaseOpts.Username,
 		Username: releaseOpts.Password,
 	}
-
-	chartPath, err := chartOptions.LocateChart(releaseOpts.ChartPath, settings)
-	if err != nil {
-		return nil, err
+	chartPath := releaseOpts.ChartPath
+	if chartPath == "" {
+		var err error
+		chartPath, err = chartOptions.LocateChart(releaseOpts.ChartPath, settings)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return helm.Upgrade(log, releaseOpts.ReleaseName, releaseOpts.Namespace, chartPath, wait, dryRun, releaseOpts.Overrides)

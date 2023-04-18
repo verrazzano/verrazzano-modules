@@ -5,6 +5,7 @@ package helm
 
 import (
 	compspi "github.com/verrazzano/verrazzano-modules/common/component/spi"
+	"github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
@@ -38,9 +39,9 @@ func NewComponent(chartDir string) compspi.LifecycleComponent {
 // Init initializes the component with Helm chart information
 func (h *helmComponentAdapter) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo) error {
 	h.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             HelmInfo.ReleaseName,
+		ReleaseName:             HelmInfo.HelmRelease.Name,
 		ChartDir:                h.chartDir,
-		ChartNamespace:          HelmInfo.ChartNamespace,
+		ChartNamespace:          HelmInfo.HelmRelease.Namespace,
 		IgnoreNamespaceOverride: true,
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
@@ -61,10 +62,10 @@ func (h helmComponentAdapter) Install(context spi.ComponentContext) error {
 		return err
 	}
 	var opts = &HelmReleaseOpts{
-		//		RepoURL:      h.RepositoryURL,
+		RepoURL:      helmRelease.Repository.URI,
 		ReleaseName:  h.ReleaseName,
 		Namespace:    h.ChartNamespace,
-		ChartPath:    helmRelease.ChartInfo.Name,
+		ChartPath:    helmRelease.ChartInfo.Path,
 		ChartVersion: helmRelease.ChartInfo.Version,
 		Overrides:    helmOverrides,
 		// TBD -- pull from a secret ref?
@@ -73,6 +74,25 @@ func (h helmComponentAdapter) Install(context spi.ComponentContext) error {
 	}
 	_, err = upgradeFunc(context.Log(), opts, h.WaitForInstall, context.IsDryRun())
 	return err
+}
+
+// IsReady Indicates whether a component is available and ready
+func (h helmComponentAdapter) IsReady(context spi.ComponentContext) bool {
+	if context.IsDryRun() {
+		context.Log().Debugf("IsReady() dry run for %s", h.ReleaseName)
+		return true
+	}
+
+	deployed, err := helm.IsReleaseDeployed(h.ReleaseName, h.ChartNamespace)
+	if err != nil {
+		context.Log().ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
+		return false
+	}
+
+	releaseMatches := h.releaseVersionMatches(context.Log())
+
+	// The helm release exists and is at the correct version
+	return deployed && releaseMatches
 }
 
 func (h helmComponentAdapter) Upgrade(context spi.ComponentContext) error {
