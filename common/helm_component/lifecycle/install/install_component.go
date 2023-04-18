@@ -1,17 +1,19 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package helm
+package install
 
 import (
-	compspi "github.com/verrazzano/verrazzano-modules/common/component/spi"
-	"github.com/verrazzano/verrazzano/pkg/helm"
+	"github.com/verrazzano/verrazzano-modules/common/helm_component/helm"
+	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
+	"helm.sh/helm/v3/pkg/release"
+
+	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
-	"helm.sh/helm/v3/pkg/release"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -22,12 +24,12 @@ type helmComponentAdapter struct {
 }
 
 // upgradeFuncSig is a function needed for unit test override
-type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
+type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
 
 var (
 	_ compspi.LifecycleComponent = &helmComponentAdapter{}
 
-	upgradeFunc upgradeFuncSig = UpgradeRelease
+	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
 )
 
 func NewComponent(chartDir string) compspi.LifecycleComponent {
@@ -57,11 +59,11 @@ func (h *helmComponentAdapter) Init(_ spi.ComponentContext, HelmInfo *compspi.He
 func (h helmComponentAdapter) Install(context spi.ComponentContext) error {
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.HelmInfo.HelmRelease
-	helmOverrides, err := ConvertToHelmOverrides(context.Log(), context.Client(), helmRelease.Name, helmRelease.Namespace, helmRelease.Overrides)
+	helmOverrides, err := helm.ConvertToHelmOverrides(context.Log(), context.Client(), helmRelease.Name, helmRelease.Namespace, helmRelease.Overrides)
 	if err != nil {
 		return err
 	}
-	var opts = &HelmReleaseOpts{
+	var opts = &helm.HelmReleaseOpts{
 		RepoURL:      helmRelease.Repository.URI,
 		ReleaseName:  h.ReleaseName,
 		Namespace:    h.ChartNamespace,
@@ -83,7 +85,7 @@ func (h helmComponentAdapter) IsReady(context spi.ComponentContext) bool {
 		return true
 	}
 
-	deployed, err := helm.IsReleaseDeployed(h.ReleaseName, h.ChartNamespace)
+	deployed, err := vzhelm.IsReleaseDeployed(h.ReleaseName, h.ChartNamespace)
 	if err != nil {
 		context.Log().ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
 		return false
@@ -100,7 +102,7 @@ func (h helmComponentAdapter) Upgrade(context spi.ComponentContext) error {
 }
 
 func (h helmComponentAdapter) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {
-	releaseChartVersion, err := GetReleaseChartVersion(h.ReleaseName, h.ChartNamespace)
+	releaseChartVersion, err := helm.GetReleaseChartVersion(h.ReleaseName, h.ChartNamespace)
 	if err != nil {
 		log.ErrorfThrottled("Error occurred getting release chart version: %v", err.Error())
 		return false
