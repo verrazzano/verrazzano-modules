@@ -114,7 +114,7 @@ func (h Component) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result
 
 	deployed, err := vzhelm.IsReleaseDeployed(h.ReleaseName, h.ChartNamespace)
 	if err != nil {
-		context.Log().ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
+		context.Log().ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
 		return false, ctrl.Result{}, err
 	}
 	if !deployed {
