@@ -6,7 +6,12 @@ package install
 import (
 	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/helm"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
+	vzos "github.com/verrazzano/verrazzano/pkg/os"
+	"os/exec"
 )
+
+// cmdRunner needed for unit tests
+var runner vzos.CmdRunner = vzos.DefaultRunner{}
 
 func (h Component) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {
 	releaseChartVersion, err := helm.GetReleaseChartVersion(h.ReleaseName, h.ChartNamespace)
@@ -32,6 +37,6 @@ func downloadChart(log vzlog.VerrazzanoLogger, verbose bool) (stdout []byte, std
 		}
 		return stdout, stderr, err
 	}
-	log.Debugf("yum %s succeeded: %s", operationName, stdout)
+	log.Debugf("yum %s succeeded: %s", stdout)
 	return stdout, stderr, nil
 }
