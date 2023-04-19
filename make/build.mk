@@ -87,7 +87,6 @@ endif
 
 .PHONY: generate-operator-artifacts
 generate-operator-artifacts:
-	rm -rf ${BUILD_DEPLOY} \
 	mkdir -p ${BUILD_DEPLOY} ; \
 	env DOCKER_IMAGE_FULLNAME=${DOCKER_IMAGE_FULLNAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} \
 		CHART_NAME=${NAME} \

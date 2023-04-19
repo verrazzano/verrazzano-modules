@@ -26,8 +26,12 @@ endif
 TIMESTAMP := $(shell date -u +%Y%m%d%H%M%S)
 DOCKER_IMAGE_TAG ?= local-${TIMESTAMP}-$(shell git rev-parse --short HEAD)
 VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME ?= verrazzano-module-operator-dev
+VERRAZZANO_HELM_OPERATOR_IMAGE_NAME ?= verrazzano-helm-operator-dev
+VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME ?= verrazzano-calico-operator-dev
 
 VERRAZZANO_MODULE_OPERATOR_IMAGE = ${DOCKER_REPO}/${DOCKER_NAMESPACE}/${VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+VERRAZZANO_HELM_OPERATOR_IMAGE = ${DOCKER_REPO}/${DOCKER_NAMESPACE}/${VERRAZZANO_HELM_OPERATOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+VERRAZZANO_CALICO_OPERATOR_IMAGE = ${DOCKER_REPO}/${DOCKER_NAMESPACE}/${VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
 
 CURRENT_YEAR = $(shell date +"%Y")
 
@@ -50,14 +54,26 @@ clean: ## remove coverage and test results
 .PHONY: docker-build
 docker-build: ## build and push all images
 	(cd module-operator; make docker-build DOCKER_IMAGE_NAME=${VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
+	(cd helm-operator; make docker-build DOCKER_IMAGE_NAME=${VERRAZZANO_HELM_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
+	(cd calico-operator; make docker-build DOCKER_IMAGE_NAME=${VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
 
 .PHONY: docker-push
 docker-push: ## build and push all images
 	(cd module-operator; make docker-push DOCKER_IMAGE_NAME=${VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
+	(cd helm-operator; make docker-push DOCKER_IMAGE_NAME=${VERRAZZANO_HELM_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
+	(cd calico-operator; make docker-push DOCKER_IMAGE_NAME=${VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
 
 .PHONY: docker-push-debug
 docker-push-debug: ## build and push all images
 	(cd module-operator; make docker-push-debug DOCKER_IMAGE_NAME=${VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
+	(cd helm-operator; make docker-push-debug DOCKER_IMAGE_NAME=${VERRAZZANO_HELM_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
+	(cd calico-operator; make docker-push-debug DOCKER_IMAGE_NAME=${VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
+
+.PHONY: generate-operator-artifacts
+generate-operator-artifacts: ## build and push all images
+	(cd module-operator; make generate-operator-artifacts DOCKER_IMAGE_NAME=${VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
+	(cd helm-operator; make generate-operator-artifacts DOCKER_IMAGE_NAME=${VERRAZZANO_HELM_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
+	(cd calico-operator; make generate-operator-artifacts DOCKER_IMAGE_NAME=${VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
 
 #.PHONY: test-module-operator-install
 #test-module-operator-install: ## install VPO from operator.yaml
