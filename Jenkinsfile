@@ -39,6 +39,15 @@ pipeline {
         DOCKER_MODULE_CI_IMAGE_NAME = 'verrazzano-module-operator-jenkins'
         DOCKER_MODULE_PUBLISH_IMAGE_NAME = 'verrazzano-module-operator'
         DOCKER_MODULE_IMAGE_NAME = "${env.BRANCH_NAME ==~ /^release-.*/ || env.BRANCH_NAME == 'main' ? env.DOCKER_MODULE_PUBLISH_IMAGE_NAME : env.DOCKER_MODULE_CI_IMAGE_NAME}"
+
+        DOCKER_HELM_CI_IMAGE_NAME = 'verrazzano-helm-operator-jenkins'
+        DOCKER_HELM_PUBLISH_IMAGE_NAME = 'verrazzano-helm-operator'
+        DOCKER_HELM_IMAGE_NAME = "${env.BRANCH_NAME ==~ /^release-.*/ || env.BRANCH_NAME == 'main' ? env.DOCKER_HELM_PUBLISH_IMAGE_NAME : env.DOCKER_HELM_CI_IMAGE_NAME}"
+
+        DOCKER_CALICO_CI_IMAGE_NAME = 'verrazzano-calico-operator-jenkins'
+        DOCKER_CALICO_PUBLISH_IMAGE_NAME = 'verrazzano-calico-operator'
+        DOCKER_CALICO_IMAGE_NAME = "${env.BRANCH_NAME ==~ /^release-.*/ || env.BRANCH_NAME == 'main' ? env.DOCKER_CALICO_PUBLISH_IMAGE_NAME : env.DOCKER_CALICO_CI_IMAGE_NAME}"
+
         CREATE_LATEST_TAG = "${env.BRANCH_NAME == 'main' ? '1' : '0'}"
         GOPATH = '/home/opc/go'
         GO_REPO_PATH = "${GOPATH}/src/github.com/verrazzano"
@@ -155,7 +164,7 @@ pipeline {
                             echo "Saving generated files"
                             saveGeneratedFiles()
                             script {
-                                archiveArtifacts artifacts: "generated/verrazzano-module-operator.yaml,generated/*.tgz,verrazzano_images.txt", allowEmptyArchive: true
+                                archiveArtifacts artifacts: "generated/*.yaml,generated/*.tgz,verrazzano_images.txt", allowEmptyArchive: true
                             }
                         }
                     }
@@ -285,7 +294,13 @@ def buildImages(dockerImageTag) {
     sh """
         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
         echo 'Building container images...'
-        make docker-push VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} CREATE_LATEST_TAG=${CREATE_LATEST_TAG}
+        make docker-push \
+            DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} \
+            DOCKER_IMAGE_TAG=${dockerImageTag} \
+            VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} \
+            VERRAZZANO_HELM_OPERATOR_IMAGE_NAME=${DOCKER_HELM_IMAGE_NAME} \
+            VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME=${DOCKER_CALICO_IMAGE_NAME} \
+            CREATE_LATEST_TAG=${CREATE_LATEST_TAG}
         #${GO_REPO_PATH}/${GIT_REPO_DIR}/tools/scripts/generate_image_list.sh $WORKSPACE/generated-verrazzano-bom.json $WORKSPACE/verrazzano_images.txt
     """
 }
@@ -293,7 +308,6 @@ def buildImages(dockerImageTag) {
 // Called in Stage Generate operator.yaml steps
 def generateOperatorYaml(dockerImageTag) {
     sh """
-        cd ${GO_REPO_PATH}/${GIT_REPO_DIR}/module-operator
         case "${env.BRANCH_NAME}" in
             main|release-*)
                 ;;
@@ -301,8 +315,14 @@ def generateOperatorYaml(dockerImageTag) {
                 echo "Adding image pull secrets to operator.yaml for non main/release branch"
                 export IMAGE_PULL_SECRETS=verrazzano-container-registry
         esac
-        echo "Generating operator manifest and versioned Chart"
-        DOCKER_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} BUILD_DEPLOY=${WORKSPACE}/generated make generate-operator-artifacts
+
+        echo "Generating operator manifests and versioned Charts"
+        cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+        make generate-operator-artifacts BUILD_DEPLOY=${WORKSPACE}/generated \
+            DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} \
+            VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} \
+            VERRAZZANO_HELM_OPERATOR_IMAGE_NAME=${DOCKER_HELM_IMAGE_NAME} \
+            VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME=${DOCKER_CALICO_IMAGE_NAME}
     """
 }
 

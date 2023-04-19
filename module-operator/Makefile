@@ -1,7 +1,9 @@
 # Copyright (C) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+include ../make/generate.mk
 include ../make/retry.mk
+include ../make/build.mk
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -17,14 +19,21 @@ GO ?= GO111MODULE=on GOPRIVATE=github.com/verrazzano go
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+WORKING_DIR = ${CURDIR}
 NAME:=verrazzano-module-operator
 REPO_NAME:=verrazzano-module-operator
 
 CONTROLLER_GEN_VERSION ?= $(shell go list -m -f '{{.Version}}' sigs.k8s.io/controller-tools)
 CREATE_LATEST_TAG=0
-
 CRD_OPTIONS ?= "crd:crdVersions=v1,maxDescLen=0"
+CRD_PATH = manifests/charts/${NAME}/crds
+TEST_PATHS = ./internal ./controllers/... ./apis/...
+DOCKER_IMAGE_TAG ?= local-$(shell git rev-parse --short HEAD)
+SHORT_COMMIT_HASH ?= $(shell git rev-parse --short=8 HEAD)
 KUBECONFIG ?= ${HOME}/.kube/config
+
+BUILD_DEPLOY ?= build/deploy
+OPERATOR_YAML ?= ${BUILD_DEPLOY}/${NAME}.yaml
 
 ifndef DOCKER_IMAGE_FULLNAME
 DOCKER_IMAGE_NAME ?= ${NAME}-dev
@@ -44,10 +53,6 @@ ifdef DOCKER_REPO
 DOCKER_IMAGE_FULLNAME := ${DOCKER_REPO}/${DOCKER_IMAGE_FULLNAME}
 endif
 endif
-
-DOCKER_IMAGE_TAG ?= local-$(shell git rev-parse --short HEAD)
-
-SHORT_COMMIT_HASH ?= $(shell git rev-parse --short=8 HEAD)
 
 .PHONY: all
 all: build
@@ -69,129 +74,5 @@ all: build
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-##@ Development
 
-.PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=manifests/charts/verrazzano-module-operator/crds
-	# Add copyright headers to the kubebuilder generated CRDs
-	./hack/add-crd-header.sh
-	./hack/update-codegen.sh "platform:v1alpha1" "boilerplate.go.txt"
-
-.PHONY: generate
-generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-
-.PHONY: fmt
-fmt: ## Run go fmt against code.
-	go fmt ./...
-
-#.PHONY: vet
-#vet: ## Run go vet against code.
-#	go vet ./...
-
-##@ Build
-
-#
-# Go build related tasks
-#
-.PHONY: go-build
-go-build: 
-	$(GO) build \
-		-ldflags "${GO_LDFLAGS}" \
-		-o bin/$(shell uname)_$(shell uname -m)/${NAME} \
-		main.go
-
-.PHONY: go-build-linux
-go-build-linux:
-	GOOS=linux GOARCH=amd64 $(GO) build \
-		-ldflags "-s -w ${GO_LDFLAGS}" \
-		-o bin/linux_amd64/${NAME} \
-		main.go
-
-.PHONY: go-build-linux-debug
-go-build-linux-debug:
-	GOOS=linux GOARCH=amd64 $(GO) build \
-		-ldflags "${GO_LDFLAGS}" \
-		-o out/linux_amd64/${NAME} \
-		main.go
-
-.PHONY: go-install
-go-install: fmt
-	$(GO) install ./...
-
-.PHONY: build
-build: fmt go-build
-
-#                                                                                                                                                         # Test-related tasks                                                                                                                                      #                                                                                                                                                         .PHONY: unit-test
-unit-test: go-install
-	$(GO) test -v  ./... ./controllers/... ./apis/...
-
-.PHONY: install-crds
-install-crds:
-	kubectl apply -f charts/verrazzano-module-operator/crd
-
-.PHONY: run
-run: ## Run a controller from your host.
-	$(GO) run ./main.go
-
-# If you wish built the manager image targeting other platforms you can use the --platform flag.
-# (i.e. docker build --platform linux/arm64 ). However, you must enable docker buildKit for it.
-# More info: https://docs.docker.com/develop/develop-images/build_enhancements/
-.PHONY: docker-build
-docker-build: go-build-linux docker-build-common
-
-.PHONY: docker-build-common
-docker-build-common:
-	@echo Building verrazzano-module-operator image ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
-	# the TPL file needs to be copied into this dir so it is in the docker build context
-	#cp ../THIRD_PARTY_LICENSES.txt .
-	docker build --pull -f Dockerfile \
-		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
-
-.PHONY: docker-push
-docker-push: docker-build docker-push-common
-
-.PHONY: docker-push-debug
-docker-push-debug: docker-build-debug docker-push-common
-
-.PHONY: docker-push-common
-docker-push-common:
-	docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
-	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG})
-ifeq ($(CREATE_LATEST_TAG), "1")
-	docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:latest;
-	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:latest);
-endif
-
-BUILD_DEPLOY ?= build/deploy
-OPERATOR_YAML ?= ${BUILD_DEPLOY}/verrazzano-module-operator.yaml
-
-.PHONY: generate-operator-artifacts
-generate-operator-artifacts:
-	mkdir -p ${BUILD_DEPLOY} ; \
-	env DOCKER_IMAGE_FULLNAME=${DOCKER_IMAGE_FULLNAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} \
-		IMAGE_PULL_SECRETS=${IMAGE_PULL_SECRETS} \
-		BUILD_OUT=${BUILD_DEPLOY} \
-		OPERATOR_YAML=${OPERATOR_YAML} \
-		./tools/scripts/generate_operator_artifacts.sh
-
-# find or download controller-gen
-CONTROLLER_GEN_PATH := $(shell eval go env GOPATH)
-.PHONY: controller-gen
-controller-gen:
-ifeq (, $(shell command -v controller-gen))
-	$(GO) install sigs.k8s.io/controller-tools/cmd/controller-gen@${CONTROLLER_GEN_VERSION}
-	$(eval CONTROLLER_GEN=$(CONTROLLER_GEN_PATH)/bin/controller-gen)
-else
-	$(eval CONTROLLER_GEN=$(shell command -v controller-gen))
-endif
-	@{ \
-	set -eu; \
-	ACTUAL_CONTROLLER_GEN_VERSION=$$(${CONTROLLER_GEN} --version | awk '{print $$2}') ; \
-	if [ "$${ACTUAL_CONTROLLER_GEN_VERSION}" != "${CONTROLLER_GEN_VERSION}" ] ; then \
-		echo  "Bad controller-gen version $${ACTUAL_CONTROLLER_GEN_VERSION}, please install ${CONTROLLER_GEN_VERSION}" ; \
-		exit 1; \
-	fi ; \
-	}
 

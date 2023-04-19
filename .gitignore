@@ -25,7 +25,7 @@ out/
 **/*-cluster-dump
 **/*.log
 module-operator/THIRD_PARTY_LICENSES.txt
-module-operator/build
+build
 .txt
 **/.DS_Store
 **/.vscode
