@@ -160,7 +160,6 @@ func (r *Reconciler) createLifecycleResource(sourceName string, sourceURI string
 			moduleInstaller.ObjectMeta.Labels = make(map[string]string)
 		}
 		moduleInstaller.Spec = modulesv1alpha1.ModuleLifecycleSpec{
-			// For now
 			LifecycleClass: modlifecycle.POCLifecycleClass,
 			Installer: modulesv1alpha1.ModuleInstaller{
 				HelmRelease: &modulesv1alpha1.HelmRelease{
