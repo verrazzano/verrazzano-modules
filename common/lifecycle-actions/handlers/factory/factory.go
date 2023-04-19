@@ -7,13 +7,15 @@ import (
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/install"
 	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/uninstall"
+	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/update"
+	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/upgrade"
 )
 
 func NewLifeCycleComponent() compspi.LifecycleComponent {
 	return compspi.LifecycleComponent{
 		InstallAction:   install.NewComponent(),
 		UninstallAction: uninstall.NewComponent(),
-		UpdateAction:    install.NewComponent(),
-		UpgradeAction:   install.NewComponent(),
+		UpdateAction:    update.NewComponent(),
+		UpgradeAction:   upgrade.NewComponent(),
 	}
 }
