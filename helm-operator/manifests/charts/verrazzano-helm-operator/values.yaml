@@ -36,18 +36,8 @@ serviceAccount:
 podAnnotations: {}
 
 podSecurityContext:
-  runAsUser: 1000
-  runAsGroup: 999
-  runAsNonRoot: true
-  seccompProfile:
-    type: RuntimeDefault
-
-securityContext:
-  privileged: false
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
+  runAsUser: 0
+  runAsGroup: 0
 
 service:
   type: ClusterIP
