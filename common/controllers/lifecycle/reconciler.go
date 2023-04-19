@@ -115,7 +115,9 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 }
 
 func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachineContext) ctrl.Result {
-	compContext := spiCtx.Init("component").Operation(string(s.cr.Spec.Action))
+	actionName := s.cr.Spec.Action
+	compContext := spiCtx.Init("component").Operation(string(actionName))
+	nsn := k8s.GetNamespacedNameString(s.cr.ObjectMeta)
 
 	for s.tracker.state != stateEnd {
 		switch s.tracker.state {
@@ -152,6 +154,7 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = statePreAction
 
 		case statePreAction:
+			spiCtx.Log().Progressf("Doing pre-%s for %s", actionName, nsn)
 			res, err := s.action.PreAction(compContext)
 			if res2 := procResult(res, err); res2.Requeue {
 				return res2
@@ -176,6 +179,7 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = stateAction
 
 		case stateAction:
+			spiCtx.Log().Progressf("Doing %s for %s", actionName, nsn)
 			res, err := s.action.DoAction(compContext)
 			if res2 := procResult(res, err); res2.Requeue {
 				return res2
@@ -193,6 +197,7 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = statePostAction
 
 		case statePostAction:
+			spiCtx.Log().Progressf("Doing post-%s for %s", actionName, nsn)
 			res, err := s.action.PostAction(compContext)
 			if res2 := procResult(res, err); res2.Requeue {
 				return res2
@@ -214,6 +219,8 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
 				return controllerutils.NewRequeueWithShortDelay()
 			}
+			spiCtx.Log().Progressf("Successfully completed %s for %s", actionName, nsn)
+
 			s.tracker.state = stateEnd
 		}
 	}
