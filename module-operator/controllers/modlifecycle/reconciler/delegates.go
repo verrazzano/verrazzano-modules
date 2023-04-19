@@ -25,9 +25,6 @@ func New(mlc *modulesv1alpha1.ModuleLifecycle, sw client.StatusWriter) (delegate
 		// If an existing delegate does not exist, wrap it in a Helm adapter to just do helm stuff
 		return newHelmAdapter(mlc, sw), nil
 	}
-	if mlc.Spec.Installer.Istio != nil {
-		return nil, fmt.Errorf("no installer implemented for Istio installer")
-	}
 	return nil, fmt.Errorf("no installer specified for lifecycle instance %s/%s", mlc.Namespace, mlc.Name)
 }
 
