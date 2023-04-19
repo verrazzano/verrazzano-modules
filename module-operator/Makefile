@@ -17,6 +17,7 @@ GO ?= GO111MODULE=on GOPRIVATE=github.com/verrazzano go
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+WORKING_DIR := ${CURDIR}
 NAME:=verrazzano-module-operator
 REPO_NAME:=verrazzano-module-operator
 
@@ -167,14 +168,18 @@ endif
 BUILD_DEPLOY ?= build/deploy
 OPERATOR_YAML ?= ${BUILD_DEPLOY}/verrazzano-module-operator.yaml
 
+generate-operator-artifacts: export CHART_NAME=
 .PHONY: generate-operator-artifacts
 generate-operator-artifacts:
+	rm -rf ${BUILD_DEPLOY} \
 	mkdir -p ${BUILD_DEPLOY} ; \
 	env DOCKER_IMAGE_FULLNAME=${DOCKER_IMAGE_FULLNAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} \
+		CHART_NAME=${NAME} \
+		MODULE_ROOT=${WORKING_DIR} \
 		IMAGE_PULL_SECRETS=${IMAGE_PULL_SECRETS} \
 		BUILD_OUT=${BUILD_DEPLOY} \
 		OPERATOR_YAML=${OPERATOR_YAML} \
-		./tools/scripts/generate_operator_artifacts.sh
+		../tools/scripts/generate_operator_artifacts.sh
 
 # find or download controller-gen
 CONTROLLER_GEN_PATH := $(shell eval go env GOPATH)
