@@ -59,7 +59,7 @@ func (h *Component) Init(context spi.ComponentContext, HelmInfo *compspi.HelmInf
 	}
 
 	if len(HelmInfo.Repository.URI) == 0 {
-		downloadChart(context.Log, true)
+		downloadChart(context.Log(), true)
 	}
 
 	h.HelmInfo = HelmInfo
