@@ -14,7 +14,6 @@ import (
 
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
-	vzctrl "github.com/verrazzano/verrazzano-modules/module-operator/pkg/controller"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
@@ -123,14 +122,14 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 		switch s.tracker.state {
 		case stateInit:
 			res, err := s.action.Init(compContext, s.chartInfo)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := controllerutils.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = stateCheckActionNeeded
 
 		case stateCheckActionNeeded:
 			needed, res, err := s.action.IsActionNeeded(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := controllerutils.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			if needed {
@@ -156,14 +155,14 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 		case statePreAction:
 			spiCtx.Log().Progressf("Doing pre-%s for %s", actionName, nsn)
 			res, err := s.action.PreAction(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := controllerutils.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = statePreActionWaitDone
 
 		case statePreActionWaitDone:
 			done, res, err := s.action.IsPreActionDone(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := controllerutils.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			if !done {
@@ -181,14 +180,14 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 		case stateAction:
 			spiCtx.Log().Progressf("Doing %s for %s", actionName, nsn)
 			res, err := s.action.DoAction(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := controllerutils.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = stateActionWaitDone
 
 		case stateActionWaitDone:
 			done, res, err := s.action.IsActionDone(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := controllerutils.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			if !done {
@@ -199,14 +198,14 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 		case statePostAction:
 			spiCtx.Log().Progressf("Doing post-%s for %s", actionName, nsn)
 			res, err := s.action.PostAction(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := controllerutils.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = statePostActionWaitDone
 
 		case statePostActionWaitDone:
 			done, res, err := s.action.IsPostActionDone(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := controllerutils.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			if !done {
@@ -246,17 +245,4 @@ func (r *Reconciler) getAction(action moduleplatform.ActionType) compspi.Lifecyc
 		return r.comp.UpgradeAction
 	}
 	return nil
-}
-
-func procResult(res ctrl.Result, err error) ctrl.Result {
-	if vzctrl.ShouldRequeue(res) {
-		if res.RequeueAfter == 0 {
-			return controllerutils.NewRequeueWithShortDelay()
-		}
-		return res
-	}
-	if err != nil {
-		return controllerutils.NewRequeueWithShortDelay()
-	}
-	return res
 }
