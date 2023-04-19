@@ -6,7 +6,8 @@ package factory
 import (
 	calicoinstall "github.com/verrazzano/verrazzano-modules/calico-operator/lifecycle-actions/handlers/install"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/install"
+	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/update"
+	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/upgrade"
 
 	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/uninstall"
 )
@@ -18,7 +19,7 @@ func NewLifeCycleComponent() compspi.LifecycleComponent {
 	return compspi.LifecycleComponent{
 		InstallAction:   calicoinstall.NewComponent(),
 		UninstallAction: uninstall.NewComponent(),
-		UpdateAction:    install.NewComponent(),
-		UpgradeAction:   install.NewComponent(),
+		UpdateAction:    update.NewComponent(),
+		UpgradeAction:   upgrade.NewComponent(),
 	}
 }

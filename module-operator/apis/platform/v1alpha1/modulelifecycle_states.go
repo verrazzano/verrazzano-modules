@@ -25,6 +25,7 @@ const (
 
 	CondAlreadyInstalled   LifecycleCondition = "AlreadyInstalled"
 	CondAlreadyUninstalled LifecycleCondition = "AlreadyUninstalled"
+	CondAlreadyUpgraded    LifecycleCondition = "AlreadyUpgraded"
 	CondPreInstall         LifecycleCondition = "PreInstall"
 	CondInstallStarted     LifecycleCondition = "InstallStarted"
 	CondInstallComplete    LifecycleCondition = "InstallComplete"
