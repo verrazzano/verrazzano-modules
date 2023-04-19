@@ -174,9 +174,9 @@ pipeline {
                    when { not { buildingTag() } }
                    steps {
                        sh """
-                           echo "Not implemented"
-                           #cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-                           #make precommit
+                           echo "Run copyright check"
+                           cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                           make copyright-check
                            #make unit-test-coverage-ratcheting
                        """
                    }
