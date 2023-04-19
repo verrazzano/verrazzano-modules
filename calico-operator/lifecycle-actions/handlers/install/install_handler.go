@@ -18,7 +18,7 @@ func NewComponent() compspi.LifecycleActionHandler {
 	return &Component{}
 }
 
-// PreAction does installation pre-action
+// PreAction does installation pre-install
 func (h Component) PreAction(context spi.ComponentContext) (ctrl.Result, error) {
 
 	// Do some pre-install work
@@ -28,12 +28,12 @@ func (h Component) PreAction(context spi.ComponentContext) (ctrl.Result, error) 
 	return h.Component.PreAction(context)
 }
 
-// IsPreActionDone returns true if pre-action done
+// IsPreActionDone returns true if pre-install done
 func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
 
-	// Check if the pre-action is done
+	// Check if the calico pre-install is done
 	// TODO - do your calico specific stuff here
 
-	// Do the common post-install action
+	// Do the common method to check if pre-install is done
 	return h.Component.IsPreActionDone(context)
 }
