@@ -85,3 +85,15 @@ ifeq ($(CREATE_LATEST_TAG), "1")
 	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:latest);
 endif
 
+.PHONY: generate-operator-artifacts
+generate-operator-artifacts:
+	rm -rf ${BUILD_DEPLOY} \
+	mkdir -p ${BUILD_DEPLOY} ; \
+	env DOCKER_IMAGE_FULLNAME=${DOCKER_IMAGE_FULLNAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} \
+		CHART_NAME=${NAME} \
+		MODULE_ROOT=${WORKING_DIR} \
+		IMAGE_PULL_SECRETS=${IMAGE_PULL_SECRETS} \
+		BUILD_OUT=${BUILD_DEPLOY} \
+		OPERATOR_YAML=${OPERATOR_YAML} \
+		../tools/scripts/generate_operator_artifacts.sh
+

@@ -37,16 +37,3 @@ endif
 .PHONY: check-repo-clean
 check-repo-clean: generate manifests
 	../tools/scripts/check_if_clean_after_generate.sh
-
-.PHONY: generate-operator-artifacts
-generate-operator-artifacts:
-	rm -rf ${BUILD_DEPLOY} \
-	mkdir -p ${BUILD_DEPLOY} ; \
-	env DOCKER_IMAGE_FULLNAME=${DOCKER_IMAGE_FULLNAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} \
-		CHART_NAME=${NAME} \
-		MODULE_ROOT=${WORKING_DIR} \
-		IMAGE_PULL_SECRETS=${IMAGE_PULL_SECRETS} \
-		BUILD_OUT=${BUILD_DEPLOY} \
-		OPERATOR_YAML=${OPERATOR_YAML} \
-		../tools/scripts/generate_operator_artifacts.sh
-

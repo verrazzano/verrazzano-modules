@@ -1,33 +1,29 @@
 # Build the manager binary
-FROM golang:1.19 as builder
-ARG TARGETOS
-ARG TARGETARCH
+FROM ghcr.io/oracle/oraclelinux:8-slim AS build_base
 
-WORKDIR /workspace
-# Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-RUN go mod download
+# Need to use specific WORKDIR to match source packages
+WORKDIR /root/go/src/github.com/verrazzano/verrazzano-modules/helm-operator
+COPY . .
 
-# Copy the go source
-COPY main.go main.go
-COPY apis/ apis/
-COPY controllers/ controllers/
+COPY bin/linux_amd64/verrazzano-helm-operator /usr/local/bin/verrazzano-helm-operator
 
-# Build
-# the GOARCH has not a default value to allow the binary be built according to the host where the command
-# was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
-# the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
-# by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
+RUN chmod 500 /usr/local/bin/verrazzano-helm-operator
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /
-COPY --from=builder /workspace/manager .
-USER 65532:65532
+# Create the verrazzano-helm-operator image
+FROM ghcr.io/oracle/oraclelinux:8-slim AS final
 
-ENTRYPOINT ["/manager"]
+RUN groupadd -r verrazzano \
+    && useradd --no-log-init -r -m -d /verrazzano -g verrazzano -u 1000 verrazzano \
+    && mkdir /home/verrazzano \
+    && chown -R 1000:verrazzano /home/verrazzano
+
+COPY --from=build_base --chown=verrazzano:verrazzano /usr/local/bin/verrazzano-helm-operator /usr/local/bin/verrazzano-helm-operator
+
+# Copy the operator binary
+WORKDIR /home/verrazzano
+COPY --from=build_base --chown=verrazzano:verrazzano /root/go/src/github.com/verrazzano/verrazzano-modules/helm-operator/manifests/config/scripts/run.sh .
+#COPY --from=build_base /root/go/src/github.com/verrazzano/verrazzano-modules/THIRD_PARTY_LICENSES.txt /licenses/
+
+USER 1000
+
+ENTRYPOINT ["/home/verrazzano/run.sh"]
