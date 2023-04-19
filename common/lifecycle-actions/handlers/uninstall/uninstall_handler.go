@@ -1,21 +1,16 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package install
+package uninstall
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/pkg/controllerutils"
-	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/action_spi"
-	"github.com/verrazzano/verrazzano-modules/common/helm_component/helm"
-
-	"helm.sh/helm/v3/pkg/release"
+	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 )
@@ -26,14 +21,7 @@ type Component struct {
 	chartDir string
 }
 
-// upgradeFuncSig is a function needed for unit test override
-type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
-
-var (
-	_ compspi.LifecycleActionHandler = &Component{}
-
-	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
-)
+var _ compspi.LifecycleActionHandler = &Component{}
 
 func NewComponent() compspi.LifecycleActionHandler {
 	return &Component{}
@@ -42,10 +30,10 @@ func NewComponent() compspi.LifecycleActionHandler {
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
 func (h *Component) GetStatusConditions() compspi.StatusConditions {
 	return compspi.StatusConditions{
-		NotNeeded: moduleplatform.CondAlreadyInstalled,
-		PreAction: moduleplatform.CondPreInstall,
-		DoAction:  moduleplatform.CondInstallStarted,
-		Completed: moduleplatform.CondInstallComplete,
+		NotNeeded: moduleplatform.CondAlreadyUninstalled,
+		PreAction: moduleplatform.CondPreUninstall,
+		DoAction:  moduleplatform.CondUninstallStarted,
+		Completed: moduleplatform.CondUninstallComplete,
 	}
 }
 
@@ -63,14 +51,14 @@ func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo) (ct
 	return ctrl.Result{}, nil
 }
 
-// IsActionNeeded returns true if install is needed
+// IsActionNeeded returns true if uninstall is needed
 func (h Component) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
 	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
 	if err != nil {
 		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
 		return true, ctrl.Result{}, err
 	}
-	return !installed, ctrl.Result{}, err
+	return installed, ctrl.Result{}, err
 }
 
 // PreAction does installation pre-action
@@ -85,24 +73,16 @@ func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Res
 
 // DoAction installs the component using Helm
 func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
-	// Perform a Helm install using the helm upgrade --install command
-	helmRelease := h.HelmInfo.HelmRelease
-	helmOverrides, err := helm.ConvertToHelmOverrides(context.Log(), context.Client(), helmRelease.Name, helmRelease.Namespace, helmRelease.Overrides)
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
 	if err != nil {
+		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
 		return ctrl.Result{}, err
 	}
-	var opts = &helm.HelmReleaseOpts{
-		RepoURL:      helmRelease.Repository.URI,
-		ReleaseName:  h.ReleaseName,
-		Namespace:    h.ChartNamespace,
-		ChartPath:    helmRelease.ChartInfo.Path,
-		ChartVersion: helmRelease.ChartInfo.Version,
-		Overrides:    helmOverrides,
-		// TBD -- pull from a secret ref?
-		//Username:     "",
-		//Password:     "",
+	if !installed {
+		return ctrl.Result{}, err
 	}
-	_, err = upgradeFunc(context.Log(), opts, h.WaitForInstall, context.IsDryRun())
+
+	err = vzhelm.Uninstall(context.Log(), h.ReleaseName, h.ChartNamespace, context.IsDryRun())
 	return ctrl.Result{}, err
 }
 
@@ -118,16 +98,8 @@ func (h Component) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result
 		context.Log().ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
 		return false, ctrl.Result{}, err
 	}
-	if !deployed {
-		return false, controllerutils.NewRequeueWithShortDelay(), nil
-	}
-	// check if helm release at the correct version
-	if !h.releaseVersionMatches(context.Log()) {
-		return false, controllerutils.NewRequeueWithShortDelay(), nil
-	}
 
-	// TODO check if release is ready (check deployments)
-	return true, ctrl.Result{}, err
+	return !deployed, ctrl.Result{}, nil
 }
 
 // PostAction does installation pre-action

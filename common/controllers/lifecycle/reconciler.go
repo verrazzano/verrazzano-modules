@@ -5,8 +5,8 @@ package lifecycle
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
-	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/action_spi"
-	"github.com/verrazzano/verrazzano-modules/common/pkg/controllerutils"
+	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -14,7 +14,6 @@ import (
 
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
-	vzctrl "github.com/verrazzano/verrazzano-modules/module-operator/pkg/controller"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
@@ -85,12 +84,12 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 
 	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
 	if err != nil {
-		return controllerutils.NewRequeueWithShortDelay(), err
+		return util.NewRequeueWithShortDelay(), err
 	}
 
 	if cr.Generation == cr.Status.ObservedGeneration {
 		spictx.Log.Debugf("Skipping reconcile for %v, observed generation has not change", nsn)
-		return controllerutils.NewRequeueWithShortDelay(), err
+		return util.NewRequeueWithShortDelay(), err
 	}
 
 	helmInfo := loadHelmInfo(cr)
@@ -123,14 +122,14 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 		switch s.tracker.state {
 		case stateInit:
 			res, err := s.action.Init(compContext, s.chartInfo)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = stateCheckActionNeeded
 
 		case stateCheckActionNeeded:
 			needed, res, err := s.action.IsActionNeeded(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			if needed {
@@ -142,82 +141,82 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 		case stateActionNotNeededUpdate:
 			cond := s.action.GetStatusConditions().NotNeeded
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return controllerutils.NewRequeueWithShortDelay()
+				return util.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateEnd
 
 		case stateStartPreActionUpdate:
 			cond := s.action.GetStatusConditions().PreAction
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return controllerutils.NewRequeueWithShortDelay()
+				return util.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = statePreAction
 
 		case statePreAction:
 			spiCtx.Log().Progressf("Doing pre-%s for %s", actionName, nsn)
 			res, err := s.action.PreAction(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = statePreActionWaitDone
 
 		case statePreActionWaitDone:
 			done, res, err := s.action.IsPreActionDone(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			if !done {
-				return controllerutils.NewRequeueWithShortDelay()
+				return util.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateStartActionUpdate
 
 		case stateStartActionUpdate:
 			cond := s.action.GetStatusConditions().DoAction
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return controllerutils.NewRequeueWithShortDelay()
+				return util.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateAction
 
 		case stateAction:
 			spiCtx.Log().Progressf("Doing %s for %s", actionName, nsn)
 			res, err := s.action.DoAction(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = stateActionWaitDone
 
 		case stateActionWaitDone:
 			done, res, err := s.action.IsActionDone(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			if !done {
-				return controllerutils.NewRequeueWithShortDelay()
+				return util.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = statePostAction
 
 		case statePostAction:
 			spiCtx.Log().Progressf("Doing post-%s for %s", actionName, nsn)
 			res, err := s.action.PostAction(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = statePostActionWaitDone
 
 		case statePostActionWaitDone:
 			done, res, err := s.action.IsPostActionDone(compContext)
-			if res2 := procResult(res, err); res2.Requeue {
+			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			if !done {
-				return controllerutils.NewRequeueWithShortDelay()
+				return util.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateCompleteUpdate
 
 		case stateCompleteUpdate:
 			cond := s.action.GetStatusConditions().Completed
 			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-				return controllerutils.NewRequeueWithShortDelay()
+				return util.NewRequeueWithShortDelay()
 			}
 			spiCtx.Log().Progressf("Successfully completed %s for %s", actionName, nsn)
 
@@ -246,17 +245,4 @@ func (r *Reconciler) getAction(action moduleplatform.ActionType) compspi.Lifecyc
 		return r.comp.UpgradeAction
 	}
 	return nil
-}
-
-func procResult(res ctrl.Result, err error) ctrl.Result {
-	if vzctrl.ShouldRequeue(res) {
-		if res.RequeueAfter == 0 {
-			return controllerutils.NewRequeueWithShortDelay()
-		}
-		return res
-	}
-	if err != nil {
-		return controllerutils.NewRequeueWithShortDelay()
-	}
-	return res
 }
