@@ -78,7 +78,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
 
 	// This is an imperative command, don't rerun it
-	if cr.Status.State == moduleplatform.StateCompleted || cr.Status.State == moduleplatform.StateIgnored {
+	if cr.Status.State == moduleplatform.StateCompleted || cr.Status.State == moduleplatform.StateNotNeeded {
 		spictx.Log.Oncef("Resource %v has already been processed, nothing to do", nsn)
 		return ctrl.Result{}, nil
 	}
