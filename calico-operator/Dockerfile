@@ -1,16 +1,16 @@
 # Build the manager binary
-FROM ghcr.io/oracle/oraclelinux:8-slim AS build_base
+FROM ghcr.io/verrazzano/verrazzano-base:v1.0.0-20230327155846-4653b27 AS build_base
 
-# Need to use specific WORKDIR to match source packages
 WORKDIR /root/go/src/github.com/verrazzano/verrazzano-modules/calico-operator
 COPY . .
 
 COPY bin/linux_amd64/verrazzano-calico-operator /usr/local/bin/verrazzano-calico-operator
 
+# Copy the operator binary
 RUN chmod 500 /usr/local/bin/verrazzano-calico-operator
 
 # Create the verrazzano-calico-operator image
-FROM ghcr.io/oracle/oraclelinux:8-slim AS final
+FROM ghcr.io/verrazzano/verrazzano-base:v1.0.0-20230327155846-4653b27 AS final
 
 RUN groupadd -r verrazzano \
     && useradd --no-log-init -r -m -d /verrazzano -g verrazzano -u 1000 verrazzano \

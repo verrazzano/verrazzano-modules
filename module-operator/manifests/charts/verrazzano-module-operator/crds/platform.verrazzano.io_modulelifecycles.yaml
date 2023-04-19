@@ -45,10 +45,11 @@ spec:
           spec:
             properties:
               action:
+                description: Action Defines lifecycle action to perform
                 type: string
               installer:
-                description: ModuleInstaller Defines the installer information for
-                  a module; only one of the fields can be set
+                description: Installer Defines the installer information required
+                  to perform the lifecycle operation
                 properties:
                   helmRelease:
                     properties:
@@ -132,9 +133,11 @@ spec:
                     required:
                     - name
                     type: object
-                  istio:
-                    type: object
                 type: object
+              lifecycleClass:
+                description: LifecycleClassType Defines the lifecycle class required
+                  to process the ModuleLifecycle instance
+                type: string
             required:
             - action
             - installer
