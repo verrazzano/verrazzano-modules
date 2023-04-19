@@ -6,7 +6,7 @@ package k8s
 import (
 	"fmt"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func GetNamespacedName(meta v1.ObjectMeta) types.NamespacedName {
@@ -17,5 +17,5 @@ func GetNamespacedName(meta v1.ObjectMeta) types.NamespacedName {
 }
 
 func GetNamespacedNameString(meta v1.ObjectMeta) string {
-	return fmt.Sprintf("%s/%s", GetNamespacedName(meta))
+	return fmt.Sprintf("%s/%s", meta.Namespace, meta.Name)
 }

@@ -5,15 +5,14 @@ package lifecycle
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
-	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/spi"
-	"github.com/verrazzano/verrazzano-modules/common/k8s"
+	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/action_spi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/controllerutils"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"time"
 
-	modplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
 	vzctrl "github.com/verrazzano/verrazzano-modules/module-operator/pkg/controller"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -25,6 +24,12 @@ type componentState string
 const (
 	// stateInit is the state when a component is initialized
 	stateInit componentState = "componentStateInit"
+
+	// stateCheckActionNeeded is the state to check if action is needed
+	stateCheckActionNeeded componentState = "stateCheckActionNeeded"
+
+	// stateActionNotNeededUpdate is the state when the status is updated to not needed
+	stateActionNotNeededUpdate componentState = "stateActionNotNeededUpdate"
 
 	// stateStartPreActionUpdate is the state when the status is updated to start pre action
 	stateStartPreActionUpdate componentState = "stateStartPreActionUpdate"
@@ -58,7 +63,7 @@ const (
 )
 
 type stateMachineContext struct {
-	cr        *modplatform.ModuleLifecycle
+	cr        *moduleplatform.ModuleLifecycle
 	tracker   *stateTracker
 	chartInfo *compspi.HelmInfo
 	action    compspi.LifecycleActionHandler
@@ -66,20 +71,26 @@ type stateMachineContext struct {
 
 // Reconcile updates the Certificate
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
-	cr := &modplatform.ModuleLifecycle{}
+	cr := &moduleplatform.ModuleLifecycle{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
+	}
+	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
+
+	// This is an imperative command, don't rerun it
+	if cr.Status.State == moduleplatform.StateCompleted || cr.Status.State == moduleplatform.StateNotNeeded {
+		spictx.Log.Oncef("Resource %v has already been processed, nothing to do", nsn)
+		return ctrl.Result{}, nil
 	}
 
 	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
 	if err != nil {
-		return newRequeueWithDelay(), err
+		return controllerutils.NewRequeueWithShortDelay(), err
 	}
 
-	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
 	if cr.Generation == cr.Status.ObservedGeneration {
 		spictx.Log.Debugf("Skipping reconcile for %v, observed generation has not change", nsn)
-		return newRequeueWithDelay(), err
+		return controllerutils.NewRequeueWithShortDelay(), err
 	}
 
 	helmInfo := loadHelmInfo(cr)
@@ -99,143 +110,153 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 		action:    action,
 	}
 
-	res, err := r.doStateMachine(ctx, smc)
-	if err != nil {
-		return newRequeueWithDelay(), err
-	}
-	if vzctrl.ShouldRequeue(res) {
-		return res, nil
-	}
-	return ctrl.Result{}, nil
+	res := r.doStateMachine(ctx, smc)
+	return res, nil
 }
 
-func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachineContext) (ctrl.Result, error) {
-	compContext := spiCtx.Init("component").Operation(string(s.cr.Spec.Action))
+func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachineContext) ctrl.Result {
+	actionName := s.cr.Spec.Action
+	compContext := spiCtx.Init("component").Operation(string(actionName))
+	nsn := k8s.GetNamespacedNameString(s.cr.ObjectMeta)
 
 	for s.tracker.state != stateEnd {
 		switch s.tracker.state {
 		case stateInit:
 			res, err := s.action.Init(compContext, s.chartInfo)
-			if err != nil {
-				return ctrl.Result{}, err
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			s.tracker.state = stateCheckActionNeeded
+
+		case stateCheckActionNeeded:
+			needed, res, err := s.action.IsActionNeeded(compContext)
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
-			s.tracker.state = stateStartPreActionUpdate
+			if needed {
+				s.tracker.state = stateStartPreActionUpdate
+			} else {
+				s.tracker.state = stateActionNotNeededUpdate
+			}
+
+		case stateActionNotNeededUpdate:
+			cond := s.action.GetStatusConditions().NotNeeded
+			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
+				return controllerutils.NewRequeueWithShortDelay()
+			}
+			s.tracker.state = stateEnd
 
 		case stateStartPreActionUpdate:
-			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondPreInstall), modulesv1alpha1.CondPreInstall); err != nil {
-				return ctrl.Result{}, err
+			cond := s.action.GetStatusConditions().PreAction
+			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = statePreAction
 
 		case statePreAction:
+			spiCtx.Log().Progressf("Doing pre-%s for %s", actionName, nsn)
 			res, err := s.action.PreAction(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			s.tracker.state = statePreActionWaitDone
 
 		case statePreActionWaitDone:
 			done, res, err := s.action.IsPreActionDone(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			if !done {
-				return newRequeueWithDelay(), nil
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateStartActionUpdate
 
 		case stateStartActionUpdate:
-			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondInstallStarted), modulesv1alpha1.CondInstallStarted); err != nil {
-				return ctrl.Result{}, err
+			cond := s.action.GetStatusConditions().DoAction
+			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateAction
 
 		case stateAction:
+			spiCtx.Log().Progressf("Doing %s for %s", actionName, nsn)
 			res, err := s.action.DoAction(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			s.tracker.state = stateActionWaitDone
 
 		case stateActionWaitDone:
 			done, res, err := s.action.IsActionDone(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			if !done {
-				return newRequeueWithDelay(), nil
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = statePostAction
 
 		case statePostAction:
+			spiCtx.Log().Progressf("Doing post-%s for %s", actionName, nsn)
 			res, err := s.action.PostAction(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			s.tracker.state = statePostActionWaitDone
 
 		case statePostActionWaitDone:
 			done, res, err := s.action.IsPostActionDone(compContext)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
+			if res2 := procResult(res, err); res2.Requeue {
+				return res2
 			}
 			if !done {
-				return newRequeueWithDelay(), nil
+				return controllerutils.NewRequeueWithShortDelay()
 			}
 			s.tracker.state = stateCompleteUpdate
 
 		case stateCompleteUpdate:
-			if err := UpdateStatus(r.Client, s.cr, string(modulesv1alpha1.CondInstallComplete), modulesv1alpha1.CondInstallComplete); err != nil {
-				return ctrl.Result{}, err
+			cond := s.action.GetStatusConditions().Completed
+			if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
+				return controllerutils.NewRequeueWithShortDelay()
 			}
+			spiCtx.Log().Progressf("Successfully completed %s for %s", actionName, nsn)
+
 			s.tracker.state = stateEnd
 		}
 	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{}
 }
 
-func newRequeueWithDelay() ctrl.Result {
-	return vzctrl.NewRequeueWithDelay(3, 10, time.Second)
-}
-
-func loadHelmInfo(cr *modplatform.ModuleLifecycle) compspi.HelmInfo {
+func loadHelmInfo(cr *moduleplatform.ModuleLifecycle) compspi.HelmInfo {
 	helmInfo := compspi.HelmInfo{
 		HelmRelease: cr.Spec.Installer.HelmRelease,
 	}
 	return helmInfo
 }
 
-func (r *Reconciler) getAction(action modulesv1alpha1.ActionType) compspi.LifecycleActionHandler {
+func (r *Reconciler) getAction(action moduleplatform.ActionType) compspi.LifecycleActionHandler {
 	switch action {
-	case modulesv1alpha1.InstallAction:
+	case moduleplatform.InstallAction:
 		return r.comp.InstallAction
-	case modulesv1alpha1.UninstallAction:
+	case moduleplatform.UninstallAction:
 		return r.comp.UninstallAction
-	case modulesv1alpha1.UpdateAction:
+	case moduleplatform.UpdateAction:
 		return r.comp.UpdateAction
-	case modulesv1alpha1.UpgradeAction:
+	case moduleplatform.UpgradeAction:
 		return r.comp.UpgradeAction
 	}
 	return nil
+}
+
+func procResult(res ctrl.Result, err error) ctrl.Result {
+	if vzctrl.ShouldRequeue(res) {
+		if res.RequeueAfter == 0 {
+			return controllerutils.NewRequeueWithShortDelay()
+		}
+		return res
+	}
+	if err != nil {
+		return controllerutils.NewRequeueWithShortDelay()
+	}
+	return res
 }

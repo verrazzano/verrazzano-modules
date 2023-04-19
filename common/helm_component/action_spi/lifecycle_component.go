@@ -1,7 +1,7 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package spi
+package action_spi
 
 import (
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -13,6 +13,13 @@ type HelmInfo struct {
 	*modulesv1alpha1.HelmRelease
 }
 
+type StatusConditions struct {
+	NotNeeded modulesv1alpha1.LifecycleCondition
+	PreAction modulesv1alpha1.LifecycleCondition
+	DoAction  modulesv1alpha1.LifecycleCondition
+	Completed modulesv1alpha1.LifecycleCondition
+}
+
 type LifecycleComponent struct {
 	InstallAction   LifecycleActionHandler
 	UninstallAction LifecycleActionHandler
@@ -21,8 +28,14 @@ type LifecycleComponent struct {
 }
 
 type LifecycleActionHandler interface {
-	// Init initializes the component helm information
+	// GetStatusConditions returns the CR status conditions for various lifecycle stages
+	GetStatusConditions() StatusConditions
+
+	// Init initializes the component Hekn information
 	Init(context vzspi.ComponentContext, chartInfo *HelmInfo) (ctrl.Result, error)
+
+	// IsActionNeeded returns true if action is needed
+	IsActionNeeded(context vzspi.ComponentContext) (bool, ctrl.Result, error)
 
 	// PreAction does lifecycle pre-Action
 	PreAction(context vzspi.ComponentContext) (ctrl.Result, error)

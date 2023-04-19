@@ -10,10 +10,12 @@ const (
 	StatePreinstall   ModuleLifecycleState = "PreInstalling"
 	StateInstalling   ModuleLifecycleState = "Installing"
 	StateUninstalling ModuleLifecycleState = "Uninstalling"
-	StateReady        ModuleLifecycleState = "Ready"
 	StatePreUpgrade   ModuleLifecycleState = "PreUpgrading"
 	StateUpgrading    ModuleLifecycleState = "Upgrading"
 	StateFailed       ModuleLifecycleState = "Failed"
+	StateNotNeeded    ModuleLifecycleState = "NotNeeded"
+	StateReady        ModuleLifecycleState = "Ready"
+	StateCompleted    ModuleLifecycleState = "Completed"
 )
 
 type LifecycleCondition string
@@ -21,14 +23,18 @@ type LifecycleCondition string
 const (
 	ConditionArrayLimit = 5
 
-	CondPreInstall      LifecycleCondition = "PreInstall"
-	CondInstallStarted  LifecycleCondition = "InstallStarted"
-	CondInstallComplete LifecycleCondition = "InstallComplete"
-	CondUninstall       LifecycleCondition = "Uninstall"
-	CondPreUpgrade      LifecycleCondition = "PreUpgrade"
-	CondUpgradeStarted  LifecycleCondition = "UpgradeStarted"
-	CondUpgradeComplete LifecycleCondition = "UpgradeComplete"
-	CondFailed          LifecycleCondition = "Failed"
+	CondAlreadyInstalled   LifecycleCondition = "AlreadyInstalled"
+	CondAlreadyUninstalled LifecycleCondition = "AlreadyUninstalled"
+	CondPreInstall         LifecycleCondition = "PreInstall"
+	CondInstallStarted     LifecycleCondition = "InstallStarted"
+	CondInstallComplete    LifecycleCondition = "InstallComplete"
+	CondPreUninstall       LifecycleCondition = "PreUninstall"
+	CondUninstallStarted   LifecycleCondition = "UninstallStarted"
+	CondUninstallComplete  LifecycleCondition = "UninstallComplete"
+	CondPreUpgrade         LifecycleCondition = "PreUpgrade"
+	CondUpgradeStarted     LifecycleCondition = "UpgradeStarted"
+	CondUpgradeComplete    LifecycleCondition = "UpgradeComplete"
+	CondFailed             LifecycleCondition = "Failed"
 )
 
 func (m *ModuleLifecycle) SetState(state ModuleLifecycleState) {
@@ -41,15 +47,25 @@ func LifecycleState(condition LifecycleCondition) ModuleLifecycleState {
 		return StatePreinstall
 	case CondInstallStarted:
 		return StateInstalling
-	case CondUninstall:
+	case CondInstallComplete:
+		return StateCompleted
+	case CondUninstallStarted:
 		return StateUninstalling
+	case CondUninstallComplete:
+		return StateCompleted
 	case CondPreUpgrade:
 		return StatePreUpgrade
 	case CondUpgradeStarted:
 		return StateUpgrading
+	case CondUpgradeComplete:
+		return StateCompleted
+	case CondAlreadyInstalled:
+		return StateNotNeeded
+	case CondAlreadyUninstalled:
+		return StateNotNeeded
 	case CondFailed:
 		return StateFailed
-	default: // CondUpgradeComplete, CondInstallComplete
+	default:
 		return StateReady
 	}
 }
