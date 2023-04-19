@@ -7,7 +7,8 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/basecontroller"
 	spi "github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
-	vzplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -25,12 +26,12 @@ var _ spi.Reconciler = Reconciler{}
 var controller Reconciler
 
 // InitController start the  controller
-func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent) error {
+func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent, class moduleplatform.LifecycleClassType) error {
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
 		Reconciler: &controller,
 	}
-	br, err := basecontroller.InitBaseController(mgr, config)
+	br, err := basecontroller.InitBaseController(mgr, config, class)
 	if err != nil {
 		return err
 	}
@@ -43,5 +44,5 @@ func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent) er
 
 // GetReconcileObject returns the kind of object being reconciled
 func (r Reconciler) GetReconcileObject() client.Object {
-	return &vzplatform.ModuleLifecycle{}
+	return &moduleplatform.ModuleLifecycle{}
 }
