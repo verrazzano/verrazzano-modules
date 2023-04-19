@@ -5,7 +5,7 @@ package lifecycle
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
-	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/action_spi"
+	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

@@ -4,7 +4,7 @@
 package install
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/helm_component/helm"
+	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/helm"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 )
 

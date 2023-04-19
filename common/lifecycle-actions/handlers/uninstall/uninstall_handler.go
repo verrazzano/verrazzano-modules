@@ -4,7 +4,7 @@
 package uninstall
 
 import (
-	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/action_spi"
+	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 

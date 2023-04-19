@@ -6,7 +6,7 @@ package lifecycle
 import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/basecontroller"
 	spi "github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
-	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/action_spi"
+	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	vzplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

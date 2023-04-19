@@ -4,9 +4,9 @@
 package factory
 
 import (
-	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/action_spi"
-	"github.com/verrazzano/verrazzano-modules/common/helm_component/handlers/install"
-	"github.com/verrazzano/verrazzano-modules/common/helm_component/handlers/uninstall"
+	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/install"
+	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/uninstall"
 )
 
 func NewLifeCycleComponent() compspi.LifecycleComponent {
