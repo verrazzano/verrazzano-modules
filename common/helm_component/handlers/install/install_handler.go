@@ -4,10 +4,8 @@
 package install
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/pkg/controllerutils"
 	compspi "github.com/verrazzano/verrazzano-modules/common/helm_component/action_spi"
 	"github.com/verrazzano/verrazzano-modules/common/helm_component/helm"
-
 	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -119,11 +117,11 @@ func (h Component) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result
 		return false, ctrl.Result{}, err
 	}
 	if !deployed {
-		return false, controllerutils.NewRequeueWithShortDelay(), nil
+		return false, controller.NewRequeueWithShortDelay(), nil
 	}
 	// check if helm release at the correct version
 	if !h.releaseVersionMatches(context.Log()) {
-		return false, controllerutils.NewRequeueWithShortDelay(), nil
+		return false, controller.NewRequeueWithShortDelay(), nil
 	}
 
 	// TODO check if release is ready (check deployments)
