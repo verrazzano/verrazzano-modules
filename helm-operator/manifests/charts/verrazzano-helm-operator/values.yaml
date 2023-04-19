@@ -45,7 +45,7 @@ service:
 
 resources:
    requests:
-     memory: 128Mi
+     memory: 1Gi
 
 nodeSelector: {}
 
