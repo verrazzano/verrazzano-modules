@@ -87,6 +87,10 @@ type ModuleLifecycleCondition struct {
 // LifecycleClassType Identifies the lifecycle class used to manage a subset of Module types
 type LifecycleClassType string
 
+const (
+	HelmLifecycleClass = "helm"
+)
+
 // ActionType defines the type of action to be performed in a ModuleLifecycle instance
 type ActionType string
 
