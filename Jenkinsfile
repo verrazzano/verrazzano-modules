@@ -174,9 +174,9 @@ pipeline {
                    when { not { buildingTag() } }
                    steps {
                        sh """
-                           echo "Run copyright check"
+                           echo "Run precommit check"
                            cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-                           make procommit
+                           make precommit
                        """
                    }
 //                    post {
