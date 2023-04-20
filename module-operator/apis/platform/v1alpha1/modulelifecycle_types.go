@@ -88,7 +88,11 @@ type ModuleLifecycleCondition struct {
 type LifecycleClassType string
 
 const (
-	HelmLifecycleClass = "helm"
+	// HelmLifecycleClass defines the class name used by the Helm operator
+	HelmLifecycleClass LifecycleClassType = "helm"
+
+	// CalicoLifecycleClass defines the class name used by the Calico operator
+	CalicoLifecycleClass LifecycleClassType = "calico"
 )
 
 // ActionType defines the type of action to be performed in a ModuleLifecycle instance
