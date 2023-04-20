@@ -119,7 +119,7 @@ func (r *Reconciler) handlesEvent(object client.Object) bool {
 		zap.S().Errorf("Failed to get ModuleLifecycle %s", objectkey)
 		return false
 	}
-	handlesEvent := mlc.Spec.LifecycleClassNmae == POCLifecycleClass
+	handlesEvent := mlc.Spec.LifecycleClassName == POCLifecycleClass
 	zap.S().Debugf("POC Helm controller event filter result for %s: %v", objectkey, handlesEvent)
 	return handlesEvent
 }

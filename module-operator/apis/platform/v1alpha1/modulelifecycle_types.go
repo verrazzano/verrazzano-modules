@@ -34,8 +34,8 @@ type ModuleLifecycleList struct {
 }
 
 type ModuleLifecycleSpec struct {
-	// LifecycleClassType Defines the lifecycle class required to process the ModuleLifecycle instance
-	LifecycleClassNmae LifecycleClassType `json:"lifecycleClassName,omitempty"`
+	// LifecycleClassName defines the lifecycle class name required to process the ModuleLifecycle instance
+	LifecycleClassName LifecycleClassType `json:"lifecycleClassName,omitempty"`
 	// Action Defines lifecycle action to perform
 	Action ActionType `json:"action"`
 	// Installer Defines the installer information required to perform the lifecycle operation
