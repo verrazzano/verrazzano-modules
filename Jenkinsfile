@@ -176,8 +176,7 @@ pipeline {
                        sh """
                            echo "Run copyright check"
                            cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-                           make copyright-check
-                           #make unit-test-coverage-ratcheting
+                           make procommit
                        """
                    }
 //                    post {

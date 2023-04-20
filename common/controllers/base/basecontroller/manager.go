@@ -37,7 +37,7 @@ type Reconciler struct {
 
 	// watcherMap is needed to keep track of which CRs have been initialized
 	// key is the NSN of the Gateway
-	watcherMap map[string][]watcher.WatchContext
+	watcherMap map[string][]*watcher.WatchContext
 }
 
 // InitBaseController inits the base controller
@@ -46,7 +46,7 @@ func InitBaseController(mgr controllerruntime.Manager, controllerConfig Controll
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
 		ControllerConfig: controllerConfig,
-		watcherMap:       make(map[string][]watcher.WatchContext),
+		watcherMap:       make(map[string][]*watcher.WatchContext),
 		LifecycleClass:   class,
 	}
 

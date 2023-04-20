@@ -17,7 +17,6 @@ type stateTracker struct {
 
 // componentTrackerContext has the component context stateTracker
 type componentTrackerContext struct {
-	actionState componentState
 }
 
 // trackerMap has a map of trackers with key from VZ name, namespace, and UID
@@ -42,13 +41,4 @@ func getTracker(cr metav1.ObjectMeta, initialState componentState) *stateTracker
 		trackerMap[key] = vuc
 	}
 	return vuc
-}
-
-// deleteTracker deletes the stateTracker for the Verrazzano resource
-func deleteTracker(cr metav1.ObjectMeta) {
-	key := getTrackerKey(cr)
-	_, ok := trackerMap[key]
-	if ok {
-		delete(trackerMap, key)
-	}
 }

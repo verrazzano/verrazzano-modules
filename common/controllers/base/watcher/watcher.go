@@ -107,7 +107,7 @@ func (w *WatchContext) GetTouchedNames() []*types.NamespacedName {
 	if len(w.touchedResources) > 0 {
 		w.mutex.Lock()
 		defer w.mutex.Unlock()
-		for i, _ := range w.touchedResources {
+		for i := range w.touchedResources {
 			names = append(names, w.touchedResources[i])
 		}
 	}
