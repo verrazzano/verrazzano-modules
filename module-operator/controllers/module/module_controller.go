@@ -160,7 +160,7 @@ func (r *Reconciler) createLifecycleResource(sourceName string, sourceURI string
 			moduleInstaller.ObjectMeta.Labels = make(map[string]string)
 		}
 		moduleInstaller.Spec = modulesv1alpha1.ModuleLifecycleSpec{
-			LifecycleClass: modlifecycle.POCLifecycleClass,
+			LifecycleClassNmae: modlifecycle.POCLifecycleClass,
 			Installer: modulesv1alpha1.ModuleInstaller{
 				HelmRelease: &modulesv1alpha1.HelmRelease{
 					Name:      chartName, // REVIEW: should this be associated with the Module name?
