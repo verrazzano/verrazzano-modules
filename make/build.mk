@@ -62,12 +62,14 @@ run: ## Run a controller from your host.
 .PHONY: docker-build
 docker-build: go-build-linux docker-build-common
 
+docker-build-common: BASE_IMAGE ?= ghcr.io/verrazzano/verrazzano-base:v1.0.0-20230327155846-4653b27@sha256:e82f7e630719a9f5a7309c41773385b273ec749f0e1ded96baa1a3f7a7e576e0
 .PHONY: docker-build-common
 docker-build-common:
 	@echo Building ${NAME} image ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
 	# the TPL file needs to be copied into this dir so it is in the docker build context
 	#cp ../THIRD_PARTY_LICENSES.txt .
 	docker build --pull -f Dockerfile \
+		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
 
 .PHONY: docker-push

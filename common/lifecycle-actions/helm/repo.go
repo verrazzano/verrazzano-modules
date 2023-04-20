@@ -31,7 +31,6 @@ type HelmReleaseOpts struct {
 	Password string
 }
 
-
 // GetReleaseChartVersion extracts the chart version from a deployed helm release
 func GetReleaseChartVersion(releaseName string, namespace string) (string, error) {
 	releases, err := helm.GetReleases(namespace)
