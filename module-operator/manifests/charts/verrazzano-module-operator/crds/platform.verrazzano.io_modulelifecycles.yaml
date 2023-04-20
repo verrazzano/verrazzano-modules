@@ -134,8 +134,8 @@ spec:
                     - name
                     type: object
                 type: object
-              lifecycleClass:
-                description: LifecycleClassType Defines the lifecycle class required
+              lifecycleClassName:
+                description: LifecycleClassName defines the lifecycle class name required
                   to process the ModuleLifecycle instance
                 type: string
             required:
