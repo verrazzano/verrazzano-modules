@@ -6,6 +6,8 @@ package modlifecycle
 import (
 	"context"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
 
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -29,9 +31,12 @@ type Reconciler struct {
 	Controller controller.Controller
 }
 
+const POCLifecycleClass = "helmpoc"
+
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&modulesv1alpha1.ModuleLifecycle{}).
+		WithEventFilter(r.createPredicateFilter()).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 10,
 		}).
@@ -88,6 +93,35 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return handleError(log, mlc, err)
 	}
 	return result, nil
+}
+
+func (r *Reconciler) createPredicateFilter() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return r.handlesEvent(e.Object)
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return r.handlesEvent(e.Object)
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return r.handlesEvent(e.ObjectOld)
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return r.handlesEvent(e.Object)
+		},
+	}
+}
+
+func (r *Reconciler) handlesEvent(object client.Object) bool {
+	mlc := modulesv1alpha1.ModuleLifecycle{}
+	objectkey := client.ObjectKeyFromObject(object)
+	if err := r.Get(context.TODO(), objectkey, &mlc); err != nil {
+		zap.S().Errorf("Failed to get ModuleLifecycle %s", objectkey)
+		return false
+	}
+	handlesEvent := mlc.Spec.LifecycleClassName == POCLifecycleClass
+	zap.S().Debugf("POC Helm controller event filter result for %s: %v", objectkey, handlesEvent)
+	return handlesEvent
 }
 
 func handleError(log vzlog.VerrazzanoLogger, mlc *modulesv1alpha1.ModuleLifecycle, err error) (ctrl.Result, error) {

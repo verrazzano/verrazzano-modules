@@ -1,4 +1,6 @@
-# Copyright (C) 2023, Oracle and/or its affiliates.
+# Copyright (c) 2023, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -46,7 +48,6 @@ spec:
                 fieldPath: metadata.namespace
           args:
             - --zap-log-level={{ .Values.logLevel }}
-            - --enable-leader-election={{ .Values.leaderElection.enabled }}
           ports:
             - containerPort: 9100
               name: http-metric

@@ -34,17 +34,17 @@ type ModuleLifecycleList struct {
 }
 
 type ModuleLifecycleSpec struct {
-	Action    ActionType      `json:"action"`
+	// LifecycleClassName defines the lifecycle class name required to process the ModuleLifecycle instance
+	LifecycleClassName LifecycleClassType `json:"lifecycleClassName,omitempty"`
+	// Action Defines lifecycle action to perform
+	Action ActionType `json:"action"`
+	// Installer Defines the installer information required to perform the lifecycle operation
 	Installer ModuleInstaller `json:"installer"`
 }
 
 // ModuleInstaller Defines the installer information for a module; only one of the fields can be set
 type ModuleInstaller struct {
-	HelmRelease *HelmRelease  `json:"helmRelease,omitempty"`
-	Istio       *IstioRelease `json:"istio,omitempty"`
-}
-
-type IstioRelease struct {
+	HelmRelease *HelmRelease `json:"helmRelease,omitempty"`
 }
 
 type HelmChart struct {
@@ -84,6 +84,18 @@ type ModuleLifecycleCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
+// LifecycleClassType Identifies the lifecycle class used to manage a subset of Module types
+type LifecycleClassType string
+
+const (
+	// HelmLifecycleClass defines the class name used by the Helm operator
+	HelmLifecycleClass LifecycleClassType = "helm"
+
+	// CalicoLifecycleClass defines the class name used by the Calico operator
+	CalicoLifecycleClass LifecycleClassType = "calico"
+)
+
+// ActionType defines the type of action to be performed in a ModuleLifecycle instance
 type ActionType string
 
 const (

@@ -170,41 +170,41 @@ pipeline {
                     }
                 }
 
-                //stage('Quality, Compliance Checks, and Unit Tests') {
-                //    when { not { buildingTag() } }
-                //    steps {
-                //        sh """
-                //            echo "Not implemented"
-                //            #cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-                //            #make precommit
-                //            #make unit-test-coverage-ratcheting
-                //        """
-                //    }
-                //    post {
-                //        always {
-                //            sh """
-                //                cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-                //                #cp coverage.html ${WORKSPACE}
-                //                #cp coverage.xml ${WORKSPACE}
-                //                #build/copy-junit-output.sh ${WORKSPACE}
-                //            """
-                //            archiveArtifacts artifacts: '**/coverage.html', allowEmptyArchive: true
-                //            junit testResults: '**/*test-result.xml', allowEmptyResults: true
-                //            cobertura(coberturaReportFile: 'coverage.xml',
-                //                    enableNewApi: true,
-                //                    autoUpdateHealth: false,
-                //                    autoUpdateStability: false,
-                //                    failUnstable: true,
-                //                    failUnhealthy: true,
-                //                    failNoReports: true,
-                //                    onlyStable: false,
-                //                    fileCoverageTargets: '100, 0, 0',
-                //                    lineCoverageTargets: '68, 68, 68',
-                //                    packageCoverageTargets: '100, 0, 0',
-                //            )
-                //        }
-                //    }
-                //}
+                stage('Quality, Compliance Checks, and Unit Tests') {
+                   when { not { buildingTag() } }
+                   steps {
+                       sh """
+                           echo "Run copyright check"
+                           cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                           make copyright-check
+                           #make unit-test-coverage-ratcheting
+                       """
+                   }
+//                    post {
+//                        always {
+//                            sh """
+//                                cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+//                                #cp coverage.html ${WORKSPACE}
+//                                #cp coverage.xml ${WORKSPACE}
+//                                #build/copy-junit-output.sh ${WORKSPACE}
+//                            """
+//                            archiveArtifacts artifacts: '**/coverage.html', allowEmptyArchive: true
+//                            junit testResults: '**/*test-result.xml', allowEmptyResults: true
+//                            cobertura(coberturaReportFile: 'coverage.xml',
+//                                    enableNewApi: true,
+//                                    autoUpdateHealth: false,
+//                                    autoUpdateStability: false,
+//                                    failUnstable: true,
+//                                    failUnhealthy: true,
+//                                    failNoReports: true,
+//                                    onlyStable: false,
+//                                    fileCoverageTargets: '100, 0, 0',
+//                                    lineCoverageTargets: '68, 68, 68',
+//                                    packageCoverageTargets: '100, 0, 0',
+//                            )
+//                        }
+//                    }
+                }
             }
 
         }
