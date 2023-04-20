@@ -86,6 +86,5 @@ func (r *Reconciler) handlesEvent(object client.Object) bool {
 		zap.S().Errorf("Failed to get ModuleLifecycle %s", objectkey)
 		return false
 	}
-	handlesEvent := mlc.Spec.LifecycleClass == r.LifecycleClass
-	return handlesEvent
+	return mlc.Spec.LifecycleClass == r.LifecycleClass
 }
