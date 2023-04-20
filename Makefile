@@ -122,25 +122,25 @@ generate-operator-artifacts: ## build and push all images
 
 ##@ Compliance
 
-#.PHONY: copyright-test
-#copyright-test: ## run the tests for the copyright checker
-#	(cd tools/copyright; go test .)
-#
-#.PHONY: copyright-check-year
-#copyright-check-year: copyright-test ## check copyright notices have correct current year
-#	go run tools/copyright/copyright.go --enforce-current $(shell git log --since=01-01-${CURRENT_YEAR} --name-only --oneline --pretty="format:" | sort -u)
-#
-#.PHONY: copyright-check
-#copyright-check: copyright-test copyright-check-year  ## check copyright notices are correct
-#	go run tools/copyright/copyright.go .
-#
-#.PHONY: copyright-check-local
-#copyright-check-local: copyright-test  ## check copyright notices are correct in local working copy
-#	go run tools/copyright/copyright.go --verbose --enforce-current  $(shell git status --short | cut -c 4-)
-#
-#.PHONY: copyright-check-branch
-#copyright-check-branch: copyright-check ## check copyright notices are correct in parent branch
-#	go run tools/copyright/copyright.go --verbose --enforce-current $(shell git diff --name-only ${PARENT_BRANCH})
+.PHONY: fix-copyright
+fix-copyright: ## run fix-copyright from the verrazzano repo
+	go run github.com/verrazzano/verrazzano/tools/copyright .
+
+.PHONY: copyright-check-year
+copyright-check-year: ## check copyright notices have correct current year
+	go run github.com/verrazzano/verrazzano/tools/copyright . --enforce-current $(shell git log --since=01-01-${CURRENT_YEAR} --name-only --oneline --pretty="format:" | sort -u)
+
+.PHONY: copyright-check
+copyright-check: copyright-check-year  ## check copyright notices are correct
+	go run github.com/verrazzano/verrazzano/tools/copyright .
+
+.PHONY: copyright-check-local
+copyright-check-local:  ## check copyright notices are correct in local working copy
+	go run github.com/verrazzano/verrazzano/tools/copyright --verbose --enforce-current  $(shell git status --short | cut -c 4-)
+
+.PHONY: copyright-check-branch
+copyright-check-branch: copyright-check ## check copyright notices are correct in parent branch
+	go run github.com/verrazzano/verrazzano/tools/copyright --verbose --enforce-current $(shell git diff --name-only ${PARENT_BRANCH})
 
 #
 # Quality checks on acceptance tests
