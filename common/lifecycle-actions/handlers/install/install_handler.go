@@ -86,7 +86,7 @@ func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Res
 func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.HelmInfo.HelmRelease
-	helmOverrides, err := helm.BuildHelmOverrides(context.Log(), context.Client(), helmRelease.Namespace, helmRelease.Name, helmRelease.Overrides)
+	helmOverrides, err := helm.LoadOverrideFiles(context.Log(), context.Client(), helmRelease.Namespace, helmRelease.Name, helmRelease.Overrides)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
