@@ -74,19 +74,6 @@ generate-operator-artifacts: ## build and push all images
 	(cd helm-operator; make generate-operator-artifacts DOCKER_IMAGE_NAME=${VERRAZZANO_HELM_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
 	(cd calico-operator; make generate-operator-artifacts DOCKER_IMAGE_NAME=${VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
 
-.PHONY: test-module-operator-install
-test-module-operator-install: ## install VPO from operator.yaml
-	kubectl apply -f module-operator/build/deploy/operator.yaml
-	kubectl -n verrazzano-install rollout status deployment/verrazzano-platform-operator
-
-.PHONY: test-module-operator-remove
-test-module-operator-remove: ## delete VPO from operator.yaml
-	kubectl delete -f module-operator/build/deploy/operator.yaml
-
-.PHONY: test-module-operator-install-logs
-test-module-operator-install-logs: ## tail VPO logs
-	kubectl logs -f -n verrazzano-install $(shell kubectl get pods -n verrazzano-install --no-headers | grep "^verrazzano-module-operator-" | cut -d ' ' -f 1)
-
 #@ Testing
 
 .PHONY: precommit
