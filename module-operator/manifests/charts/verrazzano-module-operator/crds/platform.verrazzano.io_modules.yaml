@@ -154,6 +154,8 @@ spec:
                   - type
                   type: object
                 type: array
+              lastAction:
+                type: string
               state:
                 type: string
               version:
