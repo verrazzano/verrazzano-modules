@@ -225,7 +225,7 @@ func (r *Reconciler) determineLifecycleAction(mod *modulesv1alpha1.Module, targe
 }
 
 func (r *Reconciler) uninstallModule(instance *modulesv1alpha1.Module) (ctrl.Result, error) {
-	resource, err := r.createUninstallLifecycleResource(instance.Spec.Name, instance.Spec.TargetNamespace, nil)
+	resource, err := r.createUninstallLifecycleResource(instance)
 	if err != nil {
 		return newRequeueWithDelay(), err
 	}
@@ -237,7 +237,7 @@ func (r *Reconciler) uninstallModule(instance *modulesv1alpha1.Module) (ctrl.Res
 
 func (r *Reconciler) createLifecycleResource(mod *modulesv1alpha1.Module, action modulesv1alpha1.ActionType, sourceName string, sourceURI string, chartName string, chartNamespace string, chartVersion string, overrides []modulesv1alpha1.Overrides, ownerRef *metav1.OwnerReference) (*modulesv1alpha1.ModuleLifecycle, error) {
 
-	lifecycle, err := r.findLastAction(mod, action, chartNamespace)
+	lifecycle, err := r.findLastAction(mod, action, r.lookupChartNamespace(mod))
 	if err != nil {
 		return nil, err
 	}
@@ -316,30 +316,28 @@ func (r *Reconciler) findLastAction(mod *modulesv1alpha1.Module, action modulesv
 	return nil, nil
 }
 
-func (r *Reconciler) createUninstallLifecycleResource(chartName string, chartNamespace string, ownerRef *metav1.OwnerReference) (*modulesv1alpha1.ModuleLifecycle, error) {
+func (r *Reconciler) createUninstallLifecycleResource(mod *modulesv1alpha1.Module) (*modulesv1alpha1.ModuleLifecycle, error) {
+	chartName := r.lookupChartName(mod)
+	chartNamespace := r.lookupChartNamespace(mod)
 
-	// Create a CR to manage the module installation
+	lifecycle, err := r.findLastAction(mod, modulesv1alpha1.UninstallAction, chartNamespace)
+	if err != nil {
+		return nil, err
+	}
+	if lifecycle != nil {
+		// found in-progress action
+		return lifecycle, nil
+	}
+
+	// Generate new lifecycle action
 	moduleInstaller := &modulesv1alpha1.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      chartName,
+			Name:      r.generateLifecycleName(chartName, modulesv1alpha1.UninstallAction),
 			Namespace: chartNamespace,
 		},
 	}
 
-	//lcas := modulesv1alpha1.ModuleLifecycleList{}
-	//if err := r.List(context.TODO(), &lcas, client.InNamespace(chartNamespace)); err != nil {
-	//	return nil, err
-	//}
-
-	if err := r.Get(context.TODO(), client.ObjectKeyFromObject(moduleInstaller), moduleInstaller); err != nil {
-		if errors.IsAlreadyExists(err) {
-			if moduleInstaller.Spec.Action == modulesv1alpha1.UninstallAction && moduleInstaller.Status.LastAction == moduleInstaller.Name {
-				return moduleInstaller, nil
-			}
-		}
-	}
-
-	_, err := controllerutil.CreateOrUpdate(context.TODO(), r.Client, moduleInstaller, func() error {
+	opResult, err := controllerutil.CreateOrUpdate(context.TODO(), r.Client, moduleInstaller, func() error {
 		if moduleInstaller.ObjectMeta.Labels == nil {
 			moduleInstaller.ObjectMeta.Labels = make(map[string]string)
 		}
@@ -353,13 +351,14 @@ func (r *Reconciler) createUninstallLifecycleResource(chartName string, chartNam
 				},
 			},
 		}
-		if ownerRef != nil {
-			if !ownerRefExists(moduleInstaller, ownerRef) {
-				moduleInstaller.OwnerReferences = append(moduleInstaller.OwnerReferences, *ownerRef)
-			}
-		}
 		return nil
 	})
+	if opResult == controllerutil.OperationResultCreated {
+		mod.Status.LastAction = moduleInstaller.Name
+		if err := r.Status().Update(context.TODO(), mod); err != nil {
+			return nil, err
+		}
+	}
 	return moduleInstaller, err
 }
 
