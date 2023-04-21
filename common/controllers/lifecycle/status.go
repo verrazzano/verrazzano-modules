@@ -27,10 +27,6 @@ func UpdateStatus(client client.Client, mlc *modulesv1alpha1.ModuleLifecycle, ms
 	return client.Status().Update(context.TODO(), mlc)
 }
 
-func needsReconcile(mlc *modulesv1alpha1.ModuleLifecycle) bool {
-	return mlc.Status.ObservedGeneration != mlc.Generation
-}
-
 func NewCondition(message string, condition modulesv1alpha1.LifecycleCondition) modulesv1alpha1.ModuleLifecycleCondition {
 	t := time.Now().UTC()
 	return modulesv1alpha1.ModuleLifecycleCondition{
