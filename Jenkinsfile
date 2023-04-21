@@ -179,53 +179,33 @@ pipeline {
                            make precommit
                        """
                    }
-//                    post {
-//                        always {
-//                            sh """
-//                                cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-//                                #cp coverage.html ${WORKSPACE}
-//                                #cp coverage.xml ${WORKSPACE}
-//                                #build/copy-junit-output.sh ${WORKSPACE}
-//                            """
-//                            archiveArtifacts artifacts: '**/coverage.html', allowEmptyArchive: true
-//                            junit testResults: '**/*test-result.xml', allowEmptyResults: true
-//                            cobertura(coberturaReportFile: 'coverage.xml',
-//                                    enableNewApi: true,
-//                                    autoUpdateHealth: false,
-//                                    autoUpdateStability: false,
-//                                    failUnstable: true,
-//                                    failUnhealthy: true,
-//                                    failNoReports: true,
-//                                    onlyStable: false,
-//                                    fileCoverageTargets: '100, 0, 0',
-//                                    lineCoverageTargets: '68, 68, 68',
-//                                    packageCoverageTargets: '100, 0, 0',
-//                            )
-//                        }
-//                    }
+                   post {
+                       always {
+                           sh """
+                               cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                               cp coverage.html ${WORKSPACE}
+                               cp coverage.xml ${WORKSPACE}
+                               tools/scripts/copy-junit-output.sh ${WORKSPACE}
+                           """
+                           archiveArtifacts artifacts: '**/coverage.html', allowEmptyArchive: true
+                           junit testResults: '**/*test-result.xml', allowEmptyResults: true
+                           cobertura(coberturaReportFile: 'coverage.xml',
+                                   enableNewApi: true,
+                                   autoUpdateHealth: false,
+                                   autoUpdateStability: false,
+                                   failUnstable: true,
+                                   failUnhealthy: true,
+                                   failNoReports: true,
+                                   onlyStable: false,
+                                   fileCoverageTargets: '100, 0, 0',
+                                   lineCoverageTargets: '68, 68, 68',
+                                   packageCoverageTargets: '100, 0, 0',
+                           )
+                       }
+                   }
                 }
             }
-
         }
-
-       //stage('Scan Image') {
-       //     when {
-       //        allOf {
-       //            not { buildingTag() }
-       //            expression {params.PERFORM_SCAN == true}
-       //        }
-       //     }
-       //     steps {
-       //         script {
-       //             scanContainerImage "${env.DOCKER_REPO}/${env.DOCKER_NAMESPACE}/${DOCKER_PLATFORM_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
-       //         }
-       //     }
-       //     post {
-       //         always {
-       //             archiveArtifacts artifacts: '**/scanning-report*.json', allowEmptyArchive: true
-       //         }
-       //     }
-       //}
     }
 
     post {
