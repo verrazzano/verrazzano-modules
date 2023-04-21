@@ -183,9 +183,9 @@ pipeline {
                        always {
                            sh """
                                cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-                               #cp coverage.html ${WORKSPACE}
-                               #cp coverage.xml ${WORKSPACE}
-                               #build/copy-junit-output.sh ${WORKSPACE}
+                               cp coverage.html ${WORKSPACE}
+                               cp coverage.xml ${WORKSPACE}
+                               build/copy-junit-output.sh ${WORKSPACE}
                            """
                            archiveArtifacts artifacts: '**/coverage.html', allowEmptyArchive: true
                            junit testResults: '**/*test-result.xml', allowEmptyResults: true
