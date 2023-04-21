@@ -4,7 +4,9 @@ package module
 
 import (
 	"context"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modlifecycle"
+	"fmt"
+	"k8s.io/apimachinery/pkg/types"
+	"math/rand"
 	"time"
 
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -88,6 +90,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Check if resource is being deleted
 	if !moduleInstance.ObjectMeta.DeletionTimestamp.IsZero() {
+		if result, err := r.uninstallModule(moduleInstance); err != nil || result.Requeue {
+
+		}
 		log.Oncef("Removing finalizer %s", finalizerName)
 		moduleInstance.ObjectMeta.Finalizers = vzstring.RemoveStringFromSlice(moduleInstance.ObjectMeta.Finalizers, finalizerName)
 		if err := r.Update(ctx, moduleInstance); err != nil {
@@ -134,8 +139,9 @@ func (r *Reconciler) doReconcile(log vzlog.VerrazzanoLogger, moduleInstance *mod
 }
 
 func (r *Reconciler) reconcileModule(mod *modulesv1alpha1.Module, chartName string, chartNamespace string, moduleVersion string, sourceName string, sourceURI string) (*modulesv1alpha1.ModuleLifecycle, error) {
-	lifecycleResource, err := r.createLifecycleResource(sourceName, sourceURI, chartName, chartNamespace, moduleVersion,
-		modulesv1alpha1.Overrides{}, createOwnerRef(mod))
+	action := r.determineLifecycleAction(mod, moduleVersion)
+	lifecycleResource, err := r.createLifecycleResource(mod, action, sourceName, sourceURI, chartName, chartNamespace, moduleVersion,
+		mod.Spec.Overrides, createOwnerRef(mod))
 	if err != nil {
 		return nil, err
 	}
@@ -143,48 +149,6 @@ func (r *Reconciler) reconcileModule(mod *modulesv1alpha1.Module, chartName stri
 		return nil, err
 	}
 	return lifecycleResource, err
-}
-
-func (r *Reconciler) createLifecycleResource(sourceName string, sourceURI string, chartName string, chartNamespace string, chartVersion string, overrides modulesv1alpha1.Overrides, ownerRef *metav1.OwnerReference) (*modulesv1alpha1.ModuleLifecycle, error) {
-
-	// Create a CR to manage the module installation
-	moduleInstaller := &modulesv1alpha1.ModuleLifecycle{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      chartName,
-			Namespace: chartNamespace,
-		},
-	}
-
-	_, err := controllerutil.CreateOrUpdate(context.TODO(), r.Client, moduleInstaller, func() error {
-		if moduleInstaller.ObjectMeta.Labels == nil {
-			moduleInstaller.ObjectMeta.Labels = make(map[string]string)
-		}
-		moduleInstaller.Spec = modulesv1alpha1.ModuleLifecycleSpec{
-			LifecycleClassName: modlifecycle.POCLifecycleClass,
-			Installer: modulesv1alpha1.ModuleInstaller{
-				HelmRelease: &modulesv1alpha1.HelmRelease{
-					Name:      chartName, // REVIEW: should this be associated with the Module name?
-					Namespace: chartNamespace,
-					Repository: modulesv1alpha1.HelmChartRepository{
-						Name: sourceName,
-						URI:  sourceURI,
-					},
-					ChartInfo: modulesv1alpha1.HelmChart{
-						Name:    chartName,
-						Version: chartVersion,
-					},
-					Overrides: []modulesv1alpha1.Overrides{overrides},
-				},
-			},
-		}
-		if ownerRef != nil {
-			if !ownerRefExists(moduleInstaller, ownerRef) {
-				moduleInstaller.OwnerReferences = append(moduleInstaller.OwnerReferences, *ownerRef)
-			}
-		}
-		return nil
-	})
-	return moduleInstaller, err
 }
 
 func ownerRefExists(moduleInstaller *modulesv1alpha1.ModuleLifecycle, ownerRef *metav1.OwnerReference) bool {
@@ -250,6 +214,155 @@ func (r *Reconciler) updateModuleInstanceState(instance *modulesv1alpha1.Module,
 	return r.Status().Update(context.TODO(), instance)
 }
 
+func (r *Reconciler) determineLifecycleAction(mod *modulesv1alpha1.Module, targetVersion string) modulesv1alpha1.ActionType {
+	if mod.Status.State == modulesv1alpha1.ModuleStateReady {
+		if mod.Spec.Version != targetVersion {
+			return modulesv1alpha1.UpgradeAction
+		}
+		return modulesv1alpha1.UpdateAction
+	}
+	return modulesv1alpha1.InstallAction
+}
+
+func (r *Reconciler) uninstallModule(instance *modulesv1alpha1.Module) (ctrl.Result, error) {
+	resource, err := r.createUninstallLifecycleResource(instance.Spec.Name, instance.Spec.TargetNamespace, nil)
+	if err != nil {
+		return newRequeueWithDelay(), err
+	}
+	if resource.Status.State != modulesv1alpha1.StateCompleted {
+		return newRequeueWithDelay(), nil
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) createLifecycleResource(mod *modulesv1alpha1.Module, action modulesv1alpha1.ActionType, sourceName string, sourceURI string, chartName string, chartNamespace string, chartVersion string, overrides []modulesv1alpha1.Overrides, ownerRef *metav1.OwnerReference) (*modulesv1alpha1.ModuleLifecycle, error) {
+
+	lifecycle, err := r.findLastAction(mod, action, chartNamespace)
+	if err != nil {
+		return nil, err
+	}
+	if lifecycle != nil {
+		// found in-progress action
+		return lifecycle, nil
+	}
+
+	// Generate new lifecycle action
+	moduleInstaller := &modulesv1alpha1.ModuleLifecycle{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.generateLifecycleName(chartName, action),
+			Namespace: chartNamespace,
+		},
+	}
+
+	opResult, err := controllerutil.CreateOrUpdate(context.TODO(), r.Client, moduleInstaller, func() error {
+		if moduleInstaller.ObjectMeta.Labels == nil {
+			moduleInstaller.ObjectMeta.Labels = make(map[string]string)
+		}
+		moduleInstaller.Spec = modulesv1alpha1.ModuleLifecycleSpec{
+			Action:             action,
+			LifecycleClassName: modulesv1alpha1.HelmLifecycleClass,
+			Installer: modulesv1alpha1.ModuleInstaller{
+				HelmRelease: &modulesv1alpha1.HelmRelease{
+					Name:      chartName, // REVIEW: should this be associated with the Module name?
+					Namespace: chartNamespace,
+					Repository: modulesv1alpha1.HelmChartRepository{
+						Name: sourceName,
+						URI:  sourceURI,
+					},
+					ChartInfo: modulesv1alpha1.HelmChart{
+						Name:    chartName,
+						Version: chartVersion,
+					},
+					Overrides: overrides,
+				},
+			},
+		}
+		if ownerRef != nil {
+			if !ownerRefExists(moduleInstaller, ownerRef) {
+				moduleInstaller.OwnerReferences = append(moduleInstaller.OwnerReferences, *ownerRef)
+			}
+		}
+		return nil
+	})
+	if opResult == controllerutil.OperationResultCreated {
+		mod.Status.LastAction = moduleInstaller.Name
+		if err := r.Status().Update(context.TODO(), mod); err != nil {
+			return nil, err
+		}
+	}
+	return moduleInstaller, err
+}
+
+func (r *Reconciler) findLastAction(mod *modulesv1alpha1.Module, action modulesv1alpha1.ActionType, chartNamespace string) (*modulesv1alpha1.ModuleLifecycle, error) {
+	if mod.Status.LastAction == "" {
+		return nil, nil
+	}
+
+	moduleInstaller := &modulesv1alpha1.ModuleLifecycle{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: mod.Status.LastAction, Namespace: chartNamespace}, moduleInstaller); err != nil {
+		if !errors.IsNotFound(err) {
+			return nil, err
+		}
+		// not found
+		return nil, nil
+	}
+
+	if moduleInstaller.Spec.Action == action &&
+		mod.Status.LastAction == moduleInstaller.Name &&
+		!moduleInstaller.IsFinished() {
+		return moduleInstaller, nil
+	}
+
+	return nil, nil
+}
+
+func (r *Reconciler) createUninstallLifecycleResource(chartName string, chartNamespace string, ownerRef *metav1.OwnerReference) (*modulesv1alpha1.ModuleLifecycle, error) {
+
+	// Create a CR to manage the module installation
+	moduleInstaller := &modulesv1alpha1.ModuleLifecycle{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      chartName,
+			Namespace: chartNamespace,
+		},
+	}
+
+	//lcas := modulesv1alpha1.ModuleLifecycleList{}
+	//if err := r.List(context.TODO(), &lcas, client.InNamespace(chartNamespace)); err != nil {
+	//	return nil, err
+	//}
+
+	if err := r.Get(context.TODO(), client.ObjectKeyFromObject(moduleInstaller), moduleInstaller); err != nil {
+		if errors.IsAlreadyExists(err) {
+			if moduleInstaller.Spec.Action == modulesv1alpha1.UninstallAction && moduleInstaller.Status.LastAction == moduleInstaller.Name {
+				return moduleInstaller, nil
+			}
+		}
+	}
+
+	_, err := controllerutil.CreateOrUpdate(context.TODO(), r.Client, moduleInstaller, func() error {
+		if moduleInstaller.ObjectMeta.Labels == nil {
+			moduleInstaller.ObjectMeta.Labels = make(map[string]string)
+		}
+		moduleInstaller.Spec = modulesv1alpha1.ModuleLifecycleSpec{
+			Action:             modulesv1alpha1.UninstallAction,
+			LifecycleClassName: modulesv1alpha1.HelmLifecycleClass,
+			Installer: modulesv1alpha1.ModuleInstaller{
+				HelmRelease: &modulesv1alpha1.HelmRelease{
+					Name:      chartName, // REVIEW: should this be associated with the Module name?
+					Namespace: chartNamespace,
+				},
+			},
+		}
+		if ownerRef != nil {
+			if !ownerRefExists(moduleInstaller, ownerRef) {
+				moduleInstaller.OwnerReferences = append(moduleInstaller.OwnerReferences, *ownerRef)
+			}
+		}
+		return nil
+	})
+	return moduleInstaller, err
+}
+
 func createOwnerRef(owner *modulesv1alpha1.Module) *metav1.OwnerReference {
 	return &metav1.OwnerReference{
 		APIVersion:         owner.APIVersion,
@@ -263,4 +376,22 @@ func createOwnerRef(owner *modulesv1alpha1.Module) *metav1.OwnerReference {
 
 func newRequeueWithDelay() ctrl.Result {
 	return vzcontroller.NewRequeueWithDelay(2, 5, time.Second)
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+var charString = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+func (r *Reconciler) generateLifecycleName(chartName string, action modulesv1alpha1.ActionType) string {
+	return fmt.Sprintf("%s-%s-%s", chartName, action, randomString(5))
+}
+
+func randomString(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = charString[rand.Intn(len(charString))]
+	}
+	return string(b)
 }

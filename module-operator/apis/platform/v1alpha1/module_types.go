@@ -69,8 +69,9 @@ const (
 // ModuleStatus defines the observed state of a Verrazzano Module resource.
 type ModuleStatus struct {
 	// The version of Verrazzano that is installed.
-	Version string          `json:"version,omitempty"`
-	State   ModuleStateType `json:"state,omitempty"`
+	Version    string          `json:"version,omitempty"`
+	State      ModuleStateType `json:"state,omitempty"`
+	LastAction string          `json:"lastAction,omitempty"`
 	// The latest available observations of an object's current state.
 	Conditions []ModuleCondition `json:"conditions,omitempty"`
 }

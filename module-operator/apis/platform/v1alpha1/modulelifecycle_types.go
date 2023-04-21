@@ -137,3 +137,11 @@ func (m *ModuleLifecycle) GetReleaseName() string {
 func (m *ModuleLifecycle) IsBeingDeleted() bool {
 	return m != nil && m.GetDeletionTimestamp() != nil
 }
+
+func (m *ModuleLifecycle) IsFinished() bool {
+	switch m.Status.State {
+	case StateCompleted, StateFailed, StateReady, StateNotNeeded:
+		return true
+	}
+	return false
+}
