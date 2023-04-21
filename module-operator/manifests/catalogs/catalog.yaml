@@ -1,0 +1,10 @@
+version: v1.6.0
+lifecycle-operators:
+  - lifecycleClassName: calico
+    repo:
+      name: local
+      #uri:
+    helmChart:
+      name: verrazzano-calico-operator
+      path: manifests/charts/verrazzano-calico-operator-0.1.0.tar.gz
+
