@@ -28,6 +28,8 @@ type Reconciler struct {
 	client.Client
 	Scheme     *runtime.Scheme
 	Controller controller.Controller
+
+	Catalog *ModuleCatalog
 }
 
 const (
@@ -107,29 +109,35 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return r.doReconcile(log, moduleInstance)
 }
 
-func (r *Reconciler) doReconcile(log vzlog.VerrazzanoLogger, moduleInstance *modulesv1alpha1.Module) (ctrl.Result, error) {
-	log.Infof("Reconciling Verrazzano module instance %s/%s", moduleInstance.Namespace, moduleInstance.Name)
+func (r *Reconciler) doReconcile(log vzlog.VerrazzanoLogger, mod *modulesv1alpha1.Module) (ctrl.Result, error) {
+	log.Infof("Reconciling Verrazzano module instance %s/%s", mod.Namespace, mod.Name)
 
-	sourceName, sourceURI := r.lookupModuleSource(moduleInstance)
+	sourceName, sourceURI := r.lookupModuleSource(mod)
 
-	chartName := r.lookupChartName(moduleInstance)
-	chartNamespace := r.lookupChartNamespace(moduleInstance)
+	chartName := r.lookupChartName(mod)
+	chartNamespace := r.lookupChartNamespace(mod)
 
 	// Find the desired module version
-	targetModuleVersion, err := r.lookupModuleVersion(log, moduleInstance, chartName, sourceName, sourceURI)
+	targetModuleVersion, err := r.lookupModuleVersion(log, mod, chartName, sourceName, sourceURI)
 	if err != nil {
 		return vzcontroller.NewRequeueWithDelay(5, 10, time.Second), err
 	}
 
-	if _, err := r.reconcileModule(moduleInstance, chartName, chartNamespace, targetModuleVersion, sourceName, sourceURI); err != nil {
+	// Load the LCO and wait for it to deploy if necessary
+	lifecycleOp := r.lookupLifecycleOperatorDefinition(mod)
+	if err := r.reconcileLifecycleOperatorClass(lifecycleOp); err != nil {
 		return newRequeueWithDelay(), err
 	}
-	if moduleInstance.Status.State != modulesv1alpha1.ModuleStateReady {
+
+	if _, err := r.reconcileModule(mod, chartName, chartNamespace, targetModuleVersion, sourceName, sourceURI); err != nil {
+		return newRequeueWithDelay(), err
+	}
+	if mod.Status.State != modulesv1alpha1.ModuleStateReady {
 		// Not in a ready state yet, requeue and re-check
-		log.Progressf("Module %s reconciling, requeue", common.GetNamespacedName(moduleInstance.ObjectMeta))
+		log.Progressf("Module %s reconciling, requeue", common.GetNamespacedName(mod.ObjectMeta))
 		return newRequeueWithDelay(), nil
 	}
-	log.Infof("Module %s/%s reconcile complete", moduleInstance.Namespace, moduleInstance.Name)
+	log.Infof("Module %s/%s reconcile complete", mod.Namespace, mod.Name)
 	return ctrl.Result{}, nil
 }
 
@@ -248,6 +256,15 @@ func (r *Reconciler) updateModuleInstanceState(instance *modulesv1alpha1.Module,
 		instance.Status.State = modulesv1alpha1.ModuleStateReconciling
 	}
 	return r.Status().Update(context.TODO(), instance)
+}
+
+func (r *Reconciler) lookupLifecycleOperatorDefinition(mod *modulesv1alpha1.Module) LifecycleOperatorDefinition {
+	return LifecycleOperatorDefinition{}
+}
+
+func (r *Reconciler) reconcileLifecycleOperatorClass(op LifecycleOperatorDefinition) error {
+	return nil
+
 }
 
 func createOwnerRef(owner *modulesv1alpha1.Module) *metav1.OwnerReference {
