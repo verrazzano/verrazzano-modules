@@ -115,9 +115,9 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, namespace string, n
 	// Get all the kinds of objects that need to be watched
 	// For each object, create a watchContext and call the watcher to watch it
 	watchKinds := r.Watcher.GetWatchedKinds()
-	watchContexts := []watcher.WatchContext{}
-	for i, _ := range watchKinds {
-		w := watcher.WatchContext{
+	var watchContexts []*watcher.WatchContext
+	for i := range watchKinds {
+		w := &watcher.WatchContext{
 			Controller:      r.Controller,
 			Log:             log,
 			ResourceKind:    watchKinds[i].Kind,

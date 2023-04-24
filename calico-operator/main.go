@@ -7,7 +7,7 @@ import (
 	"flag"
 	"github.com/verrazzano/verrazzano-modules/calico-operator/lifecycle-actions/handlers/factory"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/lifecycle"
-	platformapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
 	"go.uber.org/zap"
@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// init calico lifecycle controller
-	if err := lifecycle.InitController(mgr, factory.NewLifeCycleComponent()); err != nil {
+	if err := lifecycle.InitController(mgr, factory.NewLifeCycleComponent(), moduleplatform.CalicoLifecycleClass); err != nil {
 		log.Errorf("Failed to start Isio Gateway controller", err)
 		return
 	}
@@ -52,7 +52,7 @@ func initScheme() *runtime.Scheme {
 	// Create a scheme then add each GKV group to the scheme
 	scheme := runtime.NewScheme()
 
-	utilruntime.Must(platformapi.AddToScheme(scheme))
+	utilruntime.Must(moduleplatform.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 

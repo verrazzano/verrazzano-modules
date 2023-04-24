@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package spi
@@ -46,12 +46,6 @@ func (r RetryableError) Error() string {
 		builder.WriteString(fmt.Sprintf(", result: {requeue: %v, requeueAfter: %s}", r.Result.Requeue, r.Result.RequeueAfter))
 	}
 	return builder.String()
-}
-
-// IsRetryableError returns true if the error is a RetryableError.
-func IsRetryableError(err error) bool {
-	_, ok := err.(RetryableError)
-	return ok
 }
 
 // IsUpdateConflict returns true if the error is an update conflict error. This is occurs when the controller-runtime cache

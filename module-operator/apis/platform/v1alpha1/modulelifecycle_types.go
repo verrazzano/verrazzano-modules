@@ -34,8 +34,8 @@ type ModuleLifecycleList struct {
 }
 
 type ModuleLifecycleSpec struct {
-	// LifecycleClassType Defines the lifecycle class required to process the ModuleLifecycle instance
-	LifecycleClass LifecycleClassType `json:"lifecycleClass,omitempty"`
+	// LifecycleClassName defines the lifecycle class name required to process the ModuleLifecycle instance
+	LifecycleClassName LifecycleClassType `json:"lifecycleClassName,omitempty"`
 	// Action Defines lifecycle action to perform
 	Action ActionType `json:"action"`
 	// Installer Defines the installer information required to perform the lifecycle operation
@@ -88,7 +88,11 @@ type ModuleLifecycleCondition struct {
 type LifecycleClassType string
 
 const (
-	HelmLifecycleClass = "helm"
+	// HelmLifecycleClass defines the class name used by the Helm operator
+	HelmLifecycleClass LifecycleClassType = "helm"
+
+	// CalicoLifecycleClass defines the class name used by the Calico operator
+	CalicoLifecycleClass LifecycleClassType = "calico"
 )
 
 // ActionType defines the type of action to be performed in a ModuleLifecycle instance
