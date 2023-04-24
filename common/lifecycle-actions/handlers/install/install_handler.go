@@ -59,7 +59,11 @@ func (h *Component) Init(context spi.ComponentContext, HelmInfo *compspi.HelmInf
 	}
 
 	if len(HelmInfo.Repository.URI) == 0 {
-		downloadChart(context.Log(), true)
+		_, stderr, err := downloadChart(context.Log(), true)
+		if err != nil {
+			context.Log().ErrorfNewErr("Failed installing helm chart %s, stderr: %s", HelmInfo.Repository.URI, stderr)
+			return ctrl.Result{}, err
+		}
 	}
 
 	h.HelmInfo = HelmInfo
