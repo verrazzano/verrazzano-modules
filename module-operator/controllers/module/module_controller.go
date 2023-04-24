@@ -91,7 +91,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Check if resource is being deleted
 	if !moduleInstance.ObjectMeta.DeletionTimestamp.IsZero() {
 		if result, err := r.uninstallModule(moduleInstance); err != nil || result.Requeue {
-
+			return result, err
 		}
 		log.Oncef("Removing finalizer %s", finalizerName)
 		moduleInstance.ObjectMeta.Finalizers = vzstring.RemoveStringFromSlice(moduleInstance.ObjectMeta.Finalizers, finalizerName)
@@ -381,7 +381,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-var charString = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+var charString = []byte("abcdefghijklmnopqrstuvwxyz0123456789")
 
 func (r *Reconciler) generateLifecycleName(chartName string, action modulesv1alpha1.ActionType) string {
 	return fmt.Sprintf("%s-%s-%s", chartName, action, randomString(5))

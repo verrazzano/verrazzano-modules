@@ -26,7 +26,7 @@ func UpgradeRelease(log vzlog.VerrazzanoLogger, releaseOpts *HelmReleaseOpts, wa
 	chartPath := releaseOpts.ChartPath
 	if chartPath == "" {
 		var err error
-		chartPath, err = chartOptions.LocateChart(releaseOpts.ChartPath, settings)
+		chartPath, err = chartOptions.LocateChart(releaseOpts.ReleaseName, settings)
 		if err != nil {
 			return nil, err
 		}
