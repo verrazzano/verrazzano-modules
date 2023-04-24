@@ -58,7 +58,7 @@ func (h *Component) Init(context spi.ComponentContext, HelmInfo *compspi.HelmInf
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
 
-	if len(HelmInfo.Repository.URI) != 0 {
+	if len(HelmInfo.Repository.URI) == 0 {
 		downloadChart(context.Log(), true)
 	}
 
