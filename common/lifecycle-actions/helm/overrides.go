@@ -15,23 +15,27 @@ import (
 )
 
 // LoadOverrideFiles loads the helm overrides into a set of files for a release.  Return a list of Helm overrides which contain the filenames
-func LoadOverrideFiles(context spi.ComponentContext, namespace string, moduleOverrides moduleplatform.Overrides) ([]helm.HelmOverrides, error) {
+func LoadOverrideFiles(context spi.ComponentContext, releaseName string, moduleOverrides []moduleplatform.Overrides) ([]helm.HelmOverrides, error) {
 	var kvs []bom.KeyValue
 	var err error
+	vzOverrides := []v1alpha1.Overrides{}
 
-	vzOverrides := v1alpha1.Overrides{
-		ConfigMapRef: moduleOverrides.ConfigMapRef,
-		SecretRef:    moduleOverrides.SecretRef,
-		Values:       moduleOverrides.Values,
+	for _, modOverride := range moduleOverrides {
+		vzOverride := v1alpha1.Overrides{
+			ConfigMapRef: modOverride.ConfigMapRef,
+			SecretRef:    modOverride.SecretRef,
+			Values:       modOverride.Values,
+		}
+		vzOverrides = append(vzOverrides, vzOverride)
 	}
 
 	// Getting user defined Helm overrides as the highest priority
-	overrideStrings, err := vzoverride.GetInstallOverridesYAML(context, []v1alpha1.Overrides{vzOverrides})
+	overrideStrings, err := vzoverride.GetInstallOverridesYAML(context, vzOverrides)
 	if err != nil {
 		return nil, err
 	}
 	for _, overrideString := range overrideStrings {
-		file, err := vzos.CreateTempFile(fmt.Sprintf("helm-overrides-user-%s-*.yaml", h.Name()), []byte(overrideString))
+		file, err := vzos.CreateTempFile(fmt.Sprintf("helm-overrides-release-%s-*.yaml", releaseName), []byte(overrideString))
 		if err != nil {
 			context.Log().Error(err.Error())
 			return nil, err
