@@ -38,6 +38,6 @@ func downloadChart(log vzlog.VerrazzanoLogger, uri string, verbose bool) (stdout
 		}
 		return stdout, stderr, err
 	}
-	log.Debugf("yum %s succeeded: %s", stdout)
+	log.Infof("yum %s succeeded: %s", stdout)
 	return stdout, stderr, nil
 }
