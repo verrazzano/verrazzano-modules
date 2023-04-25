@@ -58,7 +58,7 @@ func (h *Component) Init(context spi.ComponentContext, HelmInfo *compspi.HelmInf
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
 
-	if len(HelmInfo.Repository.URI) == 0 {
+	if len(HelmInfo.Repository.URI) != 0 {
 		_, stderr, err := downloadChart(context.Log(), HelmInfo.Repository.URI, true)
 		if err != nil {
 			return ctrl.Result{}, context.Log().ErrorfNewErr("Failed installing helm chart %s, stderr: %s", HelmInfo.Repository.URI, stderr)
