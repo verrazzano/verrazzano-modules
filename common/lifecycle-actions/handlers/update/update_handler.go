@@ -21,7 +21,7 @@ type Component struct {
 	helmcomp.HelmComponent
 	HelmInfo     *compspi.HelmInfo
 	chartDir     string
-	mclNamespace string
+	mlcNamespace string
 }
 
 // upgradeFuncSig is a function needed for unit test override
@@ -57,7 +57,7 @@ func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlc
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
 
-	h.mclNamespace = mlcNamespace
+	h.mlcNamespace = mlcNamespace
 	h.HelmInfo = HelmInfo
 	return ctrl.Result{}, nil
 }
