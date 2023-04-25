@@ -121,7 +121,7 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 	for s.tracker.state != stateEnd {
 		switch s.tracker.state {
 		case stateInit:
-			res, err := s.action.Init(compContext, s.chartInfo)
+			res, err := s.action.Init(compContext, s.chartInfo, s.cr.Namespace)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}

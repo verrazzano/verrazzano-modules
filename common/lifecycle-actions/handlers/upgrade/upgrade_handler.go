@@ -19,8 +19,9 @@ import (
 
 type Component struct {
 	helmcomp.HelmComponent
-	HelmInfo *compspi.HelmInfo
-	chartDir string
+	HelmInfo     *compspi.HelmInfo
+	chartDir     string
+	mlcNamespace string
 }
 
 // upgradeFuncSig is a function needed for unit test override
@@ -47,7 +48,7 @@ func (h *Component) GetStatusConditions() compspi.StatusConditions {
 }
 
 // Init initializes the component with Helm chart information
-func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo) (ctrl.Result, error) {
+func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string) (ctrl.Result, error) {
 	h.HelmComponent = helmcomp.HelmComponent{
 		ReleaseName:             HelmInfo.HelmRelease.Name,
 		ChartDir:                h.chartDir,
@@ -56,6 +57,7 @@ func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo) (ct
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
 
+	h.mlcNamespace = mlcNamespace
 	h.HelmInfo = HelmInfo
 	return ctrl.Result{}, nil
 }

@@ -9,22 +9,21 @@ import (
 	"github.com/verrazzano/verrazzano/pkg/bom"
 	"github.com/verrazzano/verrazzano/pkg/helm"
 	vzos "github.com/verrazzano/verrazzano/pkg/os"
-	"github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1alpha1"
-	vzoverride "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/common/override"
+	"github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1beta1"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
 // LoadOverrideFiles loads the helm overrides into a set of files for a release.  Return a list of Helm overrides which contain the filenames
-func LoadOverrideFiles(context spi.ComponentContext, releaseName string, moduleOverrides []moduleplatform.Overrides) ([]helm.HelmOverrides, error) {
+func LoadOverrideFiles(context spi.ComponentContext, releaseName string, mlcNamespace string, moduleOverrides []moduleplatform.Overrides) ([]helm.HelmOverrides, error) {
 	if len(moduleOverrides) == 0 {
 		return nil, nil
 	}
 	var kvs []bom.KeyValue
 	var err error
-	vzOverrides := []v1alpha1.Overrides{}
+	vzOverrides := []v1beta1.Overrides{}
 
 	for _, modOverride := range moduleOverrides {
-		vzOverride := v1alpha1.Overrides{
+		vzOverride := v1beta1.Overrides{
 			ConfigMapRef: modOverride.ConfigMapRef,
 			SecretRef:    modOverride.SecretRef,
 			Values:       modOverride.Values,
@@ -33,7 +32,7 @@ func LoadOverrideFiles(context spi.ComponentContext, releaseName string, moduleO
 	}
 
 	// Getting user defined Helm overrides as the highest priority
-	overrideStrings, err := vzoverride.GetInstallOverridesYAML(context, vzOverrides)
+	overrideStrings, err := getInstallOverridesYAML(context.Log(), context.Client(), vzOverrides, mlcNamespace)
 	if err != nil {
 		return nil, err
 	}
