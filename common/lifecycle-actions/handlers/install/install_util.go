@@ -25,7 +25,7 @@ func (h Component) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {
 // downloadChart will perform yum calls with specified arguments for operations
 // The verbose field is just used for visibility of command in logging
 func downloadChart(log vzlog.VerrazzanoLogger, uri string, verbose bool) (stdout []byte, stderr []byte, err error) {
-	cmdArgs := []string{"install", "-y", "olcne-prometheus-chart"}
+	cmdArgs := []string{"install", "-y", uri}
 	cmd := exec.Command("microdnf", cmdArgs...)
 	//cmd.Env = os.Environ()
 	if verbose {
