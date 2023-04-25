@@ -16,6 +16,9 @@ import (
 
 // LoadOverrideFiles loads the helm overrides into a set of files for a release.  Return a list of Helm overrides which contain the filenames
 func LoadOverrideFiles(context spi.ComponentContext, releaseName string, moduleOverrides []moduleplatform.Overrides) ([]helm.HelmOverrides, error) {
+	if len(moduleOverrides) == 0 {
+		return nil, nil
+	}
 	var kvs []bom.KeyValue
 	var err error
 	vzOverrides := []v1alpha1.Overrides{}
