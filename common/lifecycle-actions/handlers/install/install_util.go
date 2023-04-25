@@ -28,15 +28,15 @@ func downloadChart(log vzlog.VerrazzanoLogger, uri string, verbose bool) (stdout
 	cmdArgs := []string{"install", "-y", uri}
 	cmd := exec.Command("microdnf", cmdArgs...)
 	if verbose {
-		log.Progressf("Running yum command: %s", cmd.String())
+		log.Progressf("Running microdnf command: %s", cmd.String())
 	}
 	stdout, stderr, err = runner.Run(cmd)
 	if err != nil {
 		if verbose {
-			log.Progressf("Failed running yum command %s: %s", cmd.String(), stderr)
+			log.Progressf("Failed running microdnf command %s: %s", cmd.String(), stderr)
 		}
 		return stdout, stderr, err
 	}
-	log.Debugf("yum %s succeeded: %s", stdout)
+	log.Debugf("microdnf %s succeeded: %s", stdout)
 	return stdout, stderr, nil
 }
