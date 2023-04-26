@@ -36,10 +36,8 @@ type Reconciler struct {
 	Controller controller.Controller
 	ControllerConfig
 	LifecycleClass moduleplatform.LifecycleClassType
-
-	// watcherMap is needed to keep track of which CRs have been initialized
-	// key is the NSN of the Gateway
-	watcherMap map[types.NamespacedName][]*watcher.WatchContext
+	watchersInitialized bool
+	watchContexts []*watcher.WatchContext
 
 	// controllerResources contains a set of CRs for this controller that exist.
 	// It is important that resources get added to this set during the base controller reconcile loop, as
@@ -54,7 +52,6 @@ func InitBaseController(mgr controllerruntime.Manager, controllerConfig Controll
 		Client:              mgr.GetClient(),
 		Scheme:              mgr.GetScheme(),
 		ControllerConfig:    controllerConfig,
-		watcherMap:          make(map[types.NamespacedName][]*watcher.WatchContext),
 		LifecycleClass:      class,
 		controllerResources: make(map[types.NamespacedName]bool),
 		mutex:               sync.RWMutex{},

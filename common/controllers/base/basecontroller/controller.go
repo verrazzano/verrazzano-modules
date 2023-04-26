@@ -83,6 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if r.Watcher != nil {
+		r.addControllerResource(req.NamespacedName)
 		if err := r.initWatches(log, req.NamespacedName); err != nil {
 			return util.NewRequeueWithShortDelay(), nil
 		}
@@ -103,35 +104,29 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 // Init the watches for this resource
 func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, nsn types.NamespacedName) error {
-	if r.Watcher == nil {
-		return nil
-	}
-
-	_, ok := r.watcherMap[nsn]
-	if ok {
+	if r.watchersInitialized {
 		return nil
 	}
 
 	// Get all the kinds of objects that need to be watched
 	// For each object, create a watchContext and call the watcher to watch it
-	watchKinds := r.Watcher.GetWatchedKinds()
-	var watchContexts []*watcher.WatchContext
-	for i := range watchKinds {
+	wds := r.Watcher.GetWatchDescriptors()
+	for i := range wds {
 		w := &watcher.WatchContext{
-			Controller:      r.Controller,
-			Log:             log,
-			ResourceKind:    watchKinds[i].Kind,
-			ShouldReconcile: watchKinds[i].FuncShouldReconcile,
+			Controller:                 r.Controller,
+			Log:                        log,
+			ResourceKind:               wds[i].Kind,
+			ShouldReconcile:            wds[i].FuncShouldReconcile,
 			FuncGetControllerResources: r.GetControllerResources,
 		}
 		err := w.Watch()
 		if err != nil {
 			return err
 		}
-		watchContexts = append(watchContexts, w)
+		r.watchContexts = append(r.watchContexts, w)
 	}
 
-	r.watcherMap[nsn] = watchContexts
+	r.watchersInitialized = true
 	return nil
 }
 

@@ -28,8 +28,8 @@ const (
 	Deleted WatchEvent = iota
 )
 
-// WatchedKind described an object being watched
-type WatchedKind struct {
+// WatchDescriptor described an object being watched
+type WatchDescriptor struct {
 	Kind source.Kind
 	FuncShouldReconcile
 }
@@ -51,8 +51,8 @@ type Reconciler interface {
 
 // Watcher is an interface used by controllers that watch resources
 type Watcher interface {
-	// GetWatchedKinds returns the list of object kinds being watched
-	GetWatchedKinds() []WatchedKind
+	// GetWatchDescriptors returns the list of object kinds being watched
+	GetWatchDescriptors() []WatchDescriptor
 }
 
 // Finalizer is an interface used by controllers the use finalizers
