@@ -14,8 +14,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"sync"
 )
+
+// FuncGetControllerResources is a type of function that resources the CRs that exist which are managed bu the controller
+type FuncGetControllerResources func() []types.NamespacedName
 
 // WatchContext provides context to a watcher
 type WatchContext struct {
@@ -23,13 +25,11 @@ type WatchContext struct {
 	Log             vzlog.VerrazzanoLogger
 	ResourceKind    source.Kind
 	ShouldReconcile spi.FuncShouldReconcile
-
-	touchedResources []*types.NamespacedName
-	mutex            sync.RWMutex
+	FuncGetControllerResources
 }
 
 // Watch for a specific resource type
-func (w *WatchContext) Watch(reconciledResourceNamespace string, reconciledResourceName string) error {
+func (w *WatchContext) Watch() error {
 	// The predicate functions are called to determine if the
 	// controller reconcile loop needs to be called (predicate returns true)
 	p := predicate.Funcs{
@@ -39,7 +39,6 @@ func (w *WatchContext) Watch(reconciledResourceNamespace string, reconciledResou
 			if !w.shouldReconcile(e.Object, spi.Created) {
 				return false
 			}
-			w.addTouchedResource(e.Object)
 			return true
 		},
 		// a watched resource just got updated
@@ -51,7 +50,6 @@ func (w *WatchContext) Watch(reconciledResourceNamespace string, reconciledResou
 			if !w.shouldReconcile(e.ObjectNew, spi.Updated) {
 				return false
 			}
-			w.addTouchedResource(e.ObjectNew)
 			return true
 		},
 		// a watched resource just got deleted
@@ -60,56 +58,39 @@ func (w *WatchContext) Watch(reconciledResourceNamespace string, reconciledResou
 			if !w.shouldReconcile(e.Object, spi.Deleted) {
 				return false
 			}
-			w.addTouchedResource(e.Object)
 			return true
 		},
 	}
 	// return a Watch with the predicate that is called in the future when a resource
-	// event occurs.  If the predicate returns true then the reconcile loop will be called
+	// event occurs.  If the predicate returns true. then the reconciler loop will be called
 	return w.Controller.Watch(
 		&w.ResourceKind,
-		w.createReconcileEventHandler(reconciledResourceNamespace, reconciledResourceName),
+		w.createReconcileEventHandler(),
 		p)
 }
 
-func (w *WatchContext) createReconcileEventHandler(namespace, name string) handler.EventHandler {
+// createReconcileEventHandler creates an event handler that will get called
+// when a watched event results in a true predicate.  Each CR resource that this controller
+// manages (meaning it exists) will be in the WatcherContext.reconcileResources list.
+// A reconcile.Request will be returned for each resource, causing the controller-runtime
+// to call Reconcile for that resource.
+func (w *WatchContext) createReconcileEventHandler() handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(
 		func(a client.Object) []reconcile.Request {
-			return []reconcile.Request{
-				{NamespacedName: types.NamespacedName{
-					Namespace: namespace,
-					Name:      name,
-				}},
+			requests := []reconcile.Request{}
+			resources := w.FuncGetControllerResources()
+			for i := range resources {
+				requests = append(requests, reconcile.Request{
+					NamespacedName: resources[i]})
 			}
+			return requests
 		})
 }
 
-// If the touched resource should cause a reconcile then return true
+// If the watched resource event should cause reconcile then return true
 func (w *WatchContext) shouldReconcile(watchedResource client.Object, ev spi.WatchEvent) bool {
 	if w.ShouldReconcile == nil {
 		return false
 	}
 	return w.ShouldReconcile(watchedResource, ev)
-}
-
-// Add touched resource to the map
-func (w *WatchContext) addTouchedResource(watchedResource client.Object) bool {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-	w.touchedResources = append(w.touchedResources,
-		&types.NamespacedName{Namespace: watchedResource.GetNamespace(), Name: watchedResource.GetName()})
-	return true
-}
-
-// GetTouchedNames gets the names of resources that were touched
-func (w *WatchContext) GetTouchedNames() []*types.NamespacedName {
-	names := []*types.NamespacedName{}
-	if len(w.touchedResources) > 0 {
-		w.mutex.Lock()
-		defer w.mutex.Unlock()
-		for i := range w.touchedResources {
-			names = append(names, w.touchedResources[i])
-		}
-	}
-	return names
 }

@@ -11,10 +11,12 @@ import (
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sync"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -37,17 +39,25 @@ type Reconciler struct {
 
 	// watcherMap is needed to keep track of which CRs have been initialized
 	// key is the NSN of the Gateway
-	watcherMap map[string][]*watcher.WatchContext
+	watcherMap map[types.NamespacedName][]*watcher.WatchContext
+
+	// controllerResources contains a set of CRs for this controller that exist.
+	// It is important that resources get added to this set during the base controller reconcile loop, as
+	// well as removed when the resource is deleted.
+	controllerResources map[types.NamespacedName]bool
+	mutex               sync.RWMutex
 }
 
 // InitBaseController inits the base controller
 func InitBaseController(mgr controllerruntime.Manager, controllerConfig ControllerConfig, class moduleplatform.LifecycleClassType) (*Reconciler, error) {
 	r := Reconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ControllerConfig: controllerConfig,
-		watcherMap:       make(map[string][]*watcher.WatchContext),
-		LifecycleClass:   class,
+		Client:              mgr.GetClient(),
+		Scheme:              mgr.GetScheme(),
+		ControllerConfig:    controllerConfig,
+		watcherMap:          make(map[types.NamespacedName][]*watcher.WatchContext),
+		LifecycleClass:      class,
+		controllerResources: make(map[types.NamespacedName]bool),
+		mutex:               sync.RWMutex{},
 	}
 
 	var err error
