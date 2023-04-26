@@ -21,8 +21,9 @@ import (
 
 type Component struct {
 	helmcomp.HelmComponent
-	HelmInfo *compspi.HelmInfo
-	chartDir string
+	HelmInfo     *compspi.HelmInfo
+	chartDir     string
+	mlcNamespace string
 }
 
 // upgradeFuncSig is a function needed for unit test override
@@ -49,7 +50,7 @@ func (h *Component) GetStatusConditions() compspi.StatusConditions {
 }
 
 // Init initializes the component with Helm chart information
-func (h *Component) Init(context spi.ComponentContext, HelmInfo *compspi.HelmInfo) (ctrl.Result, error) {
+func (h *Component) Init(context spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string) (ctrl.Result, error) {
 	h.HelmComponent = helmcomp.HelmComponent{
 		ReleaseName:             HelmInfo.HelmRelease.Name,
 		ChartDir:                h.chartDir,
@@ -64,7 +65,7 @@ func (h *Component) Init(context spi.ComponentContext, HelmInfo *compspi.HelmInf
 			return ctrl.Result{}, context.Log().ErrorfNewErr("Failed installing helm chart %s, stderr: %s", HelmInfo.Repository.URI, stderr)
 		}
 	}
-
+	h.mlcNamespace = mlcNamespace
 	h.HelmInfo = HelmInfo
 	return ctrl.Result{}, nil
 }
@@ -93,7 +94,7 @@ func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Res
 func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.HelmInfo.HelmRelease
-	helmOverrides, err := helm.ConvertToHelmOverrides(context.Log(), context.Client(), helmRelease.Name, helmRelease.Namespace, helmRelease.Overrides)
+	helmOverrides, err := helm.LoadOverrideFiles(context, helmRelease.Name, h.mlcNamespace, helmRelease.Overrides)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
