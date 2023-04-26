@@ -37,3 +37,4 @@ COPY --from=build_base --chown=verrazzano:verrazzano /root/go/src/github.com/ver
 USER 1000
 
 ENTRYPOINT ["/home/verrazzano/run.sh"]
+
