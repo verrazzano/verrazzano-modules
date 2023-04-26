@@ -59,11 +59,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// Handle finalizer
-	if r.Finalizer == nil {
-		if err := r.ensureFinalizer(log, cr); err != nil {
-			return newRequeueWithDelay(), nil
-		}
-		if !cr.GetDeletionTimestamp().IsZero() {
+	if r.Finalizer != nil {
+		// Make sure the CR has a finalizer, if it is not being deleted
+		if cr.GetDeletionTimestamp().IsZero() {
+			if err := r.ensureFinalizer(log, cr); err != nil {
+				return newRequeueWithDelay(), nil
+			}
+		} else {
 			// Resource is getting deleted
 			if err := r.deleteWatches(); err != nil {
 				return util.NewRequeueWithShortDelay(), nil
@@ -77,6 +79,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			if err := r.deleteFinalizer(log, cr); err != nil {
 				return util.NewRequeueWithShortDelay(), nil
 			}
+			log.Oncef("Successfully deleted resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
+
 			// all done, CR will be deleted from etcd
 			return ctrl.Result{}, nil
 		}
@@ -163,8 +167,12 @@ func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured
 // deleteFinalizer deletes the finalizer
 func (r *Reconciler) deleteFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) error {
 	finalizerName := r.Finalizer.GetName()
+	finalizers := u.GetFinalizers()
+	if !vzstring.SliceContainsString(finalizers, finalizerName) {
+		return nil
+	}
 	log.Oncef("Removing finalizer %s", finalizerName)
-	finalizers := vzstring.RemoveStringFromSlice(u.GetFinalizers(), finalizerName)
+	finalizers = vzstring.RemoveStringFromSlice(u.GetFinalizers(), finalizerName)
 	u.SetFinalizers(finalizers)
 	if err := r.Update(context.TODO(), u); err != nil {
 		return err

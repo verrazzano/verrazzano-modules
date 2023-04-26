@@ -9,7 +9,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const finalizerName = "modulelifecycle.finalizer.verrazzano.io"
+const finalizerName = "platform.verrazzano.io/modulelifecycle.finalizer"
 
 // GetName returns the name of the finalizer
 func (r Reconciler) GetName() string {
@@ -18,17 +18,5 @@ func (r Reconciler) GetName() string {
 
 // Cleanup garbage collects any related resources that were created by the controller
 func (r Reconciler) Cleanup(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
-	//if err := UpdateStatus(r.Client(), mlc, string(modulesv1alpha1.CondUninstall), modulesv1alpha1.CondUninstall); err != nil {
-	//	return ctrl.Result{}, err
-	//}
-	//if err := r.Uninstall(ctx); err != nil {
-	//	return newRequeueWithDelay(), err
-	//}
-	//if err := removeFinalizer(ctx, mlc); err != nil {
-	//	return newRequeueWithDelay(), err
-	//}
-	//ctx.Log().Infof("Uninstall of %s complete", common.GetNamespacedName(mlc.ObjectMeta))
-	//return ctrl.Result{}, nil
-
 	return ctrl.Result{}, nil
 }
