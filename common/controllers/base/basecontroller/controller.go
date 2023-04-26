@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	vzctrl "github.com/verrazzano/verrazzano/pkg/controller"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log/vzlog"
+	vzstring "github.com/verrazzano/verrazzano/pkg/string"
 	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -58,26 +60,29 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Handle finalizer
 	if r.Finalizer != nil {
-		if !cr.GetDeletionTimestamp().IsZero() {
+		// Make sure the CR has a finalizer, if it is not being deleted
+		if cr.GetDeletionTimestamp().IsZero() {
+			if err := r.ensureFinalizer(log, cr); err != nil {
+				return newRequeueWithDelay(), nil
+			}
+		} else {
 			// Resource is getting deleted
 			if err := r.deleteWatches(); err != nil {
-				return newRequeueWithDelay(), nil
+				return util.NewRequeueWithShortDelay(), nil
 			}
 
 			res, err := r.Cleanup(rctx, cr)
-			if err != nil {
-				return newRequeueWithDelay(), nil
+			if res2 := util.DeriveResult(res, err); res2.Requeue {
+				return res2, nil
 			}
-			if err != nil {
-				return newRequeueWithDelay(), nil
+
+			if err := r.deleteFinalizer(log, cr); err != nil {
+				return util.NewRequeueWithShortDelay(), nil
 			}
-			if vzctrl.ShouldRequeue(res) {
-				return res, nil
-			}
+			log.Oncef("Successfully deleted resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
+
+			// all done, CR will be deleted from etcd
 			return ctrl.Result{}, nil
-		}
-		if err := r.ensureFinalizer(log); err != nil {
-			return newRequeueWithDelay(), nil
 		}
 	}
 
@@ -142,9 +147,37 @@ func (r *Reconciler) deleteWatches() error {
 }
 
 // ensureFinalizer ensures that a finalizer exists and updates the CR if it doesn't
-func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger) error {
+func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) error {
+	finalizerName := r.Finalizer.GetName()
+	finalizers := u.GetFinalizers()
+	if vzstring.SliceContainsString(finalizers, finalizerName) {
+		return nil
+	}
 
-	// TODO - must implement
+	log.Oncef("Adding finalizer %s", finalizerName)
+	finalizers = append(finalizers, finalizerName)
+	u.SetFinalizers(finalizers)
+	if err := r.Update(context.TODO(), u); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// deleteFinalizer deletes the finalizer
+func (r *Reconciler) deleteFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) error {
+	finalizerName := r.Finalizer.GetName()
+	finalizers := u.GetFinalizers()
+	if !vzstring.SliceContainsString(finalizers, finalizerName) {
+		return nil
+	}
+	log.Oncef("Removing finalizer %s", finalizerName)
+	finalizers = vzstring.RemoveStringFromSlice(u.GetFinalizers(), finalizerName)
+	u.SetFinalizers(finalizers)
+	if err := r.Update(context.TODO(), u); err != nil {
+		return err
+	}
+
 	return nil
 }
 

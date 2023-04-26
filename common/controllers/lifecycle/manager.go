@@ -30,6 +30,7 @@ func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent, cl
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
 		Reconciler: &controller,
+		Finalizer:  &controller,
 	}
 	br, err := basecontroller.InitBaseController(mgr, config, class)
 	if err != nil {
