@@ -13,7 +13,7 @@ import (
 
 func NewLifeCycleComponent() compspi.LifecycleComponent {
 	return compspi.LifecycleComponent{
-		InstallAction:   install.NewComponent(),
+		InstallAction:   install.NewHandler(),
 		UninstallAction: uninstall.NewComponent(),
 		UpdateAction:    update.NewComponent(),
 		UpgradeAction:   upgrade.NewComponent(),
