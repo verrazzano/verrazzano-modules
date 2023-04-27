@@ -108,9 +108,9 @@ func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, erro
 		return false, util.NewRequeueWithShortDelay(), nil
 	}
 	if mlc.Status.State == moduleplatform.StateCompleted || mlc.Status.State == moduleplatform.StateNotNeeded {
-		ctx.Log().Progressf("Waiting for ModuleLifecycle %s to be completed", h.baseHandler.MlcName)
-		return true, util.NewRequeueWithShortDelay(), nil
+		return true, ctrl.Result{}, nil
 	}
+	ctx.Log().Progressf("Waiting for ModuleLifecycle %s to be completed", h.baseHandler.MlcName)
 	return false, ctrl.Result{}, nil
 }
 

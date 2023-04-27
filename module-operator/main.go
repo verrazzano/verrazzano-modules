@@ -5,9 +5,12 @@ package main
 
 import (
 	"flag"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/lifecycle"
+	helmfactory "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/factory"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/factory"
+	modulefactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/factory"
+
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
 	"go.uber.org/zap"
@@ -32,8 +35,14 @@ func main() {
 		return
 	}
 
+	// init module controller
+	if err := module.InitController(mgr, modulefactory.NewLifeCycleComponent(), ""); err != nil {
+		log.Errorf("Failed to start Isio Gateway controller", err)
+		return
+	}
+
 	// init helm lifecycle controller
-	if err := module.InitController(mgr, factory.NewLifeCycleComponent(), ""); err != nil {
+	if err := lifecycle.InitController(mgr, helmfactory.NewLifeCycleComponent(), moduleplatform.HelmLifecycleClass); err != nil {
 		log.Errorf("Failed to start Isio Gateway controller", err)
 		return
 	}
