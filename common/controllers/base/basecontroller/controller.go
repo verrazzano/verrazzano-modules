@@ -5,7 +5,6 @@ package basecontroller
 
 import (
 	"context"
-	"fmt"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
@@ -15,12 +14,14 @@ import (
 	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 // Reconcile the resource
+// The controller-runtime will call this method repeatedly if the ctrl.Result.Requeue is true, or an error is returned
+// This code will always return a nil error, and will set the ctrl.Result.Requeue to true (with a delay) if a requeue is needed.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	cr := &unstructured.Unstructured{}
 	gvk, _, err := r.Scheme.ObjectKinds(r.GetReconcileObject())
@@ -33,10 +34,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// If the resource is not found, that means all the finalizers have been removed,
 		// and the Verrazzano resource has been deleted, so there is nothing left to do.
 		if k8serrors.IsNotFound(err) {
+			r.removeControllerResource(req.NamespacedName)
 			return reconcile.Result{}, nil
 		}
 		zap.S().Errorf("Failed to fetch DNS resource: %v", err)
-		return newRequeueWithDelay(), nil
+		return util.NewRequeueWithShortDelay(), nil
 	}
 
 	log, err := vzlog.EnsureResourceLogger(&vzlog.ResourceConfig{
@@ -50,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		zap.S().Errorf("Failed to create controller logger for DNS controller", err)
 	}
 
-	log.Oncef("Reconciling resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
+	log.Progressf("Reconciling resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
 
 	// Create a new context for this reconcile loop
 	rctx := spi.ReconcileContext{
@@ -60,17 +62,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Handle finalizer
 	if r.Finalizer != nil {
-		// Make sure the CR has a finalizer, if it is not being deleted
+		// Make sure the CR has a finalizer
 		if cr.GetDeletionTimestamp().IsZero() {
 			if err := r.ensureFinalizer(log, cr); err != nil {
-				return newRequeueWithDelay(), nil
-			}
-		} else {
-			// Resource is getting deleted
-			if err := r.deleteWatches(); err != nil {
 				return util.NewRequeueWithShortDelay(), nil
 			}
-
+		} else {
+			// CR is being deleted
 			res, err := r.Cleanup(rctx, cr)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2, nil
@@ -79,70 +77,62 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			if err := r.deleteFinalizer(log, cr); err != nil {
 				return util.NewRequeueWithShortDelay(), nil
 			}
-			log.Oncef("Successfully deleted resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
 
 			// all done, CR will be deleted from etcd
+			log.Oncef("Successfully deleted resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
+			r.removeControllerResource(req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
 	}
 
 	if r.Watcher != nil {
-		if err := r.initWatches(log, cr.GetNamespace(), cr.GetName()); err != nil {
-			return newRequeueWithDelay(), nil
+		// Only keep track of resources if a watcher is used
+		r.addControllerResource(req.NamespacedName)
+
+		if err := r.initWatches(log, req.NamespacedName); err != nil {
+			return util.NewRequeueWithShortDelay(), nil
 		}
 	}
 
+	// Call the layered controller to reconcile.
 	res, err := r.Reconciler.Reconcile(rctx, cr)
 	if err != nil {
-		return newRequeueWithDelay(), nil
+		return util.NewRequeueWithShortDelay(), nil
 	}
 	if vzctrl.ShouldRequeue(res) {
 		return res, nil
 	}
 
 	// The resource has been reconciled.
-	log.Oncef("Successfully reconciled resource %v", req.NamespacedName)
+	log.Infof("Successfully reconciled resource %v", req.NamespacedName)
 	return ctrl.Result{}, nil
 }
 
 // Init the watches for this resource
-func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, namespace string, name string) error {
-	if r.Watcher == nil {
-		return nil
-	}
-
-	nsn := fmt.Sprintf("%s-%s", namespace, name)
-	_, ok := r.watcherMap[nsn]
-	if ok {
+func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, nsn types.NamespacedName) error {
+	if r.watchersInitialized {
 		return nil
 	}
 
 	// Get all the kinds of objects that need to be watched
 	// For each object, create a watchContext and call the watcher to watch it
-	watchKinds := r.Watcher.GetWatchedKinds()
-	var watchContexts []*watcher.WatchContext
-	for i := range watchKinds {
+	wds := r.Watcher.GetWatchDescriptors()
+	for i := range wds {
 		w := &watcher.WatchContext{
-			Controller:      r.Controller,
-			Log:             log,
-			ResourceKind:    watchKinds[i].Kind,
-			ShouldReconcile: watchKinds[i].FuncShouldReconcile,
+			Controller:                 r.Controller,
+			Log:                        log,
+			ResourceKind:               wds[i].Kind,
+			ShouldReconcile:            wds[i].FuncShouldReconcile,
+			FuncGetControllerResources: r.GetControllerResources,
 		}
-		err := w.Watch(namespace, name)
+		err := w.Watch()
 		if err != nil {
 			return err
 		}
-		watchContexts = append(watchContexts, w)
+		r.watchContexts = append(r.watchContexts, w)
 	}
 
-	r.watcherMap[nsn] = watchContexts
-	return nil
-}
-
-// deleteWatches deletes the watches for this resource
-func (r *Reconciler) deleteWatches() error {
-
-	// TODO - must implement
+	r.watchersInitialized = true
 	return nil
 }
 
@@ -181,7 +171,43 @@ func (r *Reconciler) deleteFinalizer(log vzlog.VerrazzanoLogger, u *unstructured
 	return nil
 }
 
-// Create a new Result that will cause a reconciliation requeue after a short delay
-func newRequeueWithDelay() ctrl.Result {
-	return vzctrl.NewRequeueWithDelay(2, 3, time.Second)
+// removeControllerResource removes a controller resource from the set
+func (r *Reconciler) removeControllerResource(nsn types.NamespacedName) {
+	if !r.controllerResourceExists(nsn) {
+		return
+	}
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	delete(r.controllerResources, nsn)
+}
+
+// addControllerResource adds a controller resource to the set
+func (r *Reconciler) addControllerResource(nsn types.NamespacedName) {
+	if r.controllerResourceExists(nsn) {
+		return
+	}
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.controllerResources[nsn] = true
+}
+
+// controllerResourceExists returns true if the resource is in the set
+func (r *Reconciler) controllerResourceExists(nsn types.NamespacedName) bool {
+	if r.controllerResources == nil {
+		return false
+	}
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	return r.controllerResources[nsn]
+}
+
+// GetControllerResources returns the list of controller resources
+func (r *Reconciler) GetControllerResources() []types.NamespacedName {
+	nsns := []types.NamespacedName{}
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	for k := range r.controllerResources {
+		nsns = append(nsns, k)
+	}
+	return nsns
 }

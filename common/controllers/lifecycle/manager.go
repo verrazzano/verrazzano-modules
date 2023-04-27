@@ -8,7 +8,6 @@ import (
 	spi "github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
