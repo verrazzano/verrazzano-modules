@@ -8,10 +8,8 @@ import (
 	spi "github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // Specify the SPI interfaces that this controller implements
@@ -32,7 +30,6 @@ func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent, cl
 	config := basecontroller.ControllerConfig{
 		Reconciler: &controller,
 		Finalizer:  &controller,
-		Watcher:    &controller,
 	}
 	br, err := basecontroller.InitBaseController(mgr, config, class)
 	if err != nil {
@@ -48,16 +45,4 @@ func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent, cl
 // GetReconcileObject returns the kind of object being reconciled
 func (r Reconciler) GetReconcileObject() client.Object {
 	return &moduleplatform.ModuleLifecycle{}
-}
-
-// GetWatchedKinds returns the list of object kinds being watched
-func (r Reconciler) GetWatchDescriptors() []spi.WatchDescriptor {
-	return []spi.WatchDescriptor{{
-		Kind:                source.Kind{Type: &corev1.Pod{}},
-		FuncShouldReconcile: shouldReconcile,
-	}}
-}
-
-func shouldReconcile(object client.Object, event spi.WatchEvent) bool {
-	return true
 }

@@ -20,6 +20,8 @@ import (
 )
 
 // Reconcile the resource
+// The controller-runtime will call this method repeatedly if the ctrl.Result.Requeue is true, or an error is returned
+// This code will always return a nil error, and will set the ctrl.Result.Requeue to true (with a delay) if a requeue is needed.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	cr := &unstructured.Unstructured{}
 	gvk, _, err := r.Scheme.ObjectKinds(r.GetReconcileObject())
@@ -50,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		zap.S().Errorf("Failed to create controller logger for DNS controller", err)
 	}
 
-	log.Oncef("Reconciling resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
+	log.Progressf("Reconciling resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
 
 	// Create a new context for this reconcile loop
 	rctx := spi.ReconcileContext{
@@ -60,12 +62,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Handle finalizer
 	if r.Finalizer != nil {
-		// Make sure the CR has a finalizer, if it is not being deleted
+		// Make sure the CR has a finalizer
 		if cr.GetDeletionTimestamp().IsZero() {
 			if err := r.ensureFinalizer(log, cr); err != nil {
 				return util.NewRequeueWithShortDelay(), nil
 			}
 		} else {
+			// CR is being deleted
 			res, err := r.Cleanup(rctx, cr)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2, nil
@@ -83,12 +86,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if r.Watcher != nil {
+		// Only keep track of resources if a watcher is used
 		r.addControllerResource(req.NamespacedName)
+
 		if err := r.initWatches(log, req.NamespacedName); err != nil {
 			return util.NewRequeueWithShortDelay(), nil
 		}
 	}
 
+	// Call the layered controller to reconcile.
 	res, err := r.Reconciler.Reconcile(rctx, cr)
 	if err != nil {
 		return util.NewRequeueWithShortDelay(), nil
@@ -98,7 +104,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// The resource has been reconciled.
-	log.Oncef("Successfully reconciled resource %v", req.NamespacedName)
+	log.Infof("Successfully reconciled resource %v", req.NamespacedName)
 	return ctrl.Result{}, nil
 }
 
