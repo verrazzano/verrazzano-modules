@@ -33,7 +33,7 @@ func (h *BaseHandler) GetStatusConditions() compspi.StatusConditions {
 	}
 }
 
-// Init initializes the component with Helm chart information
+// Init initializes the handler with Helm chart information
 func (h *BaseHandler) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error) {
 	h.HelmComponent = helmcomp.HelmComponent{
 		ReleaseName:             HelmInfo.HelmRelease.Name,
@@ -43,8 +43,8 @@ func (h *BaseHandler) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, m
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
 
-	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleplatform.HelmLifecycleClass, moduleplatform.InstallAction)
 	h.ModuleCR = cr.(*moduleplatform.Module)
+	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleplatform.HelmLifecycleClass, moduleplatform.InstallAction)
 	h.MlcNamespace = mlcNamespace
 	h.HelmInfo = HelmInfo
 	return ctrl.Result{}, nil

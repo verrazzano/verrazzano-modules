@@ -4,11 +4,11 @@ package moduleold
 
 import (
 	"context"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modlifecycle"
+	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/helm"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
 	"time"
 
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/common"
 	vzcontroller "github.com/verrazzano/verrazzano/pkg/controller"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	vzstring "github.com/verrazzano/verrazzano/pkg/string"
@@ -126,7 +126,7 @@ func (r *Reconciler) doReconcile(log vzlog.VerrazzanoLogger, moduleInstance *mod
 	}
 	if moduleInstance.Status.State != modulesv1alpha1.ModuleStateReady {
 		// Not in a ready state yet, requeue and re-check
-		log.Progressf("Module %s reconciling, requeue", common.GetNamespacedName(moduleInstance.ObjectMeta))
+		log.Progressf("Module %s reconciling, requeue", k8s.GetNamespacedName(moduleInstance.ObjectMeta))
 		return newRequeueWithDelay(), nil
 	}
 	log.Infof("Module %s/%s reconcile complete", moduleInstance.Namespace, moduleInstance.Name)
@@ -160,7 +160,7 @@ func (r *Reconciler) createLifecycleResource(sourceName string, sourceURI string
 			moduleInstaller.ObjectMeta.Labels = make(map[string]string)
 		}
 		moduleInstaller.Spec = modulesv1alpha1.ModuleLifecycleSpec{
-			LifecycleClassName: modlifecycle.POCLifecycleClass,
+			LifecycleClassName: modulesv1alpha1.HelmLifecycleClass,
 			Installer: modulesv1alpha1.ModuleInstaller{
 				HelmRelease: &modulesv1alpha1.HelmRelease{
 					Name:      chartName, // REVIEW: should this be associated with the Module name?
@@ -227,7 +227,7 @@ func (r *Reconciler) lookupModuleVersion(log vzlog.VerrazzanoLogger, moduleInsta
 		return moduleInstance.Spec.Version, nil
 	}
 	// - find the most recent module version in the repo
-	modVersion, err := common.FindLatestChartVersion(log, chartName, repoName, repoURI)
+	modVersion, err := helm.FindLatestChartVersion(log, chartName, repoName, repoURI)
 	if err != nil {
 		return "", err
 	}
