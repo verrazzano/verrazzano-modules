@@ -35,9 +35,9 @@ type Reconciler struct {
 	Scheme     *runtime.Scheme
 	Controller controller.Controller
 	ControllerConfig
-	LifecycleClass moduleplatform.LifecycleClassType
+	LifecycleClass      moduleplatform.LifecycleClassType
 	watchersInitialized bool
-	watchContexts []*watcher.WatchContext
+	watchContexts       []*watcher.WatchContext
 
 	// controllerResources contains a set of CRs for this controller that exist.
 	// It is important that resources get added to this set during the base controller reconcile loop, as
@@ -58,10 +58,16 @@ func InitBaseController(mgr controllerruntime.Manager, controllerConfig Controll
 	}
 
 	var err error
-	r.Controller, err = ctrl.NewControllerManagedBy(mgr).
-		For(controllerConfig.Reconciler.GetReconcileObject()).
-		WithEventFilter(r.createPredicateFilter()).
-		Build(&r)
+	if class == "" {
+		r.Controller, err = ctrl.NewControllerManagedBy(mgr).
+			For(controllerConfig.Reconciler.GetReconcileObject()).
+			Build(&r)
+	} else {
+		r.Controller, err = ctrl.NewControllerManagedBy(mgr).
+			For(controllerConfig.Reconciler.GetReconcileObject()).
+			WithEventFilter(r.createPredicateFilter()).
+			Build(&r)
+	}
 
 	if err != nil {
 		return nil, vzlog.DefaultLogger().ErrorfNewErr("Failed calling SetupWithManager for Istio Gateway controller: %v", err)

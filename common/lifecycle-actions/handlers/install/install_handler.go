@@ -50,7 +50,7 @@ func (h *Component) GetStatusConditions() compspi.StatusConditions {
 }
 
 // Init initializes the component with Helm chart information
-func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string) (ctrl.Result, error) {
+func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error) {
 	h.HelmComponent = helmcomp.HelmComponent{
 		ReleaseName:             HelmInfo.HelmRelease.Name,
 		ChartDir:                h.chartDir,
