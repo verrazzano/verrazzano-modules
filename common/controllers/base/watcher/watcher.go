@@ -36,10 +36,7 @@ func (w *WatchContext) Watch() error {
 		// a watched resource just got created
 		CreateFunc: func(e event.CreateEvent) bool {
 			w.Log.Infof("Watcher `create` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
-			if !w.shouldReconcile(e.Object, spi.Created) {
-				return false
-			}
-			return true
+			return w.shouldReconcile(e.Object, spi.Created)
 		},
 		// a watched resource just got updated
 		UpdateFunc: func(e event.UpdateEvent) bool {
@@ -47,18 +44,12 @@ func (w *WatchContext) Watch() error {
 				return false
 			}
 			w.Log.Infof("Watcher `update` event occurred for watched  resource %s/%s", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
-			if !w.shouldReconcile(e.ObjectNew, spi.Updated) {
-				return false
-			}
-			return true
+			return w.shouldReconcile(e.ObjectNew, spi.Updated)
 		},
 		// a watched resource just got deleted
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			w.Log.Infof("Watcher `delete` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
-			if !w.shouldReconcile(e.Object, spi.Deleted) {
-				return false
-			}
-			return true
+			return w.shouldReconcile(e.Object, spi.Deleted)
 		},
 	}
 	// return a Watch with the predicate that is called in the future when a resource
