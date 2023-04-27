@@ -50,7 +50,7 @@ func (h *Component) GetStatusConditions() compspi.StatusConditions {
 }
 
 // Init initializes the component with Helm chart information
-func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string) (ctrl.Result, error) {
+func (h *Component) Init(context spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string) (ctrl.Result, error) {
 	h.HelmComponent = helmcomp.HelmComponent{
 		ReleaseName:             HelmInfo.HelmRelease.Name,
 		ChartDir:                h.chartDir,
@@ -59,6 +59,9 @@ func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlc
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
 
+	if len(HelmInfo.Repository.URI) != 0 {
+		downloadChart(context.Log(), HelmInfo.Repository.URI, true)
+	}
 	h.mlcNamespace = mlcNamespace
 	h.HelmInfo = HelmInfo
 	return ctrl.Result{}, nil

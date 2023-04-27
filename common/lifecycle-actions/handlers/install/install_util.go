@@ -6,7 +6,12 @@ package install
 import (
 	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/helm"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
+	vzos "github.com/verrazzano/verrazzano/pkg/os"
+	"os/exec"
 )
+
+// cmdRunner needed for unit tests
+var runner vzos.CmdRunner = vzos.DefaultRunner{}
 
 func (h Component) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {
 	releaseChartVersion, err := helm.GetReleaseChartVersion(h.ReleaseName, h.ChartNamespace)
@@ -15,4 +20,23 @@ func (h Component) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {
 		return false
 	}
 	return h.HelmInfo.ChartInfo.Version == releaseChartVersion
+}
+
+// downloadChart will perform yum calls with specified arguments for operations
+// The verbose field is just used for visibility of command in logging
+func downloadChart(log vzlog.VerrazzanoLogger, uri string, verbose bool) (stdout []byte, stderr []byte, err error) {
+	cmdArgs := []string{"install", "-y", uri}
+	cmd := exec.Command("microdnf", cmdArgs...)
+	if verbose {
+		log.Progressf("Running microdnf command: %s", cmd.String())
+	}
+	stdout, stderr, err = runner.Run(cmd)
+	if err != nil {
+		if verbose {
+			log.Progressf("Failed running microdnf command %s: %s", cmd.String(), stderr)
+		}
+		return stdout, stderr, err
+	}
+	log.Debugf("microdnf %s succeeded: %s", stdout)
+	return stdout, stderr, nil
 }
