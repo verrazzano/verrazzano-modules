@@ -16,6 +16,15 @@ import (
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
+const (
+	defaultRepoName = "vz-stable"
+	defaultRepoURI  = "http://localhost:8080"
+)
+
+var (
+	trueValue = true
+)
+
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleplatform.Module{}
@@ -52,7 +61,7 @@ func loadHelmInfo(cr *moduleplatform.Module) compspi.HelmInfo {
 				Version: "0.1.0",
 				Path:    "/Users/pmackin/charts/vz-integration-operator-0.1.0.tgz",
 			},
-			Overrides:  nil,
+			Overrides: nil,
 		},
 	}
 	return helmInfo
@@ -60,4 +69,26 @@ func loadHelmInfo(cr *moduleplatform.Module) compspi.HelmInfo {
 
 func (r *Reconciler) getAction(cr *moduleplatform.Module) compspi.LifecycleActionHandler {
 	return r.comp.InstallAction
+}
+
+func (r *Reconciler) lookupModuleSource(mod *moduleplatform.Module) (repoName, sourceURI string) {
+	source := mod.Spec.Source
+	if source == nil {
+		return defaultRepoName, defaultRepoURI
+	}
+	return source.ChartRepo.Name, source.ChartRepo.URI
+}
+
+func (r *Reconciler) lookupChartNamespace(mod *moduleplatform.Module) string {
+	if len(mod.Spec.TargetNamespace) > 0 {
+		return mod.Spec.TargetNamespace
+	}
+	return mod.Namespace
+}
+
+func (r *Reconciler) lookupChartName(moduleInstance *moduleplatform.Module) string {
+	if len(moduleInstance.Spec.Name) > 0 {
+		return moduleInstance.Spec.Name
+	}
+	return moduleInstance.Name
 }
