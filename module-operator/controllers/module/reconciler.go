@@ -16,15 +16,6 @@ import (
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
-const (
-	defaultRepoName = "vz-stable"
-	defaultRepoURI  = "http://localhost:8080"
-)
-
-var (
-	trueValue = true
-)
-
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleplatform.Module{}
@@ -38,7 +29,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 
 	helmInfo, err := loadHelmInfo(cr)
 	if err != nil {
-		spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
+		err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
 		return util.NewRequeueWithShortDelay(), err
 	}
 	tracker := getTracker(cr.ObjectMeta, stateInit)
