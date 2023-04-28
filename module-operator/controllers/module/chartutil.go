@@ -7,29 +7,35 @@ import (
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
+	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"path/filepath"
 )
 
-func loadHelmInfo(cr *moduleplatform.Module) compspi.HelmInfo {
-	//	chartName := lookupChartName(cr)
+func loadHelmInfo(cr *moduleplatform.Module) (compspi.HelmInfo, error) {
+	chartDir := lookupChartDir(cr)
+	chartInfo, err := vzhelm.GetChartInfo(chartDir)
+	if err != nil {
+		return compspi.HelmInfo{}, err
+	}
 
 	helmInfo := compspi.HelmInfo{
 		HelmRelease: &moduleplatform.HelmRelease{
 			Name:      cr.Name,
 			Namespace: cr.Spec.TargetNamespace,
 			ChartInfo: moduleplatform.HelmChart{
-				Name:    "vz-integration-operator",
-				Version: "0.1.0",
-				Path:    lookupChartPath(cr),
+				Name:    chartInfo.Name,
+				Version: chartInfo.Version,
+				Path:    lookupChartDir(cr),
 			},
 			Overrides: nil,
 		},
 	}
-	return helmInfo
+	return helmInfo, nil
 }
 
-func lookupChartPath(mod *moduleplatform.Module) string {
-	chartpath := filepath.Join(config.Get().ChartsDir, lookupChartName(mod))
+func lookupChartDir(mod *moduleplatform.Module) string {
+	config := config.Get()
+	chartpath := filepath.Join(config.ChartsDir, lookupChartName(mod))
 	return chartpath
 }
 
@@ -41,7 +47,7 @@ func lookupChartName(mod *moduleplatform.Module) string {
 		chartName = "verrazzano-calico-operator"
 	case string(moduleplatform.CCMLifecycleClass):
 		chartName = "verrazzano-ccm-operator"
-	case string("vz-test"):
+	case string(moduleplatform.HelmLifecycleClass):
 		chartName = "vz-test"
 	}
 	return chartName

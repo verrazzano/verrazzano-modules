@@ -39,12 +39,12 @@ func NewHandler() compspi.LifecycleActionHandler {
 
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
 func (h *Handler) GetStatusConditions() compspi.StatusConditions {
-	return h.GetStatusConditions()
+	return h.BaseHandler.GetStatusConditions()
 }
 
 // Init initializes the component with Helm chart information
 func (h *Handler) Init(ctx spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error) {
-	return h.Init(ctx, HelmInfo, mlcNamespace, cr)
+	return h.BaseHandler.Init(ctx, HelmInfo, mlcNamespace, cr)
 }
 
 // IsActionNeeded returns true if install is needed

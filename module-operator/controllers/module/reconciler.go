@@ -36,7 +36,11 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 		return util.NewRequeueWithShortDelay(), err
 	}
 
-	helmInfo := loadHelmInfo(cr)
+	helmInfo, err := loadHelmInfo(cr)
+	if err != nil {
+		spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
+		return util.NewRequeueWithShortDelay(), err
+	}
 	tracker := getTracker(cr.ObjectMeta, stateInit)
 
 	action := r.getAction(cr)
