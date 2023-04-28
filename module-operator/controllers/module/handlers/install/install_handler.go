@@ -6,8 +6,8 @@ package install
 import (
 	"context"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/helm"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +21,7 @@ import (
 )
 
 type Handler struct {
-	baseHandler common.BaseHandler
+	BaseHandler common.BaseHandler
 }
 
 // upgradeFuncSig is a function needed for unit test override
@@ -39,12 +39,12 @@ func NewHandler() compspi.LifecycleActionHandler {
 
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
 func (h *Handler) GetStatusConditions() compspi.StatusConditions {
-	return h.baseHandler.GetStatusConditions()
+	return h.GetStatusConditions()
 }
 
 // Init initializes the component with Helm chart information
 func (h *Handler) Init(ctx spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error) {
-	return h.baseHandler.Init(ctx, HelmInfo, mlcNamespace, cr)
+	return h.Init(ctx, HelmInfo, mlcNamespace, cr)
 }
 
 // IsActionNeeded returns true if install is needed
@@ -74,8 +74,8 @@ func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	// Create ModuleLifecycle
 	mlc := moduleplatform.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      h.baseHandler.MlcName,
-			Namespace: h.baseHandler.ModuleCR.Namespace,
+			Name:      h.BaseHandler.MlcName,
+			Namespace: h.BaseHandler.ModuleCR.Namespace,
 		},
 	}
 	_, err := controllerutil.CreateOrUpdate(context.TODO(), ctx.Client(), &mlc, func() error {
@@ -92,36 +92,36 @@ func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 func (h Handler) mutateMLC(mlc *moduleplatform.ModuleLifecycle) error {
 	mlc.Spec.LifecycleClassName = moduleplatform.HelmLifecycleClass
 	mlc.Spec.Action = moduleplatform.InstallAction
-	mlc.Spec.Installer.HelmRelease = h.baseHandler.HelmInfo.HelmRelease
+	mlc.Spec.Installer.HelmRelease = h.BaseHandler.HelmInfo.HelmRelease
 	return nil
 }
 
 // IsActionDone Indicates whether a component is installed and ready
 func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	if ctx.IsDryRun() {
-		ctx.Log().Debugf("IsReady() dry run for %s", h.baseHandler.ReleaseName)
+		ctx.Log().Debugf("IsReady() dry run for %s", h.BaseHandler.ReleaseName)
 		return true, ctrl.Result{}, nil
 	}
 
-	mlc, err := h.baseHandler.GetModuleLifecycle(ctx)
+	mlc, err := h.BaseHandler.GetModuleLifecycle(ctx)
 	if err != nil {
 		return false, util.NewRequeueWithShortDelay(), nil
 	}
 	if mlc.Status.State == moduleplatform.StateCompleted || mlc.Status.State == moduleplatform.StateNotNeeded {
 		return true, ctrl.Result{}, nil
 	}
-	ctx.Log().Progressf("Waiting for ModuleLifecycle %s to be completed", h.baseHandler.MlcName)
+	ctx.Log().Progressf("Waiting for ModuleLifecycle %s to be completed", h.BaseHandler.MlcName)
 	return false, ctrl.Result{}, nil
 }
 
 // PostAction does installation post-action
 func (h Handler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	if ctx.IsDryRun() {
-		ctx.Log().Debugf("IsReady() dry run for %s", h.baseHandler.ReleaseName)
+		ctx.Log().Debugf("IsReady() dry run for %s", h.BaseHandler.ReleaseName)
 		return ctrl.Result{}, nil
 	}
 
-	if err := h.baseHandler.DeleteModuleLifecycle(ctx); err != nil {
+	if err := h.BaseHandler.DeleteModuleLifecycle(ctx); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	return ctrl.Result{}, nil

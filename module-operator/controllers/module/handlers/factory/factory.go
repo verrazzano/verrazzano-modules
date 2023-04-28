@@ -14,7 +14,7 @@ import (
 func NewLifeCycleComponent() compspi.LifecycleComponent {
 	return compspi.LifecycleComponent{
 		InstallAction:   install.NewHandler(),
-		UninstallAction: uninstall.NewComponent(),
+		UninstallAction: uninstall.NewHandler(),
 		UpdateAction:    update.NewComponent(),
 		UpgradeAction:   upgrade.NewComponent(),
 	}

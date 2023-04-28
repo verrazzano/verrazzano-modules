@@ -11,8 +11,7 @@ import (
 )
 
 func loadHelmInfo(cr *moduleplatform.Module) compspi.HelmInfo {
-	chartName := lookupChartName(cr)
-	chartPath := lookupChartPath(cr)
+	//	chartName := lookupChartName(cr)
 
 	helmInfo := compspi.HelmInfo{
 		HelmRelease: &moduleplatform.HelmRelease{
@@ -21,7 +20,7 @@ func loadHelmInfo(cr *moduleplatform.Module) compspi.HelmInfo {
 			ChartInfo: moduleplatform.HelmChart{
 				Name:    "vz-integration-operator",
 				Version: "0.1.0",
-				Path:    "/Users/pmackin/charts/vz-integration-operator-0.1.0.tgz",
+				Path:    lookupChartPath(cr),
 			},
 			Overrides: nil,
 		},
@@ -40,6 +39,8 @@ func lookupChartName(mod *moduleplatform.Module) string {
 	switch mod.Spec.ModuleName {
 	case string(moduleplatform.CalicoLifecycleClass):
 		chartName = "verrazzano-calico-operator"
+	case string(moduleplatform.CCMLifecycleClass):
+		chartName = "verrazzano-ccm-operator"
 	case string("vz-test"):
 		chartName = "vz-test"
 	}

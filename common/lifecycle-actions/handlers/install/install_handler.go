@@ -4,8 +4,8 @@
 package install
 
 import (
+	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/helm"
 	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 

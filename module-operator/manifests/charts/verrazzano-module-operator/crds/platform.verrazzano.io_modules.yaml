@@ -50,9 +50,7 @@ spec:
             description: ModuleSpec defines the attributes for a Verrazzano Module
               instance
             properties:
-              enabled:
-                type: boolean
-              name:
+              moduleName:
                 type: string
               overrides:
                 items:
@@ -100,25 +98,6 @@ spec:
                       x-kubernetes-preserve-unknown-fields: true
                   type: object
                 type: array
-              reconcile:
-                type: boolean
-              source:
-                properties:
-                  repo:
-                    properties:
-                      credentialsSecret:
-                        type: string
-                      name:
-                        type: string
-                      uri:
-                        type: string
-                    required:
-                    - name
-                    - uri
-                    type: object
-                  sourceRef:
-                    type: object
-                type: object
               targetNamespace:
                 type: string
               version:
