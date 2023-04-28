@@ -3,12 +3,29 @@
 
 package config
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
-const leaderElectionNamespaceVarName = "LEADER_ELECTION_NAMESPACE"
+const (
+	leaderElectionNamespaceVarName = "LEADER_ELECTION_NAMESPACE"
+	rootDirEnv                     = "VZ_ROOT_DIR"
+	defaultRootDir                 = "/home/verrazzano"
+	manifestRelDir                 = "manifests"
+	chartsRelDir                   = "manifests/charts"
+)
 
-// OperatorConfig specifies the Verrazzano Platform Operator Config
+// OperatorConfig specifies the module operator config
 type OperatorConfig struct {
+	// The RootDir is the root directory on the image (or the local system when developing)
+	RootDir string
+
+	// The Manifest dir is the absolute directory path of the manifest
+	ManifestDir string
+
+	// The Charts dir is the absolute directory path of the charts
+	ChartsDir string
 
 	// The CertDir directory containing tls.crt and tls.key
 	CertDir string
@@ -35,11 +52,21 @@ func Set(config OperatorConfig) {
 // Get returns the singleton instance of the operator config
 func Get() OperatorConfig {
 	if instance == nil {
+		rootDir := os.Getenv(rootDirEnv)
+		if len(rootDir) == 0 {
+			rootDir = defaultRootDir
+		}
+		manifestDir := filepath.Join(rootDir, manifestRelDir)
+		chartsDir := filepath.Join(rootDir, chartsRelDir)
+
 		instance = &OperatorConfig{
 			CertDir:                 "/etc/webhook/certs",
 			MetricsAddr:             ":8080",
 			LeaderElectionEnabled:   true,
 			LeaderElectionNamespace: GetWorkingNamespace(),
+			RootDir:                 rootDir,
+			ManifestDir:             manifestDir,
+			ChartsDir:               chartsDir,
 		}
 	}
 	return *instance

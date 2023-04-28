@@ -1,0 +1,44 @@
+// Copyright (c) 2023, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+package module
+
+import (
+	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// stateTracker keeps an in-memory state for a component doing actions
+type stateTracker struct {
+	state   state
+	gen     int64
+	compMap map[string]*componentTrackerContext
+}
+
+// componentTrackerContext has the component context stateTracker
+type componentTrackerContext struct {
+}
+
+// trackerMap has a map of trackers with key from VZ name, namespace, and UID
+var trackerMap = make(map[string]*stateTracker)
+
+// getTrackerKey gets the stateTracker key for the Verrazzano resource
+func getTrackerKey(cr metav1.ObjectMeta) string {
+	return fmt.Sprintf("%s-%s-%s", cr.Namespace, cr.Name, string(cr.UID))
+}
+
+// getTracker gets the install stateTracker for Verrazzano
+func getTracker(cr metav1.ObjectMeta, initialState state) *stateTracker {
+	key := getTrackerKey(cr)
+	vuc, ok := trackerMap[key]
+	// If the entry is missing or the generation is different create a new entry
+	if !ok || vuc.gen != cr.Generation {
+		vuc = &stateTracker{
+			state:   initialState,
+			gen:     cr.Generation,
+			compMap: make(map[string]*componentTrackerContext),
+		}
+		trackerMap[key] = vuc
+	}
+	return vuc
+}

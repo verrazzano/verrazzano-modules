@@ -5,91 +5,77 @@ package main
 
 import (
 	"flag"
-	platformv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modlifecycle"
-	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
-	"os"
-	controllerruntime "sigs.k8s.io/controller-runtime"
-
-	modulectrl "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/lifecycle"
+	helmfactory "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/factory"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
+	modulefactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/factory"
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
 	"go.uber.org/zap"
-	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	controllerruntime "sigs.k8s.io/controller-runtime"
 	kzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
-	// +kubebuilder:scaffold:imports
 )
 
-var scheme = runtime.NewScheme()
+func main() {
+	log := initLog()
 
-func init() {
-	_ = platformv1alpha1.AddToScheme(scheme)
+	// Use the same controller runtime.Manager for all the controllers, since the manager has the cluster cache and we
+	// want the cache to be shared across all the controllers.
+	mgr, err := controllerruntime.NewManager(k8sutil.GetConfigOrDieFromController(), controllerruntime.Options{
+		Scheme: initScheme(),
+		Port:   8080,
+	})
+	if err != nil {
+		log.Errorf("Failed to create a controller-runtime manager", err)
+		return
+	}
 
-	// Add K8S api-extensions so that we can list CustomResourceDefinitions during uninstall of VZ
-	_ = v1.AddToScheme(scheme)
-	// +kubebuilder:scaffold:scheme
+	// init module controller
+	if err := module.InitController(mgr, modulefactory.NewLifeCycleComponent(), ""); err != nil {
+		log.Errorf("Failed to start Isio Gateway controller", err)
+		return
+	}
+
+	// init helm lifecycle controller
+	if err := lifecycle.InitController(mgr, helmfactory.NewLifeCycleComponent(), moduleplatform.HelmLifecycleClass); err != nil {
+		log.Errorf("Failed to start Isio Gateway controller", err)
+		return
+	}
+
+	// +kubebuilder:scaffold:builder
+	log.Info("Starting controller-runtime manager")
+	if err := mgr.Start(controllerruntime.SetupSignalHandler()); err != nil {
+		log.Errorf("Failed to start controller-runtime manager", err)
+		return
+	}
 }
 
-func main() {
+// initScheme returns the all the schemes used by the controllers.  The controller runtime uses
+// a generic go client that can do operations on any object type, but it needs to know the schemes.
+func initScheme() *runtime.Scheme {
+	// Create a scheme then add each GKV group to the scheme
+	scheme := runtime.NewScheme()
 
-	// config will hold the entire operator config
-	config := internalconfig.Get()
+	utilruntime.Must(moduleplatform.AddToScheme(scheme))
+	utilruntime.Must(corev1.AddToScheme(scheme))
 
-	flag.StringVar(&config.MetricsAddr, "metrics-addr", config.MetricsAddr,
-		"The address the metric endpoint binds to.")
-	flag.BoolVar(&config.LeaderElectionEnabled, "enable-leader-election", config.LeaderElectionEnabled,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
+	//+kubebuilder:scaffold:scheme
 
+	return scheme
+}
+
+func initLog() *zap.SugaredLogger {
 	// Add the zap logger flag set to the CLI.
 	opts := kzap.Options{}
 	opts.BindFlags(flag.CommandLine)
 
 	flag.Parse()
 	kzap.UseFlagOptions(&opts)
-	//vzlog.InitLogs(opts)
+	vzlog.InitLogs(opts)
 
-	// Save the config as immutable from this point on.
-	log := zap.S()
-
-	mgr, err := controllerruntime.NewManager(k8sutil.GetConfigOrDieFromController(), controllerruntime.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: config.MetricsAddr,
-		Port:               8080,
-		LeaderElection:     config.LeaderElectionEnabled,
-		LeaderElectionID:   "d607cb6.verrazzano.io",
-	})
-	if err != nil {
-		log.Errorf("Failed to create a controller-runtime manager: %v", err)
-		os.Exit(1)
-	}
-
-	log.Info("Starting Verrazzano Module Operator")
-
-	if err := (&modlifecycle.Reconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		log.Error(err, "Failed to setup ModuleLifecycle controller", vzlog.FieldController, "ModuleLifecycleController")
-		os.Exit(1)
-	}
-
-	// v1beta2 VerrazzanoModule controller
-	if err = (&modulectrl.Reconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		log.Error(err, "Failed to setup Verrazzano Module controller", vzlog.FieldController, "VerrazzanoModuleController")
-		os.Exit(1)
-	}
-
-	// +kubebuilder:scaffold:builder
-	log.Info("Starting controller-runtime manager")
-	if err := mgr.Start(controllerruntime.SetupSignalHandler()); err != nil {
-		log.Errorf("Failed starting controller-runtime manager: %v", err)
-		os.Exit(1)
-	}
-	log.Infof("Exiting")
+	return zap.S()
 }

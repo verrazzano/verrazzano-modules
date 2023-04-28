@@ -36,13 +36,10 @@ type ModuleList struct {
 
 // ModuleSpec defines the attributes for a Verrazzano Module instance
 type ModuleSpec struct {
-	Name            string        `json:"name,omitempty"`
-	Enabled         bool          `json:"enabled,omitempty"`
-	Version         string        `json:"version,omitempty"`
-	TargetNamespace string        `json:"targetNamespace,omitempty"`
-	Reconcile       bool          `json:"reconcile,omitempty"`
-	Source          *ModuleSource `json:"source,omitempty"`
-	Overrides       []Overrides   `json:"overrides,omitempty"`
+	ModuleName      string      `json:"moduleName,omitempty"`
+	Version         string      `json:"version,omitempty"`
+	TargetNamespace string      `json:"targetNamespace,omitempty"`
+	Overrides       []Overrides `json:"overrides,omitempty"`
 }
 
 // Overrides identifies overrides for a component.

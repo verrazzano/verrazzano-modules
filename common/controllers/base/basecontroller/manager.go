@@ -9,7 +9,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
-	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -35,9 +34,9 @@ type Reconciler struct {
 	Scheme     *runtime.Scheme
 	Controller controller.Controller
 	ControllerConfig
-	LifecycleClass moduleplatform.LifecycleClassType
+	LifecycleClass      moduleplatform.LifecycleClassType
 	watchersInitialized bool
-	watchContexts []*watcher.WatchContext
+	watchContexts       []*watcher.WatchContext
 
 	// controllerResources contains a set of CRs for this controller that exist.
 	// It is important that resources get added to this set during the base controller reconcile loop, as
@@ -58,10 +57,16 @@ func InitBaseController(mgr controllerruntime.Manager, controllerConfig Controll
 	}
 
 	var err error
-	r.Controller, err = ctrl.NewControllerManagedBy(mgr).
-		For(controllerConfig.Reconciler.GetReconcileObject()).
-		WithEventFilter(r.createPredicateFilter()).
-		Build(&r)
+	if class == "" {
+		r.Controller, err = ctrl.NewControllerManagedBy(mgr).
+			For(controllerConfig.Reconciler.GetReconcileObject()).
+			Build(&r)
+	} else {
+		r.Controller, err = ctrl.NewControllerManagedBy(mgr).
+			For(controllerConfig.Reconciler.GetReconcileObject()).
+			WithEventFilter(r.createPredicateFilter()).
+			Build(&r)
+	}
 
 	if err != nil {
 		return nil, vzlog.DefaultLogger().ErrorfNewErr("Failed calling SetupWithManager for Istio Gateway controller: %v", err)
@@ -90,7 +95,6 @@ func (r *Reconciler) handlesEvent(object client.Object) bool {
 	mlc := moduleplatform.ModuleLifecycle{}
 	objectkey := client.ObjectKeyFromObject(object)
 	if err := r.Get(context.TODO(), objectkey, &mlc); err != nil {
-		zap.S().Errorf("Failed to get ModuleLifecycle %s", objectkey)
 		return false
 	}
 	return mlc.Spec.LifecycleClassName == r.LifecycleClass

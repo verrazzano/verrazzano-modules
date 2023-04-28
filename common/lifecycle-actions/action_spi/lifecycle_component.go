@@ -32,7 +32,7 @@ type LifecycleActionHandler interface {
 	GetStatusConditions() StatusConditions
 
 	// Init initializes the component Hekn information
-	Init(context vzspi.ComponentContext, chartInfo *HelmInfo, mlcNamespace string) (ctrl.Result, error)
+	Init(context vzspi.ComponentContext, chartInfo *HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error)
 
 	// IsActionNeeded returns true if action is needed
 	IsActionNeeded(context vzspi.ComponentContext) (bool, ctrl.Result, error)
