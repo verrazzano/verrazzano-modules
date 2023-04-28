@@ -72,9 +72,6 @@ type ModuleStatus struct {
 	Conditions []ModuleCondition `json:"conditions,omitempty"`
 }
 
-// ModuleConditionType identifies the condition of the Module resource, which can be checked with `kubectl wait`.
-type ModuleConditionType string
-
 // ModuleCondition describes the current state of an installation.
 type ModuleCondition struct {
 	// Last time the condition transitioned from one status to another.
@@ -84,7 +81,7 @@ type ModuleCondition struct {
 	// Status of the condition: one of `True`, `False`, or `Unknown`.
 	Status corev1.ConditionStatus `json:"status"`
 	// Type of condition.
-	Type ModuleConditionType `json:"type"`
+	Type LifecycleCondition `json:"type"`
 }
 
 type ChartVersion struct {

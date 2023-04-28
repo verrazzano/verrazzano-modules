@@ -4,6 +4,7 @@
 package module
 
 import (
+	"context"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
@@ -89,17 +90,19 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			}
 
 		case stateActionNotNeededUpdate:
-			//cond := s.action.GetStatusConditions().NotNeeded
-			//if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-			//	return util.NewRequeueWithShortDelay()
-			//}
+			s.cr.Status.State = moduleplatform.ModuleStateReady
+			if err := r.Client.Status().Update(context.TODO(), s.cr); err != nil {
+				return util.NewRequeueWithShortDelay()
+			}
 			s.tracker.state = stateEnd
 
 		case stateStartPreActionUpdate:
-			//cond := s.action.GetStatusConditions().PreAction
-			//if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-			//	return util.NewRequeueWithShortDelay()
-			//}
+			cond := s.action.GetStatusConditions().PreAction
+			AppendCondition(s.cr, string(cond), cond)
+			s.cr.Status.State = moduleplatform.ModuleStateReady
+			if err := r.Client.Status().Update(context.TODO(), s.cr); err != nil {
+				return util.NewRequeueWithShortDelay()
+			}
 			s.tracker.state = statePreAction
 
 		case statePreAction:
@@ -121,10 +124,12 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = stateStartActionUpdate
 
 		case stateStartActionUpdate:
-			//cond := s.action.GetStatusConditions().DoAction
-			//if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-			//	return util.NewRequeueWithShortDelay()
-			//}
+			cond := s.action.GetStatusConditions().DoAction
+			AppendCondition(s.cr, string(cond), cond)
+			s.cr.Status.State = moduleplatform.ModuleStateReady
+			if err := r.Client.Status().Update(context.TODO(), s.cr); err != nil {
+				return util.NewRequeueWithShortDelay()
+			}
 			s.tracker.state = stateAction
 
 		case stateAction:
@@ -164,10 +169,11 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			s.tracker.state = stateCompleteUpdate
 
 		case stateCompleteUpdate:
-			//cond := s.action.GetStatusConditions().Completed
-			//if err := UpdateStatus(r.Client, s.cr, string(cond), cond); err != nil {
-			//	return util.NewRequeueWithShortDelay()
-			//}
+			AppendCondition(s.cr, string(moduleplatform.CondReady), moduleplatform.CondReady)
+			s.cr.Status.State = moduleplatform.ModuleStateReady
+			if err := r.Client.Status().Update(context.TODO(), s.cr); err != nil {
+				return util.NewRequeueWithShortDelay()
+			}
 			spiCtx.Log().Progressf("Successfully completed %s for %s", actionName, nsn)
 
 			s.tracker.state = stateEnd

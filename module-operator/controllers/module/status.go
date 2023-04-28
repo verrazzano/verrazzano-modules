@@ -4,33 +4,35 @@
 package module
 
 import (
-	"context"
 	"fmt"
 	"time"
 
-	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	modulesplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// UpdateStatus configures the Module's status based on the passed in state and then updates the Module on the cluster
-func UpdateStatus(client client.Client, module *modulesv1alpha1.Module, msg string, condition modulesv1alpha1.ModuleCondition) error {
-	state := modulesv1alpha1.ModuleStateReconciling
+func AppendCondition(module *modulesplatform.Module, message string, conditionType modulesplatform.LifecycleCondition) {
+	conditions := module.Status.Conditions
+	newCondition := NewCondition(message, conditionType)
+	var lastCondition modulesplatform.ModuleCondition
+	if len(conditions) > 0 {
+		lastCondition = conditions[len(conditions)-1]
+	}
 
-	// Update the Module's State
-	module.Status.State = modulesv1alpha1.ModuleStateType(state)
-
-	// Append a new condition, if applicable
-	AppendCondition(module, msg, condition)
-
-	// Update the module lifecycle status
-	return client.Status().Update(context.TODO(), module)
+	// Only update the conditions if there is a notable change between the last update
+	if needsConditionUpdate(lastCondition, newCondition) {
+		// Delete the oldest condition if at tracking limit
+		if len(conditions) > modulesplatform.ConditionArrayLimit {
+			conditions = conditions[1:]
+		}
+		module.Status.Conditions = append(conditions, newCondition)
+	}
 }
 
-func NewCondition(message string, condition modulesv1alpha1.ModuleCondition) modulesv1alpha1.ModuleCondition {
+func NewCondition(message string, conditionType modulesplatform.LifecycleCondition) modulesplatform.ModuleCondition {
 	t := time.Now().UTC()
-	return modulesv1alpha1.ModuleCondition{
-		Type:    condition.Type,
+	return modulesplatform.ModuleCondition{
+		Type:    conditionType,
 		Message: message,
 		Status:  corev1.ConditionTrue,
 		LastTransitionTime: fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02dZ",
@@ -39,25 +41,7 @@ func NewCondition(message string, condition modulesv1alpha1.ModuleCondition) mod
 	}
 }
 
-func AppendCondition(module *modulesv1alpha1.Module, message string, condition modulesv1alpha1.ModuleCondition) {
-	conditions := module.Status.Conditions
-	newCondition := NewCondition(message, condition)
-	var lastCondition modulesv1alpha1.ModuleCondition
-	if len(conditions) > 0 {
-		lastCondition = conditions[len(conditions)-1]
-	}
-
-	// Only update the conditions if there is a notable change between the last update
-	if needsConditionUpdate(lastCondition, newCondition) {
-		// Delete the oldest condition if at tracking limit
-		if len(conditions) > modulesv1alpha1.ConditionArrayLimit {
-			conditions = conditions[1:]
-		}
-		module.Status.Conditions = append(conditions, newCondition)
-	}
-}
-
 // needsConditionUpdate checks if the condition needs an update
-func needsConditionUpdate(last, new modulesv1alpha1.ModuleCondition) bool {
+func needsConditionUpdate(last, new modulesplatform.ModuleCondition) bool {
 	return last.Type != new.Type && last.Message != new.Message
 }
