@@ -51,44 +51,6 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	return res, nil
 }
 
-func loadHelmInfo(cr *moduleplatform.Module) compspi.HelmInfo {
-	helmInfo := compspi.HelmInfo{
-		HelmRelease: &moduleplatform.HelmRelease{
-			Name:      "vz-integration-operator",
-			Namespace: "default",
-			ChartInfo: moduleplatform.HelmChart{
-				Name:    "vz-integration-operator",
-				Version: "0.1.0",
-				Path:    "/Users/pmackin/charts/vz-integration-operator-0.1.0.tgz",
-			},
-			Overrides: nil,
-		},
-	}
-	return helmInfo
-}
-
 func (r *Reconciler) getAction(cr *moduleplatform.Module) compspi.LifecycleActionHandler {
 	return r.comp.InstallAction
-}
-
-func (r *Reconciler) lookupModuleSource(mod *moduleplatform.Module) (repoName, sourceURI string) {
-	source := mod.Spec.Source
-	if source == nil {
-		return defaultRepoName, defaultRepoURI
-	}
-	return source.ChartRepo.Name, source.ChartRepo.URI
-}
-
-func (r *Reconciler) lookupChartNamespace(mod *moduleplatform.Module) string {
-	if len(mod.Spec.TargetNamespace) > 0 {
-		return mod.Spec.TargetNamespace
-	}
-	return mod.Namespace
-}
-
-func (r *Reconciler) lookupChartName(moduleInstance *moduleplatform.Module) string {
-	if len(moduleInstance.Spec.Name) > 0 {
-		return moduleInstance.Spec.Name
-	}
-	return moduleInstance.Name
 }

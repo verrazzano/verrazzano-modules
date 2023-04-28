@@ -1,113 +1,133 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package uninstall
+package install
 
 import (
+	"context"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/helm"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
+	"helm.sh/helm/v3/pkg/release"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 
-	"github.com/verrazzano/verrazzano/platform-operator/constants"
-	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 )
 
-type Component struct {
-	helmcomp.HelmComponent
-	HelmInfo *compspi.HelmInfo
-	chartDir string
+type Handler struct {
+	baseHandler common.BaseHandler
 }
 
-var _ compspi.LifecycleActionHandler = &Component{}
+// upgradeFuncSig is a function needed for unit test override
+type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
 
-func NewComponent() compspi.LifecycleActionHandler {
-	return &Component{}
+var (
+	_ compspi.LifecycleActionHandler = &Handler{}
+
+	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
+)
+
+func NewHandler() compspi.LifecycleActionHandler {
+	return &Handler{}
 }
 
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
-func (h *Component) GetStatusConditions() compspi.StatusConditions {
-	return compspi.StatusConditions{
-		NotNeeded: moduleplatform.CondAlreadyUninstalled,
-		PreAction: moduleplatform.CondPreUninstall,
-		DoAction:  moduleplatform.CondUninstallStarted,
-		Completed: moduleplatform.CondUninstallComplete,
-	}
+func (h *Handler) GetStatusConditions() compspi.StatusConditions {
+	return h.baseHandler.GetStatusConditions()
 }
 
 // Init initializes the component with Helm chart information
-func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, _ string, cr interface{}) (ctrl.Result, error) {
-	h.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             HelmInfo.HelmRelease.Name,
-		ChartDir:                h.chartDir,
-		ChartNamespace:          HelmInfo.HelmRelease.Namespace,
-		IgnoreNamespaceOverride: true,
-		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
-	}
-
-	h.HelmInfo = HelmInfo
-	return ctrl.Result{}, nil
+func (h *Handler) Init(ctx spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error) {
+	return h.baseHandler.Init(ctx, HelmInfo, mlcNamespace, cr)
 }
 
-// IsActionNeeded returns true if uninstall is needed
-func (h Component) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
-	if err != nil {
-		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
-		return true, ctrl.Result{}, err
-	}
-	return installed, ctrl.Result{}, err
+// IsActionNeeded returns true if install is needed
+func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
+	return true, ctrl.Result{}, nil
+
+	//installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
+	//if err != nil {
+	//	ctx.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
+	//	return true, ctrl.Result{}, err
+	//}
+	//return !installed, ctrl.Result{}, err
 }
 
 // PreAction does installation pre-action
-func (h Component) PreAction(context spi.ComponentContext) (ctrl.Result, error) {
+func (h Handler) PreAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
 // IsPreActionDone returns true if pre-action done
-func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h Handler) IsPreActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
 // DoAction installs the component using Helm
-func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
-	if err != nil {
-		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
-		return ctrl.Result{}, err
+func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
+	// Create ModuleLifecycle
+	mlc := moduleplatform.ModuleLifecycle{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      h.baseHandler.MlcName,
+			Namespace: h.baseHandler.ModuleCR.Namespace,
+		},
 	}
-	if !installed {
-		return ctrl.Result{}, err
-	}
+	_, err := controllerutil.CreateOrUpdate(context.TODO(), ctx.Client(), &mlc, func() error {
+		err := h.mutateMLC(&mlc)
 
-	err = vzhelm.Uninstall(context.Log(), h.ReleaseName, h.ChartNamespace, context.IsDryRun())
+		//	TODO - figure out how to get scheme, also does controller ref need to be set
+		//	return controllerutil.SetControllerReference(h.moduleCR, &mlc, h.Scheme)
+		return err
+	})
+
 	return ctrl.Result{}, err
 }
 
+func (h Handler) mutateMLC(mlc *moduleplatform.ModuleLifecycle) error {
+	mlc.Spec.LifecycleClassName = moduleplatform.HelmLifecycleClass
+	mlc.Spec.Action = moduleplatform.InstallAction
+	mlc.Spec.Installer.HelmRelease = h.baseHandler.HelmInfo.HelmRelease
+	return nil
+}
+
 // IsActionDone Indicates whether a component is installed and ready
-func (h Component) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	if context.IsDryRun() {
-		context.Log().Debugf("IsReady() dry run for %s", h.ReleaseName)
+func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
+	if ctx.IsDryRun() {
+		ctx.Log().Debugf("IsReady() dry run for %s", h.baseHandler.ReleaseName)
 		return true, ctrl.Result{}, nil
 	}
 
-	deployed, err := vzhelm.IsReleaseDeployed(h.ReleaseName, h.ChartNamespace)
+	mlc, err := h.baseHandler.GetModuleLifecycle(ctx)
 	if err != nil {
-		context.Log().ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
-		return false, ctrl.Result{}, err
+		return false, util.NewRequeueWithShortDelay(), nil
 	}
-
-	return !deployed, ctrl.Result{}, nil
+	if mlc.Status.State == moduleplatform.StateCompleted || mlc.Status.State == moduleplatform.StateNotNeeded {
+		return true, ctrl.Result{}, nil
+	}
+	ctx.Log().Progressf("Waiting for ModuleLifecycle %s to be completed", h.baseHandler.MlcName)
+	return false, ctrl.Result{}, nil
 }
 
-// PostAction does installation pre-action
-func (h Component) PostAction(context spi.ComponentContext) (ctrl.Result, error) {
+// PostAction does installation post-action
+func (h Handler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
+	if ctx.IsDryRun() {
+		ctx.Log().Debugf("IsReady() dry run for %s", h.baseHandler.ReleaseName)
+		return ctrl.Result{}, nil
+	}
+
+	if err := h.baseHandler.DeleteModuleLifecycle(ctx); err != nil {
+		return util.NewRequeueWithShortDelay(), nil
+	}
 	return ctrl.Result{}, nil
 }
 
 // IsPostActionDone returns true if post-action done
-func (h Component) IsPostActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
