@@ -9,7 +9,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
-	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -96,7 +95,6 @@ func (r *Reconciler) handlesEvent(object client.Object) bool {
 	mlc := moduleplatform.ModuleLifecycle{}
 	objectkey := client.ObjectKeyFromObject(object)
 	if err := r.Get(context.TODO(), objectkey, &mlc); err != nil {
-		zap.S().Errorf("Failed to get ModuleLifecycle %s", objectkey)
 		return false
 	}
 	return mlc.Spec.LifecycleClassName == r.LifecycleClass

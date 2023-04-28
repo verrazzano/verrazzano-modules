@@ -10,6 +10,7 @@ import (
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -53,7 +54,7 @@ func (h *BaseHandler) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, m
 func (h BaseHandler) GetModuleLifecycle(ctx spi.ComponentContext) (*moduleplatform.ModuleLifecycle, error) {
 	mlc := moduleplatform.ModuleLifecycle{}
 	nsn := types.NamespacedName{
-		Name:      DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleplatform.HelmLifecycleClass, moduleplatform.InstallAction),
+		Name:      h.MlcName,
 		Namespace: h.ModuleCR.Namespace,
 	}
 
@@ -62,4 +63,19 @@ func (h BaseHandler) GetModuleLifecycle(ctx spi.ComponentContext) (*moduleplatfo
 		return nil, err
 	}
 	return &mlc, nil
+}
+
+func (h BaseHandler) DeleteModuleLifecycle(ctx spi.ComponentContext) error {
+	mlc := moduleplatform.ModuleLifecycle{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      h.MlcName,
+			Namespace: h.ModuleCR.Namespace,
+		},
+	}
+
+	if err := ctx.Client().Delete(context.TODO(), &mlc); err != nil {
+		ctx.Log().ErrorfThrottled("Failed trying to delete ModuleLifecycles/%s: %v", mlc.Namespace, mlc.Name, err)
+		return err
+	}
+	return nil
 }

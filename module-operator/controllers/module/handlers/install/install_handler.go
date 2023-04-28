@@ -114,19 +114,16 @@ func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, erro
 	return false, ctrl.Result{}, nil
 }
 
-// PostAction does installation pre-action
+// PostAction does installation post-action
 func (h Handler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	if ctx.IsDryRun() {
 		ctx.Log().Debugf("IsReady() dry run for %s", h.baseHandler.ReleaseName)
 		return ctrl.Result{}, nil
 	}
 
-	_, err := h.baseHandler.GetModuleLifecycle(ctx)
-	if err != nil {
+	if err := h.baseHandler.DeleteModuleLifecycle(ctx); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
-
-	// TODO update module cr status
 	return ctrl.Result{}, nil
 }
 
