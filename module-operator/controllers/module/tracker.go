@@ -19,27 +19,27 @@ type stateTracker struct {
 var trackerMap = make(map[string]*stateTracker)
 
 // getTrackerKey gets the stateTracker key for the Verrazzano resource
-func getTrackerKey(cr metav1.ObjectMeta, gen int64) string {
-	return fmt.Sprintf("%s-%s-%v-%s", cr.Namespace, cr.Name, gen, string(cr.UID))
+func getTrackerKey(meta metav1.ObjectMeta, gen int64) string {
+	return fmt.Sprintf("%s-%s-%v-%s", meta.Namespace, meta.Name, gen, string(meta.UID))
 }
 
 // getTracker gets the install stateTracker for Verrazzano
-func getTracker(cr metav1.ObjectMeta, initialState state) *stateTracker {
+func getTracker(meta metav1.ObjectMeta, initialState state) *stateTracker {
 	mutex := sync.RWMutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
-	key := getTrackerKey(cr, cr.Generation)
+	key := getTrackerKey(meta, meta.Generation)
 	tracker, ok := trackerMap[key]
 	// If the entry is missing then create a new entry
 	if !ok {
 		tracker = &stateTracker{
 			state: initialState,
-			gen:   cr.Generation,
+			gen:   meta.Generation,
 		}
 		trackerMap[key] = tracker
 
 		// Delete the previous entry if it exists
-		key := getTrackerKey(cr, cr.Generation-1)
+		key := getTrackerKey(meta, meta.Generation-1)
 		_, ok := trackerMap[key]
 		if ok {
 			delete(trackerMap, key)

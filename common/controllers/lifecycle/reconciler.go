@@ -8,57 +8,55 @@ import (
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-
-	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
-// componentState identifies the state of a component during action
-type componentState string
+// state identifies the state of a component during action
+type state string
 
 const (
 	// stateInit is the state when a component is initialized
-	stateInit componentState = "componentStateInit"
+	stateInit state = "stateInit"
 
 	// stateCheckActionNeeded is the state to check if action is needed
-	stateCheckActionNeeded componentState = "stateCheckActionNeeded"
+	stateCheckActionNeeded state = "stateCheckActionNeeded"
 
 	// stateActionNotNeededUpdate is the state when the status is updated to not needed
-	stateActionNotNeededUpdate componentState = "stateActionNotNeededUpdate"
+	stateActionNotNeededUpdate state = "stateActionNotNeededUpdate"
 
 	// stateStartPreActionUpdate is the state when the status is updated to start pre action
-	stateStartPreActionUpdate componentState = "stateStartPreActionUpdate"
+	stateStartPreActionUpdate state = "stateStartPreActionUpdate"
 
 	// stateStartActionUpdate is the state when the status is updated to start action
-	stateStartActionUpdate componentState = "stateStartActionUpdate"
+	stateStartActionUpdate state = "stateStartActionUpdate"
 
 	// statePreAction is the state when a component does a pre-action
-	statePreAction componentState = "statePreAction"
+	statePreAction state = "statePreAction"
 
 	// statePreActionWaitDone is the state when a component is waiting for pre-action to be done
-	statePreActionWaitDone componentState = "statePreActionWaitDone"
+	statePreActionWaitDone state = "statePreActionWaitDone"
 
 	// stateAction is the state where a component does an action
-	stateAction componentState = "stateAction"
+	stateAction state = "stateAction"
 
 	// stateActionWaitDone is the state when a component is waiting for action to be done
-	stateActionWaitDone componentState = "stateActionWaitDone"
+	stateActionWaitDone state = "stateActionWaitDone"
 
 	// statePostAction is the state when a component does a post-action
-	statePostAction componentState = "statePostAction"
+	statePostAction state = "statePostAction"
 
 	// statePostActionWaitDone is the state when a component is waiting for post-action to be done
-	statePostActionWaitDone componentState = "statePostActionWaitDone"
+	statePostActionWaitDone state = "statePostActionWaitDone"
 
 	// stateCompleteUpdate is the state when the status is updated to completed
-	stateCompleteUpdate componentState = "stateCompleteUpdate"
+	stateCompleteUpdate state = "stateCompleteUpdate"
 
 	// stateEnd is the terminal state
-	stateEnd componentState = "stateEnd"
+	stateEnd state = "stateEnd"
 )
 
 type stateMachineContext struct {
