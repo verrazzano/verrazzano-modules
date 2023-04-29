@@ -34,9 +34,9 @@ func (h *Handler) GetStatusConditions() compspi.StatusConditions {
 	return h.BaseHandler.GetStatusConditions()
 }
 
-// Init initializes the component with Helm chart information
-func (h *Handler) Init(ctx spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error) {
-	return h.BaseHandler.Init(ctx, HelmInfo, mlcNamespace, cr, moduleplatform.InstallAction)
+// Init initializes the handler
+func (h *Handler) Init(ctx spi.ComponentContext, config compspi.HandlerConfig) (ctrl.Result, error) {
+	return h.BaseHandler.Init(ctx, config, moduleplatform.InstallAction)
 }
 
 // IsActionNeeded returns true if install is needed

@@ -8,8 +8,6 @@ import (
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano/platform-operator/constants"
-	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,13 +15,11 @@ import (
 )
 
 type BaseHandler struct {
-	helmcomp.HelmComponent
-	HelmInfo     *compspi.HelmInfo
-	ChartDir     string
-	MlcName      string
-	MlcNamespace string
+	Config       compspi.HandlerConfig
 	ModuleCR     *moduleplatform.Module
 	Action       moduleplatform.ActionType
+	MlcName      string
+	MlcNamespace string
 }
 
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
@@ -37,19 +33,12 @@ func (h *BaseHandler) GetStatusConditions() compspi.StatusConditions {
 }
 
 // Init initializes the handler with Helm chart information
-func (h *BaseHandler) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}, action moduleplatform.ActionType) (ctrl.Result, error) {
-	h.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             HelmInfo.HelmRelease.Name,
-		ChartDir:                h.ChartDir,
-		ChartNamespace:          HelmInfo.HelmRelease.Namespace,
-		IgnoreNamespaceOverride: true,
-		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
-	}
-
-	h.ModuleCR = cr.(*moduleplatform.Module)
+func (h *BaseHandler) Init(_ spi.ComponentContext, config compspi.HandlerConfig, action moduleplatform.ActionType) (ctrl.Result, error) {
+	h.Config = config
+	return ctrl.Result{}, nil
+	h.ModuleCR = config.CR.(*moduleplatform.Module)
 	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleplatform.HelmLifecycleClass, moduleplatform.InstallAction)
-	h.MlcNamespace = mlcNamespace
-	h.HelmInfo = HelmInfo
+	h.MlcNamespace = h.ModuleCR.Namespace
 	h.Action = action
 	return ctrl.Result{}, nil
 }
@@ -65,10 +54,10 @@ func (h BaseHandler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	}
 	_, err := controllerutil.CreateOrUpdate(context.TODO(), ctx.Client(), &mlc, func() error {
 		err := h.mutateMLC(&mlc)
-
-		//	TODO - figure out how to get scheme, also does controller ref need to be set
-		//	return controllerutil.SetControllerReference(h.moduleCR, &mlc, h.Scheme)
-		return err
+		if err != nil {
+			return err
+		}
+		return controllerutil.SetControllerReference(h.ModuleCR, &mlc, h.Config.Scheme)
 	})
 
 	return ctrl.Result{}, err
@@ -77,14 +66,13 @@ func (h BaseHandler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 func (h BaseHandler) mutateMLC(mlc *moduleplatform.ModuleLifecycle) error {
 	mlc.Spec.LifecycleClassName = moduleplatform.HelmLifecycleClass
 	mlc.Spec.Action = h.Action
-	mlc.Spec.Installer.HelmRelease = h.HelmInfo.HelmRelease
+	mlc.Spec.Installer.HelmRelease = h.Config.HelmInfo.HelmRelease
 	return nil
 }
 
 // IsActionDone returns true if the module action is done
 func (h BaseHandler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	if ctx.IsDryRun() {
-		ctx.Log().Debugf("IsReady() dry run for %s", h.ReleaseName)
 		return true, ctrl.Result{}, nil
 	}
 
@@ -102,7 +90,6 @@ func (h BaseHandler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, 
 // PostAction does post-action
 func (h BaseHandler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	if ctx.IsDryRun() {
-		ctx.Log().Debugf("IsReady() dry run for %s", h.ReleaseName)
 		return ctrl.Result{}, nil
 	}
 

@@ -6,11 +6,13 @@ package action_spi
 import (
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type HelmInfo struct {
 	*modulesv1alpha1.HelmRelease
+	ChartDir string
 }
 
 type StatusConditions struct {
@@ -27,6 +29,12 @@ type LifecycleComponent struct {
 	UpgradeAction   LifecycleActionHandler
 }
 
+type HandlerConfig struct {
+	HelmInfo
+	CR           interface{}
+	Scheme       *runtime.Scheme
+}
+
 type LifecycleActionHandler interface {
 	// GetActionName returns the action name
 	GetActionName() string
@@ -35,7 +43,7 @@ type LifecycleActionHandler interface {
 	GetStatusConditions() StatusConditions
 
 	// Init initializes the component Hekn information
-	Init(context vzspi.ComponentContext, chartInfo *HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error)
+	Init(context vzspi.ComponentContext, config HandlerConfig) (ctrl.Result, error)
 
 	// IsActionNeeded returns true if action is needed
 	IsActionNeeded(context vzspi.ComponentContext) (bool, ctrl.Result, error)
