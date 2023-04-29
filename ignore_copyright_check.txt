@@ -5,3 +5,4 @@ LICENSES-OLCNE.pdf
 coverage.xml
 .idea
 .DS_Store
+module-operator/manifests/charts/calico
