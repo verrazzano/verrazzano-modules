@@ -10,82 +10,71 @@ import (
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano/platform-operator/constants"
-	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
+)
+import (
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 )
 
-type Component struct {
-	helmcomp.HelmComponent
-	HelmInfo     *compspi.HelmInfo
-	chartDir     string
-	mlcNamespace string
+type Handler struct {
+	BaseHandler common.BaseHandler
 }
 
 var (
-	_ compspi.LifecycleActionHandler = &Component{}
+	_ compspi.LifecycleActionHandler = &Handler{}
 )
 
-func NewComponent() compspi.LifecycleActionHandler {
-	return &Component{}
+func NewHandler() compspi.LifecycleActionHandler {
+	return &Handler{}
 }
 
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
-func (h *Component) GetStatusConditions() compspi.StatusConditions {
-	return compspi.StatusConditions{
-		NotNeeded: moduleplatform.CondAlreadyUpgraded,
-		PreAction: moduleplatform.CondPreUpgrade,
-		DoAction:  moduleplatform.CondUpgradeStarted,
-		Completed: moduleplatform.CondUpgradeComplete,
-	}
+func (h *Handler) GetStatusConditions() compspi.StatusConditions {
+	return h.BaseHandler.GetStatusConditions()
 }
 
 // Init initializes the component with Helm chart information
-func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error) {
-	h.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             HelmInfo.HelmRelease.Name,
-		ChartDir:                h.chartDir,
-		ChartNamespace:          HelmInfo.HelmRelease.Namespace,
-		IgnoreNamespaceOverride: true,
-		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
-	}
-
-	h.mlcNamespace = mlcNamespace
-	h.HelmInfo = HelmInfo
-	return ctrl.Result{}, nil
+func (h *Handler) Init(ctx spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error) {
+	return h.BaseHandler.Init(ctx, HelmInfo, mlcNamespace, cr, moduleplatform.UpgradeAction)
 }
 
 // IsActionNeeded returns true if install is needed
-func (h Component) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	// TODO - return false until upgrade implemented
-	return false, ctrl.Result{}, nil
+func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
+	return true, ctrl.Result{}, nil
+
+	//installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
+	//if err != nil {
+	//	ctx.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
+	//	return true, ctrl.Result{}, err
+	//}
+	//return !installed, ctrl.Result{}, err
 }
 
 // PreAction does installation pre-action
-func (h Component) PreAction(context spi.ComponentContext) (ctrl.Result, error) {
+func (h Handler) PreAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
 // IsPreActionDone returns true if pre-action done
-func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h Handler) IsPreActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
 // DoAction installs the component using Helm
-func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
+	return h.BaseHandler.DoAction(ctx)
 }
 
 // IsActionDone Indicates whether a component is installed and ready
-func (h Component) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
+func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
+	return h.BaseHandler.IsActionDone(ctx)
 }
 
-// PostAction does installation pre-action
-func (h Component) PostAction(context spi.ComponentContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+// PostAction does installation post-action
+func (h Handler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
+	return h.BaseHandler.PostAction(ctx)
 }
 
 // IsPostActionDone returns true if post-action done
-func (h Component) IsPostActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
