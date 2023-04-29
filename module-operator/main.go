@@ -35,25 +35,25 @@ func main() {
 	}
 
 	// init module controller
-	if err := module.InitController(mgr, modulefactory.NewLifeCycleComponent(), ""); err != nil {
+	if err := module.InitController(mgr, modulefactory.NewLifecycleActionHandler(), ""); err != nil {
 		log.Errorf("Failed to start the module controller", err)
 		return
 	}
 
 	// init Helm lifecycle controller
-	if err := lifecycle.InitController(mgr, helmfactory.NewLifeCycleComponent(), moduleplatform.HelmLifecycleClass); err != nil {
+	if err := lifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.HelmLifecycleClass); err != nil {
 		log.Errorf("Failed to start Helm controller", err)
 		return
 	}
 
 	// init Calico lifecycle controller
-	if err := lifecycle.InitController(mgr, helmfactory.NewLifeCycleComponent(), moduleplatform.CalicoLifecycleClass); err != nil {
+	if err := lifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.CalicoLifecycleClass); err != nil {
 		log.Errorf("Failed to start the Calico controller", err)
 		return
 	}
 
 	// init CCM lifecycle controller
-	if err := lifecycle.InitController(mgr, helmfactory.NewLifeCycleComponent(), moduleplatform.CCMLifecycleClass); err != nil {
+	if err := lifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.CCMLifecycleClass); err != nil {
 		log.Errorf("Failed to start OCI-CCM controller", err)
 		return
 	}

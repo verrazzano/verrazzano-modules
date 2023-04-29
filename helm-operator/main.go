@@ -33,7 +33,7 @@ func main() {
 	}
 
 	// init helm lifecycle controller
-	if err := lifecycle.InitController(mgr, factory.NewLifeCycleComponent(), moduleplatform.HelmLifecycleClass); err != nil {
+	if err := lifecycle.InitController(mgr, factory.NewLifecycleActionHandler(), moduleplatform.HelmLifecycleClass); err != nil {
 		log.Errorf("Failed to start Isio Gateway controller", err)
 		return
 	}

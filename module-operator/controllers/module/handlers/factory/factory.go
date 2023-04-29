@@ -11,11 +11,11 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/upgrade"
 )
 
-func NewLifeCycleComponent() compspi.LifecycleComponent {
+func NewLifecycleActionHandler() compspi.LifecycleComponent {
 	return compspi.LifecycleComponent{
 		InstallAction:   install.NewHandler(),
 		UninstallAction: uninstall.NewHandler(),
-		UpdateAction:    update.NewComponent(),
-		UpgradeAction:   upgrade.NewComponent(),
+		UpdateAction:    update.NewHandler(),
+		UpgradeAction:   upgrade.NewHandler(),
 	}
 }
