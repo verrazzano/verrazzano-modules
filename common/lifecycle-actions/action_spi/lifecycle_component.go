@@ -10,11 +10,16 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+// HelmInfo contains all the information need to manage the lifecycle of Helm releases
 type HelmInfo struct {
+	// HelmRelease contains Helm release information
 	*modulesv1alpha1.HelmRelease
+
+	// CharDir is the local file system chart directory
 	ChartDir string
 }
 
+// StatusConditions are conditions written to the CR Status during statemachine execution
 type StatusConditions struct {
 	NotNeeded modulesv1alpha1.LifecycleCondition
 	PreAction modulesv1alpha1.LifecycleCondition
@@ -22,7 +27,8 @@ type StatusConditions struct {
 	Completed modulesv1alpha1.LifecycleCondition
 }
 
-type LifecycleComponent struct {
+// ActionHandlers
+type ActionHandlers struct {
 	InstallAction   LifecycleActionHandler
 	UninstallAction LifecycleActionHandler
 	UpdateAction    LifecycleActionHandler
@@ -31,8 +37,8 @@ type LifecycleComponent struct {
 
 type HandlerConfig struct {
 	HelmInfo
-	CR           interface{}
-	Scheme       *runtime.Scheme
+	CR     interface{}
+	Scheme *runtime.Scheme
 }
 
 type LifecycleActionHandler interface {

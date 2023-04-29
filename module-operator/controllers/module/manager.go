@@ -19,7 +19,7 @@ var _ spi.Reconciler = Reconciler{}
 type Reconciler struct {
 	Client client.Client
 	Scheme *runtime.Scheme
-	comp   compspi.LifecycleComponent
+	comp   compspi.ActionHandlers
 }
 
 var _ spi.Reconciler = Reconciler{}
@@ -27,7 +27,7 @@ var _ spi.Reconciler = Reconciler{}
 var controller Reconciler
 
 // InitController start the  controller
-func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent, class moduleplatform.LifecycleClassType) error {
+func InitController(mgr ctrlruntime.Manager, comp compspi.ActionHandlers, class moduleplatform.LifecycleClassType) error {
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
 		Reconciler: &controller,

@@ -11,8 +11,8 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/upgrade"
 )
 
-func NewLifecycleActionHandler() compspi.LifecycleComponent {
-	return compspi.LifecycleComponent{
+func NewLifecycleActionHandler() compspi.ActionHandlers {
+	return compspi.ActionHandlers{
 		InstallAction:   install.NewHandler(),
 		UninstallAction: uninstall.NewHandler(),
 		UpdateAction:    update.NewHandler(),
