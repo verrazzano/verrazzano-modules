@@ -52,5 +52,6 @@ func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatf
 }
 
 func (r *Reconciler) getActionHandler(cr *moduleplatform.Module) compspi.LifecycleActionHandler {
+
 	return r.comp.InstallAction
 }

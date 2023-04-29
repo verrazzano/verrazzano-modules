@@ -28,6 +28,9 @@ type LifecycleComponent struct {
 }
 
 type LifecycleActionHandler interface {
+	// GetActionName returns the action name
+	GetActionName() string
+
 	// GetStatusConditions returns the CR status conditions for various lifecycle stages
 	GetStatusConditions() StatusConditions
 

@@ -22,6 +22,11 @@ func NewHandler() compspi.LifecycleActionHandler {
 	return &Handler{}
 }
 
+// GetActionName returns the action name
+func (h Handler) GetActionName() string {
+	return "update"
+}
+
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
 func (h *Handler) GetStatusConditions() compspi.StatusConditions {
 	return h.BaseHandler.GetStatusConditions()

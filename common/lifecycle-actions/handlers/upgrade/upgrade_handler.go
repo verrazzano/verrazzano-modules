@@ -29,6 +29,11 @@ func NewComponent() compspi.LifecycleActionHandler {
 	return &Component{}
 }
 
+// GetActionName returns the action name
+func (h Component) GetActionName() string {
+	return "upgrade"
+}
+
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
 func (h *Component) GetStatusConditions() compspi.StatusConditions {
 	return compspi.StatusConditions{

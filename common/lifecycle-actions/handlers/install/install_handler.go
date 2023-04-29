@@ -4,8 +4,8 @@
 package install
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -62,6 +62,11 @@ func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlc
 	h.mlcNamespace = mlcNamespace
 	h.HelmInfo = HelmInfo
 	return ctrl.Result{}, nil
+}
+
+// GetActionName returns the action name
+func (h Component) GetActionName() string {
+	return "install"
 }
 
 // IsActionNeeded returns true if install is needed

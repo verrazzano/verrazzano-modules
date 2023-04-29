@@ -58,14 +58,13 @@ type Overrides struct {
 type ModuleStateType string
 
 const (
-	ModuleStateUnknown     = "Unknown"
-	ModuleStateReconciling = "Reconciling"
 	ModuleStateReady       = "Ready"
+	ModuleStateReconciling = "Reconciling"
 )
 
 // ModuleStatus defines the observed state of a Verrazzano Module resource.
 type ModuleStatus struct {
-	// The version of Verrazzano that is installed.
+	// The version of module that is installed.
 	Version string          `json:"version,omitempty"`
 	State   ModuleStateType `json:"state,omitempty"`
 	// The latest available observations of an object's current state.
