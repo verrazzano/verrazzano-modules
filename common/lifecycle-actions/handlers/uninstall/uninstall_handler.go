@@ -66,7 +66,7 @@ func (h *Component) GetStatusConditions() compspi.StatusConditions {
 
 // IsActionNeeded returns true if uninstall is needed
 func (h Component) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.Config.ChartDir)
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.Config.Namespace)
 	if err != nil {
 		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.Config.ChartDir, h.ReleaseName)
 		return true, ctrl.Result{}, err
@@ -84,9 +84,9 @@ func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Res
 	return true, ctrl.Result{}, nil
 }
 
-// DoAction installs the component using Helm
+// DoAction uninstalls the component using Helm
 func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.Config.ChartDir)
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.Config.Namespace)
 	if err != nil {
 		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.Config.ChartDir, h.ReleaseName)
 		return ctrl.Result{}, err
@@ -99,7 +99,7 @@ func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
 
-// IsActionDone Indicates whether a component is installed and ready
+// IsActionDone Indicates whether a component is uninstalled
 func (h Component) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
 	if context.IsDryRun() {
 		context.Log().Debugf("IsReady() dry run for %s", h.ReleaseName)
@@ -115,7 +115,7 @@ func (h Component) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result
 	return !deployed, ctrl.Result{}, nil
 }
 
-// PostAction does installation pre-action
+// PostAction does uninstall post-action
 func (h Component) PostAction(context spi.ComponentContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }

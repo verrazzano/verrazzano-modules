@@ -67,7 +67,7 @@ func (h Component) GetActionName() string {
 
 // IsActionNeeded returns true if install is needed
 func (h Component) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.Config.ChartDir)
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.Config.Namespace)
 	if err != nil {
 		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.Config.ChartDir, h.ReleaseName)
 		return true, ctrl.Result{}, err
