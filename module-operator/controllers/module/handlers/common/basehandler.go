@@ -35,7 +35,6 @@ func (h *BaseHandler) GetStatusConditions() compspi.StatusConditions {
 // Init initializes the handler with Helm chart information
 func (h *BaseHandler) Init(_ spi.ComponentContext, config compspi.HandlerConfig, action moduleplatform.ActionType) (ctrl.Result, error) {
 	h.Config = config
-	return ctrl.Result{}, nil
 	h.ModuleCR = config.CR.(*moduleplatform.Module)
 	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleplatform.HelmLifecycleClass, moduleplatform.InstallAction)
 	h.MlcNamespace = h.ModuleCR.Namespace

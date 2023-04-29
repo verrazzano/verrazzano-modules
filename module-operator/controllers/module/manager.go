@@ -8,6 +8,7 @@ import (
 	spi "github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -17,6 +18,7 @@ var _ spi.Reconciler = Reconciler{}
 
 type Reconciler struct {
 	Client client.Client
+	Scheme *runtime.Scheme
 	comp   compspi.LifecycleComponent
 }
 
@@ -31,13 +33,14 @@ func InitController(mgr ctrlruntime.Manager, comp compspi.LifecycleComponent, cl
 		Reconciler: &controller,
 		Finalizer:  &controller,
 	}
-	br, err := basecontroller.InitBaseController(mgr, config, class)
+	baseController, err := basecontroller.InitBaseController(mgr, config, class)
 	if err != nil {
 		return err
 	}
 
 	// init other controller fields
-	controller.Client = br.Client
+	controller.Client = baseController.Client
+	controller.Scheme = baseController.Scheme
 	controller.comp = comp
 	return nil
 }

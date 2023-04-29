@@ -5,26 +5,48 @@ package uninstall
 
 import (
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
-
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
-
+	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
+	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
+	"helm.sh/helm/v3/pkg/release"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type Component struct {
 	helmcomp.HelmComponent
-	HelmInfo *compspi.HelmInfo
-	chartDir string
+	Config compspi.HandlerConfig
+	CR     *moduleplatform.ModuleLifecycle
 }
 
-var _ compspi.LifecycleActionHandler = &Component{}
+// upgradeFuncSig is a function needed for unit test override
+type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
+
+var (
+	_ compspi.LifecycleActionHandler = &Component{}
+
+	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
+)
 
 func NewComponent() compspi.LifecycleActionHandler {
 	return &Component{}
+}
+
+// Init initializes the component with Helm chart information
+func (h *Component) Init(_ spi.ComponentContext, config compspi.HandlerConfig) (ctrl.Result, error) {
+	h.HelmComponent = helmcomp.HelmComponent{
+		ReleaseName:             config.HelmInfo.HelmRelease.Name,
+		ChartNamespace:          config.HelmInfo.HelmRelease.Namespace,
+		ChartDir:                config.ChartDir,
+		IgnoreNamespaceOverride: true,
+		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
+	}
+	h.CR = config.CR.(*moduleplatform.ModuleLifecycle)
+	h.Config = config
+	return ctrl.Result{}, nil
 }
 
 // GetActionName returns the action name
@@ -42,25 +64,11 @@ func (h *Component) GetStatusConditions() compspi.StatusConditions {
 	}
 }
 
-// Init initializes the component with Helm chart information
-func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, _ string, cr interface{}) (ctrl.Result, error) {
-	h.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             HelmInfo.HelmRelease.Name,
-		ChartDir:                h.chartDir,
-		ChartNamespace:          HelmInfo.HelmRelease.Namespace,
-		IgnoreNamespaceOverride: true,
-		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
-	}
-
-	h.HelmInfo = HelmInfo
-	return ctrl.Result{}, nil
-}
-
 // IsActionNeeded returns true if uninstall is needed
 func (h Component) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.Config.ChartDir)
 	if err != nil {
-		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
+		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.Config.ChartDir, h.ReleaseName)
 		return true, ctrl.Result{}, err
 	}
 	return installed, ctrl.Result{}, err
@@ -78,9 +86,9 @@ func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Res
 
 // DoAction installs the component using Helm
 func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.Config.ChartDir)
 	if err != nil {
-		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
+		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.Config.ChartDir, h.ReleaseName)
 		return ctrl.Result{}, err
 	}
 	if !installed {

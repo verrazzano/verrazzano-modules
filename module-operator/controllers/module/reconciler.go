@@ -41,10 +41,10 @@ func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatf
 	tracker := getTracker(cr.ObjectMeta, stateInit)
 
 	smc := stateMachineContext{
-		cr:        cr,
-		tracker:   tracker,
-		chartInfo: &helmInfo,
-		handler:   handler,
+		cr:       cr,
+		tracker:  tracker,
+		helmInfo: &helmInfo,
+		handler:  handler,
 	}
 
 	res := r.doStateMachine(ctx, smc)

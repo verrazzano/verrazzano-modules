@@ -5,28 +5,47 @@ package update
 
 import (
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
-	ctrl "sigs.k8s.io/controller-runtime"
-
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
-
+	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
+	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
+	"helm.sh/helm/v3/pkg/release"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type Component struct {
 	helmcomp.HelmComponent
-	HelmInfo     *compspi.HelmInfo
-	chartDir     string
-	mlcNamespace string
+	Config compspi.HandlerConfig
+	CR     *moduleplatform.ModuleLifecycle
 }
+
+// upgradeFuncSig is a function needed for unit test override
+type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
 
 var (
 	_ compspi.LifecycleActionHandler = &Component{}
+
+	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
 )
 
 func NewComponent() compspi.LifecycleActionHandler {
 	return &Component{}
+}
+
+// Init initializes the component with Helm chart information
+func (h *Component) Init(_ spi.ComponentContext, config compspi.HandlerConfig) (ctrl.Result, error) {
+	h.HelmComponent = helmcomp.HelmComponent{
+		ReleaseName:             config.HelmInfo.HelmRelease.Name,
+		ChartNamespace:          config.HelmInfo.HelmRelease.Namespace,
+		ChartDir:                config.ChartDir,
+		IgnoreNamespaceOverride: true,
+		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
+	}
+	h.CR = config.CR.(*moduleplatform.ModuleLifecycle)
+	h.Config = config
+	return ctrl.Result{}, nil
 }
 
 // GetActionName returns the action name
@@ -42,21 +61,6 @@ func (h *Component) GetStatusConditions() compspi.StatusConditions {
 		DoAction:  moduleplatform.CondInstallStarted,
 		Completed: moduleplatform.CondInstallComplete,
 	}
-}
-
-// Init initializes the component with Helm chart information
-func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error) {
-	h.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             HelmInfo.HelmRelease.Name,
-		ChartDir:                h.chartDir,
-		ChartNamespace:          HelmInfo.HelmRelease.Namespace,
-		IgnoreNamespaceOverride: true,
-		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
-	}
-
-	h.mlcNamespace = mlcNamespace
-	h.HelmInfo = HelmInfo
-	return ctrl.Result{}, nil
 }
 
 // IsActionNeeded returns true if install is needed

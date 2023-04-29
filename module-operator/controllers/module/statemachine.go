@@ -59,10 +59,10 @@ const (
 )
 
 type stateMachineContext struct {
-	cr        *moduleplatform.Module
-	tracker   *stateTracker
-	chartInfo *compspi.HelmInfo
-	handler   compspi.LifecycleActionHandler
+	cr       *moduleplatform.Module
+	tracker  *stateTracker
+	helmInfo *compspi.HelmInfo
+	handler  compspi.LifecycleActionHandler
 }
 
 func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachineContext) ctrl.Result {
@@ -75,11 +75,18 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 		case stateInit:
 			if len(s.cr.Spec.Version) == 0 {
 				// Update spec version to match chart, always requeue to get CR with version
-				s.cr.Spec.Version = s.chartInfo.ChartInfo.Version
+				s.cr.Spec.Version = s.helmInfo.ChartInfo.Version
 				r.Client.Update(context.TODO(), s.cr)
 				return util.NewRequeueWithDelay(1, 2, time.Second)
 			}
-			res, err := s.handler.Init(compContext, s.chartInfo, s.cr.Namespace, s.cr)
+
+			// Init the handler
+			config := compspi.HandlerConfig{
+				HelmInfo: *s.helmInfo,
+				CR:       s.cr,
+				Scheme:   r.Scheme,
+			}
+			res, err := s.handler.Init(compContext, config)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
