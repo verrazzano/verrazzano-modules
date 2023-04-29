@@ -11,6 +11,7 @@ import (
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"time"
 )
 
 // state identifies the state of a component during action
@@ -73,11 +74,10 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 		switch s.tracker.state {
 		case stateInit:
 			if len(s.cr.Spec.Version) == 0 {
-				// Update spec version to match chart
+				// Update spec version to match chart, always requeue to get CR with version
 				s.cr.Spec.Version = s.chartInfo.ChartInfo.Version
-				if err := r.Client.Update(context.TODO(), s.cr); err != nil {
-					return util.NewRequeueWithShortDelay()
-				}
+				r.Client.Update(context.TODO(), s.cr)
+				return util.NewRequeueWithDelay(1, 2, time.Second)
 			}
 			res, err := s.handler.Init(compContext, s.chartInfo, s.cr.Namespace, s.cr)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
