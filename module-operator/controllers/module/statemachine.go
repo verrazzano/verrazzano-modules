@@ -76,7 +76,10 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			if len(s.cr.Spec.Version) == 0 {
 				// Update spec version to match chart, always requeue to get CR with version
 				s.cr.Spec.Version = s.helmInfo.ChartInfo.Version
-				r.Client.Update(context.TODO(), s.cr)
+				if err := r.Client.Update(context.TODO(), s.cr); err != nil {
+					return util.NewRequeueWithShortDelay()
+				}
+				// ALways reconcile
 				return util.NewRequeueWithDelay(1, 2, time.Second)
 			}
 
