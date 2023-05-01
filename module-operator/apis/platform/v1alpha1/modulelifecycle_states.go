@@ -35,6 +35,8 @@ const (
 	CondPreUpgrade         LifecycleCondition = "PreUpgrade"
 	CondUpgradeStarted     LifecycleCondition = "UpgradeStarted"
 	CondUpgradeComplete    LifecycleCondition = "UpgradeComplete"
+	CondReady              LifecycleCondition = "Ready"
+	CondReconciling        LifecycleCondition = "Reconciling"
 	CondFailed             LifecycleCondition = "Failed"
 )
 
