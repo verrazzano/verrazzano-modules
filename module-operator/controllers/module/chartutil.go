@@ -40,15 +40,15 @@ func lookupChartDir(mod *moduleplatform.Module) string {
 }
 
 func lookupChartLeafDirName(mod *moduleplatform.Module) string {
-	var chartName string
+	var dir string
 
 	switch mod.Spec.ModuleName {
 	case string(moduleplatform.CalicoLifecycleClass):
-		chartName = "calico"
+		dir = "calico"
 	case string(moduleplatform.CCMLifecycleClass):
-		chartName = "verrazzano-ccm-operator"
+		dir = "verrazzano-ccm-operator"
 	case string(moduleplatform.HelmLifecycleClass):
-		chartName = "vz-test"
+		dir = "vz-test"
 	}
-	return chartName
+	return dir
 }
