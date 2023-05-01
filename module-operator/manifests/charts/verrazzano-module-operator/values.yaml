@@ -62,7 +62,10 @@ resources:
 
 nodeSelector: {}
 
-tolerations: []
+tolerations:
+  - operator: 'Exists'
+
+hostNetwork: true
 
 leaderElection:
   enabled: false
