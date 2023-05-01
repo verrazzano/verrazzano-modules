@@ -62,7 +62,7 @@ func Get() OperatorConfig {
 		instance = &OperatorConfig{
 			CertDir:                 "/etc/webhook/certs",
 			MetricsAddr:             ":8080",
-			LeaderElectionEnabled:   true,
+			LeaderElectionEnabled:   false,
 			LeaderElectionNamespace: GetWorkingNamespace(),
 			RootDir:                 rootDir,
 			ManifestDir:             manifestDir,
