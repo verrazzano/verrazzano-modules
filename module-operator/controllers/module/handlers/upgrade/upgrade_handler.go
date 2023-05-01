@@ -27,14 +27,19 @@ func NewHandler() compspi.LifecycleActionHandler {
 	return &Handler{}
 }
 
+// GetStatusConditions returns the CR status conditions for various lifecycle stages
+func (h *Handler) GetStatusConditions() compspi.StatusConditions {
+	return compspi.StatusConditions{
+		NotNeeded: moduleplatform.CondAlreadyUpgraded,
+		PreAction: moduleplatform.CondPreUpgrade,
+		DoAction:  moduleplatform.CondUpgradeStarted,
+		Completed: moduleplatform.CondUpgradeComplete,
+	}
+}
+
 // GetActionName returns the action name
 func (h Handler) GetActionName() string {
 	return "upgrade"
-}
-
-// GetStatusConditions returns the CR status conditions for various lifecycle stages
-func (h *Handler) GetStatusConditions() compspi.StatusConditions {
-	return h.BaseHandler.GetStatusConditions()
 }
 
 // Init initializes the handler

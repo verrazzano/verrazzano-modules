@@ -2,6 +2,7 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package update
+
 import (
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -22,14 +23,19 @@ func NewHandler() compspi.LifecycleActionHandler {
 	return &Handler{}
 }
 
+// GetStatusConditions returns the CR status conditions for various lifecycle stages
+func (h *Handler) GetStatusConditions() compspi.StatusConditions {
+	return compspi.StatusConditions{
+		NotNeeded: moduleplatform.CondAlreadyInstalled,
+		PreAction: moduleplatform.CondPreInstall,
+		DoAction:  moduleplatform.CondInstallStarted,
+		Completed: moduleplatform.CondInstallComplete,
+	}
+}
+
 // GetActionName returns the action name
 func (h Handler) GetActionName() string {
 	return "update"
-}
-
-// GetStatusConditions returns the CR status conditions for various lifecycle stages
-func (h *Handler) GetStatusConditions() compspi.StatusConditions {
-	return h.BaseHandler.GetStatusConditions()
 }
 
 // Init initializes the handler
