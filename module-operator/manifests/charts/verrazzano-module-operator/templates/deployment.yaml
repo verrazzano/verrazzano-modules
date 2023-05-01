@@ -35,6 +35,7 @@ spec:
       serviceAccountName: {{ include "verrazzano-module-operator.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      hostNetwork: {{ .Values.hostNetwork }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
