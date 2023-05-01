@@ -66,7 +66,7 @@ func (h BaseHandler) mutateMLC(mlc *moduleplatform.ModuleLifecycle) error {
 	mlc.Spec.LifecycleClassName = moduleplatform.HelmLifecycleClass
 	mlc.Spec.Action = h.Action
 	mlc.Spec.Installer.HelmRelease = h.Config.HelmInfo.HelmRelease
-	mlc.Spec.Installer.HelmRelease.Overrides = h.Config.Overrides
+	mlc.Spec.Installer.HelmRelease.Overrides = h.ModuleCR.Spec.Overrides
 	return nil
 }
 
