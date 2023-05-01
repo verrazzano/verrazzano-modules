@@ -6,7 +6,6 @@ package main
 import (
 	"flag"
 	"github.com/verrazzano/verrazzano-modules/calico-operator/lifecycle-actions/handlers/factory"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/lifecycle"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
@@ -33,7 +32,7 @@ func main() {
 	}
 
 	// init calico lifecycle controller
-	if err := lifecycle.InitController(mgr, factory.NewLifeCycleComponent(), moduleplatform.CalicoLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, factory.NewLifeCycleComponent(), moduleplatform.CalicoLifecycleClass); err != nil {
 		log.Errorf("Failed to start Isio Gateway controller", err)
 		return
 	}

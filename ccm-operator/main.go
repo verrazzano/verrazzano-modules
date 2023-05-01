@@ -6,13 +6,12 @@ package main
 import (
 	"flag"
 	"github.com/verrazzano/verrazzano-modules/ccm-operator/lifecycle-actions/handlers/factory"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/lifecycle"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-        corev1 "k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	kzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -33,7 +32,7 @@ func main() {
 	}
 
 	// init ccm lifecycle controller
-	if err := lifecycle.InitController(mgr, factory.NewLifeCycleComponent(), moduleplatform.CCMLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, factory.NewLifeCycleComponent(), moduleplatform.CCMLifecycleClass); err != nil {
 		log.Errorf("Failed to start CCM controller", err)
 		return
 	}
