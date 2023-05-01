@@ -14,5 +14,5 @@ func (h Component) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {
 		log.ErrorfThrottled("Error occurred getting release chart version: %v", err.Error())
 		return false
 	}
-	return h.HelmInfo.ChartInfo.Version == releaseChartVersion
+	return h.Config.HelmInfo.ChartInfo.Version == releaseChartVersion
 }

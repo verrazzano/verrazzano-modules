@@ -35,16 +35,16 @@ func loadHelmInfo(cr *moduleplatform.Module) (compspi.HelmInfo, error) {
 
 func lookupChartDir(mod *moduleplatform.Module) string {
 	config := config.Get()
-	chartpath := filepath.Join(config.ChartsDir, lookupChartName(mod))
+	chartpath := filepath.Join(config.ChartsDir, lookupChartLeafDirName(mod))
 	return chartpath
 }
 
-func lookupChartName(mod *moduleplatform.Module) string {
+func lookupChartLeafDirName(mod *moduleplatform.Module) string {
 	var chartName string
 
 	switch mod.Spec.ModuleName {
 	case string(moduleplatform.CalicoLifecycleClass):
-		chartName = "verrazzano-calico-operator"
+		chartName = "calico"
 	case string(moduleplatform.CCMLifecycleClass):
 		chartName = "verrazzano-ccm-operator"
 	case string(moduleplatform.HelmLifecycleClass):

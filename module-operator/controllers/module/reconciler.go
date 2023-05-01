@@ -22,6 +22,12 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
+	handler := r.getActionHandler(cr)
+	return r.reconcileAction(spictx, cr, handler)
+}
+
+// reconcileAction reconciles the Module CR for a particular action
+func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatform.Module, handler compspi.LifecycleActionHandler) (ctrl.Result, error) {
 	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
 	if err != nil {
 		return util.NewRequeueWithShortDelay(), err
@@ -34,18 +40,18 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	}
 	tracker := getTracker(cr.ObjectMeta, stateInit)
 
-	action := r.getAction(cr)
 	smc := stateMachineContext{
-		cr:        cr,
-		tracker:   tracker,
-		chartInfo: &helmInfo,
-		action:    action,
+		cr:       cr,
+		tracker:  tracker,
+		helmInfo: &helmInfo,
+		handler:  handler,
 	}
 
 	res := r.doStateMachine(ctx, smc)
 	return res, nil
 }
 
-func (r *Reconciler) getAction(cr *moduleplatform.Module) compspi.LifecycleActionHandler {
+func (r *Reconciler) getActionHandler(cr *moduleplatform.Module) compspi.LifecycleActionHandler {
+
 	return r.comp.InstallAction
 }

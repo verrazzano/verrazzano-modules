@@ -11,6 +11,7 @@ import (
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"time"
 )
 
 // state identifies the state of a component during action
@@ -26,11 +27,11 @@ const (
 	// stateActionNotNeededUpdate is the state when the status is updated to not needed
 	stateActionNotNeededUpdate state = "stateActionNotNeededUpdate"
 
-	// stateStartPreActionUpdate is the state when the status is updated to start pre action
-	stateStartPreActionUpdate state = "stateStartPreActionUpdate"
+	// statePreActionUpdateStatus is the state when the status is updated to start pre action
+	statePreActionUpdateStatus state = "statePreActionUpdateStatus"
 
-	// stateStartActionUpdate is the state when the status is updated to start action
-	stateStartActionUpdate state = "stateStartActionUpdate"
+	// stateActionUpdateStatus is the state when the status is updated to start action
+	stateActionUpdateStatus state = "stateActionUpdateStatus"
 
 	// statePreAction is the state when a component does a pre-action
 	statePreAction state = "statePreAction"
@@ -50,43 +51,59 @@ const (
 	// statePostActionWaitDone is the state when a component is waiting for post-action to be done
 	statePostActionWaitDone state = "statePostActionWaitDone"
 
-	// stateCompleteUpdate is the state when the status is updated to completed
-	stateCompleteUpdate state = "stateCompleteUpdate"
+	// stateCompleteUpdateStatus is the state when the status is updated to completed
+	stateCompleteUpdateStatus state = "stateCompleteUpdateStatus"
 
 	// stateEnd is the terminal state
 	stateEnd state = "stateEnd"
 )
 
 type stateMachineContext struct {
-	cr        *moduleplatform.Module
-	tracker   *stateTracker
-	chartInfo *compspi.HelmInfo
-	action    compspi.LifecycleActionHandler
+	cr       *moduleplatform.Module
+	tracker  *stateTracker
+	helmInfo *compspi.HelmInfo
+	handler  compspi.LifecycleActionHandler
 }
 
 func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachineContext) ctrl.Result {
-	actionName := "action-placeholder"
-	compContext := spiCtx.Init("component").Operation(string(actionName))
+	actionName := s.handler.GetActionName()
+	compContext := spiCtx.Init("component").Operation(actionName)
 	nsn := k8s.GetNamespacedNameString(s.cr.ObjectMeta)
 
 	for s.tracker.state != stateEnd {
 		switch s.tracker.state {
 		case stateInit:
-			res, err := s.action.Init(compContext, s.chartInfo, s.cr.Namespace, s.cr)
+			if len(s.cr.Spec.Version) == 0 {
+				// Update spec version to match chart, always requeue to get CR with version
+				s.cr.Spec.Version = s.helmInfo.ChartInfo.Version
+				if err := r.Client.Update(context.TODO(), s.cr); err != nil {
+					return util.NewRequeueWithShortDelay()
+				}
+				// ALways reconcile
+				return util.NewRequeueWithDelay(1, 2, time.Second)
+			}
+
+			// Init the handler
+			config := compspi.HandlerConfig{
+				HelmInfo: *s.helmInfo,
+				CR:       s.cr,
+				Scheme:   r.Scheme,
+			}
+			res, err := s.handler.Init(compContext, config)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = stateCheckActionNeeded
 
 		case stateCheckActionNeeded:
-			needed, res, err := s.action.IsActionNeeded(compContext)
+			needed, res, err := s.handler.IsActionNeeded(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			if needed {
-				s.tracker.state = stateStartPreActionUpdate
-			} else {
+			if !needed {
 				s.tracker.state = stateActionNotNeededUpdate
+			} else {
+				s.tracker.state = statePreActionUpdateStatus
 			}
 
 		case stateActionNotNeededUpdate:
@@ -96,10 +113,10 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 			}
 			s.tracker.state = stateEnd
 
-		case stateStartPreActionUpdate:
-			cond := s.action.GetStatusConditions().PreAction
+		case statePreActionUpdateStatus:
+			cond := s.handler.GetStatusConditions().PreAction
 			AppendCondition(s.cr, string(cond), cond)
-			s.cr.Status.State = moduleplatform.ModuleStateReady
+			s.cr.Status.State = moduleplatform.ModuleStateReconciling
 			if err := r.Client.Status().Update(context.TODO(), s.cr); err != nil {
 				return util.NewRequeueWithShortDelay()
 			}
@@ -107,26 +124,25 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 
 		case statePreAction:
 			spiCtx.Log().Progressf("Doing pre-%s for %s", actionName, nsn)
-			res, err := s.action.PreAction(compContext)
+			res, err := s.handler.PreAction(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = statePreActionWaitDone
 
 		case statePreActionWaitDone:
-			done, res, err := s.action.IsPreActionDone(compContext)
+			done, res, err := s.handler.IsPreActionDone(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			if !done {
 				return util.NewRequeueWithShortDelay()
 			}
-			s.tracker.state = stateStartActionUpdate
+			s.tracker.state = stateActionUpdateStatus
 
-		case stateStartActionUpdate:
-			cond := s.action.GetStatusConditions().DoAction
+		case stateActionUpdateStatus:
+			cond := s.handler.GetStatusConditions().DoAction
 			AppendCondition(s.cr, string(cond), cond)
-			s.cr.Status.State = moduleplatform.ModuleStateReady
 			if err := r.Client.Status().Update(context.TODO(), s.cr); err != nil {
 				return util.NewRequeueWithShortDelay()
 			}
@@ -134,14 +150,14 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 
 		case stateAction:
 			spiCtx.Log().Progressf("Doing %s for %s", actionName, nsn)
-			res, err := s.action.DoAction(compContext)
+			res, err := s.handler.DoAction(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = stateActionWaitDone
 
 		case stateActionWaitDone:
-			done, res, err := s.action.IsActionDone(compContext)
+			done, res, err := s.handler.IsActionDone(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
@@ -152,25 +168,27 @@ func (r *Reconciler) doStateMachine(spiCtx vzspi.ComponentContext, s stateMachin
 
 		case statePostAction:
 			spiCtx.Log().Progressf("Doing post-%s for %s", actionName, nsn)
-			res, err := s.action.PostAction(compContext)
+			res, err := s.handler.PostAction(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			s.tracker.state = statePostActionWaitDone
 
 		case statePostActionWaitDone:
-			done, res, err := s.action.IsPostActionDone(compContext)
+			done, res, err := s.handler.IsPostActionDone(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
 			if !done {
 				return util.NewRequeueWithShortDelay()
 			}
-			s.tracker.state = stateCompleteUpdate
+			s.tracker.state = stateCompleteUpdateStatus
 
-		case stateCompleteUpdate:
-			AppendCondition(s.cr, string(moduleplatform.CondReady), moduleplatform.CondReady)
+		case stateCompleteUpdateStatus:
+			cond := s.handler.GetStatusConditions().Completed
+			AppendCondition(s.cr, string(cond), cond)
 			s.cr.Status.State = moduleplatform.ModuleStateReady
+			s.cr.Status.Version = s.cr.Spec.Version
 			if err := r.Client.Status().Update(context.TODO(), s.cr); err != nil {
 				return util.NewRequeueWithShortDelay()
 			}

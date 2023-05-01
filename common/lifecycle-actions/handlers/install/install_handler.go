@@ -4,26 +4,23 @@
 package install
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
-	"helm.sh/helm/v3/pkg/release"
-	ctrl "sigs.k8s.io/controller-runtime"
-
-	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
-
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
+	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
+	"helm.sh/helm/v3/pkg/release"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type Component struct {
 	helmcomp.HelmComponent
-	HelmInfo     *compspi.HelmInfo
-	chartDir     string
-	mlcNamespace string
+	Config compspi.HandlerConfig
+	CR     *moduleplatform.ModuleLifecycle
 }
 
 // upgradeFuncSig is a function needed for unit test override
@@ -39,6 +36,20 @@ func NewComponent() compspi.LifecycleActionHandler {
 	return &Component{}
 }
 
+// Init initializes the component with Helm chart information
+func (h *Component) Init(_ spi.ComponentContext, config compspi.HandlerConfig) (ctrl.Result, error) {
+	h.HelmComponent = helmcomp.HelmComponent{
+		ReleaseName:             config.HelmInfo.HelmRelease.Name,
+		ChartNamespace:          config.HelmInfo.HelmRelease.Namespace,
+		ChartDir:                config.ChartDir,
+		IgnoreNamespaceOverride: true,
+		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
+	}
+	h.CR = config.CR.(*moduleplatform.ModuleLifecycle)
+	h.Config = config
+	return ctrl.Result{}, nil
+}
+
 // GetStatusConditions returns the CR status conditions for various lifecycle stages
 func (h *Component) GetStatusConditions() compspi.StatusConditions {
 	return compspi.StatusConditions{
@@ -49,26 +60,16 @@ func (h *Component) GetStatusConditions() compspi.StatusConditions {
 	}
 }
 
-// Init initializes the component with Helm chart information
-func (h *Component) Init(_ spi.ComponentContext, HelmInfo *compspi.HelmInfo, mlcNamespace string, cr interface{}) (ctrl.Result, error) {
-	h.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             HelmInfo.HelmRelease.Name,
-		ChartDir:                h.chartDir,
-		ChartNamespace:          HelmInfo.HelmRelease.Namespace,
-		IgnoreNamespaceOverride: true,
-		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
-	}
-
-	h.mlcNamespace = mlcNamespace
-	h.HelmInfo = HelmInfo
-	return ctrl.Result{}, nil
+// GetActionName returns the action name
+func (h Component) GetActionName() string {
+	return "install"
 }
 
 // IsActionNeeded returns true if install is needed
 func (h Component) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
+	installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.Config.Namespace)
 	if err != nil {
-		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
+		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.Config.ChartDir, h.ReleaseName)
 		return true, ctrl.Result{}, err
 	}
 	return !installed, ctrl.Result{}, err
@@ -87,8 +88,8 @@ func (h Component) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Res
 // DoAction installs the component using Helm
 func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
 	// Perform a Helm install using the helm upgrade --install command
-	helmRelease := h.HelmInfo.HelmRelease
-	helmOverrides, err := helm.LoadOverrideFiles(context, helmRelease.Name, h.mlcNamespace, helmRelease.Overrides)
+	helmRelease := h.Config.HelmInfo.HelmRelease
+	helmOverrides, err := helm.LoadOverrideFiles(context, helmRelease.Name, h.CR.Namespace, helmRelease.Overrides)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -99,7 +100,7 @@ func (h Component) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
 		ChartPath:    helmRelease.ChartInfo.Path,
 		ChartVersion: helmRelease.ChartInfo.Version,
 		Overrides:    helmOverrides,
-		// TBD -- pull from a secret ref?
+		// TODO -- pull from a secret ref?
 		//Username:     "",
 		//Password:     "",
 	}

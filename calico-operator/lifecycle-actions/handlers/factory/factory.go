@@ -13,10 +13,10 @@ import (
 )
 
 // NewLifeCycleComponent creates a new lifecycle component
-func NewLifeCycleComponent() compspi.LifecycleComponent {
+func NewLifeCycleComponent() compspi.ActionHandlers {
 
 	// This is an example of how to override just the install lifecycle handler
-	return compspi.LifecycleComponent{
+	return compspi.ActionHandlers{
 		InstallAction:   calicoinstall.NewComponent(),
 		UninstallAction: uninstall.NewComponent(),
 		UpdateAction:    update.NewComponent(),

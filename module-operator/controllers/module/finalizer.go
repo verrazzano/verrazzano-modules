@@ -5,7 +5,9 @@ package module
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -16,8 +18,11 @@ func (r Reconciler) GetName() string {
 	return finalizerName
 }
 
-// Cleanup garbage collects any related resources that were created by the controller
+// Cleanup uninstalls the module
 func (r Reconciler) Cleanup(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+	cr := &moduleplatform.Module{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
+		return ctrl.Result{}, err
+	}
+	return r.reconcileAction(spictx, cr, r.comp.UninstallAction)
 }
-
