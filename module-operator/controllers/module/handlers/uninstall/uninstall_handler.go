@@ -23,14 +23,19 @@ func NewHandler() compspi.LifecycleActionHandler {
 	return &Handler{}
 }
 
+// GetStatusConditions returns the CR status conditions for various lifecycle stages
+func (h *Handler) GetStatusConditions() compspi.StatusConditions {
+	return compspi.StatusConditions{
+		NotNeeded: moduleplatform.CondAlreadyUninstalled,
+		PreAction: moduleplatform.CondPreUninstall,
+		DoAction:  moduleplatform.CondUninstallStarted,
+		Completed: moduleplatform.CondUninstallComplete,
+	}
+}
+
 // GetActionName returns the action name
 func (h Handler) GetActionName() string {
 	return "uninstall"
-}
-
-// GetStatusConditions returns the CR status conditions for various lifecycle stages
-func (h *Handler) GetStatusConditions() compspi.StatusConditions {
-	return h.BaseHandler.GetStatusConditions()
 }
 
 // Init initializes the handler

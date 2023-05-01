@@ -22,16 +22,6 @@ type BaseHandler struct {
 	MlcNamespace string
 }
 
-// GetStatusConditions returns the CR status conditions for various lifecycle stages
-func (h *BaseHandler) GetStatusConditions() compspi.StatusConditions {
-	return compspi.StatusConditions{
-		NotNeeded: moduleplatform.CondAlreadyInstalled,
-		PreAction: moduleplatform.CondPreInstall,
-		DoAction:  moduleplatform.CondInstallStarted,
-		Completed: moduleplatform.CondInstallComplete,
-	}
-}
-
 // Init initializes the handler with Helm chart information
 func (h *BaseHandler) Init(_ spi.ComponentContext, config compspi.HandlerConfig, action moduleplatform.ActionType) (ctrl.Result, error) {
 	h.Config = config
