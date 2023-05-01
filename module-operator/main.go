@@ -10,6 +10,7 @@ import (
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
 	modulefactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/factory"
+	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
 	"go.uber.org/zap"
@@ -21,7 +22,7 @@ import (
 )
 
 func main() {
-	log := initLog()
+	log := initConfig()
 
 	// Use the same controller runtime.Manager for all the controllers, since the manager has the cluster cache and we
 	// want the cache to be shared across all the controllers.
@@ -80,7 +81,15 @@ func initScheme() *runtime.Scheme {
 	return scheme
 }
 
-func initLog() *zap.SugaredLogger {
+func initConfig() *zap.SugaredLogger {
+	config := internalconfig.Get()
+
+	flag.StringVar(&config.MetricsAddr, "metrics-addr", config.MetricsAddr, "The address the metric endpoint binds to.")
+	flag.BoolVar(&config.LeaderElectionEnabled, "enable-leader-election", config.LeaderElectionEnabled,
+		"Enable leader election for controller manager. "+
+			"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&config.CertDir, "cert-dir", config.CertDir, "The directory containing tls.crt and tls.key.")
+
 	// Add the zap logger flag set to the CLI.
 	opts := kzap.Options{}
 	opts.BindFlags(flag.CommandLine)
@@ -88,6 +97,9 @@ func initLog() *zap.SugaredLogger {
 	flag.Parse()
 	kzap.UseFlagOptions(&opts)
 	vzlog.InitLogs(opts)
+
+	// Save the config as immutable from this point on.
+	internalconfig.Set(config)
 
 	return zap.S()
 }
