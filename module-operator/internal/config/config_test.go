@@ -22,7 +22,7 @@ func TestConfigDefaults(t *testing.T) {
 	asserts := assert.New(t)
 	conf := Get()
 	asserts.Equal("/etc/webhook/certs", conf.CertDir, "CertDir is incorrect")
-	asserts.True(conf.LeaderElectionEnabled, "LeaderElectionEnabled is incorrect")
+	asserts.False(conf.LeaderElectionEnabled, "LeaderElectionEnabled is incorrect")
 	asserts.Equal(":8080", conf.MetricsAddr, "MetricsAddr is incorrect")
 	asserts.Equal("default", conf.LeaderElectionNamespace, "LeaderElectionNamespace default is not correct")
 }
@@ -46,7 +46,7 @@ func TestConfigLeaderElectionNamespace(t *testing.T) {
 
 	conf := Get()
 	asserts.Equal("/etc/webhook/certs", conf.CertDir, "CertDir is incorrect")
-	asserts.True(conf.LeaderElectionEnabled, "LeaderElectionEnabled is incorrect")
+	asserts.False(conf.LeaderElectionEnabled, "LeaderElectionEnabled is incorrect")
 	asserts.Equal(":8080", conf.MetricsAddr, "MetricsAddr is incorrect")
 	asserts.Equal(leNamespace, conf.LeaderElectionNamespace, "LeaderElectionNamespace default is not correct")
 }
