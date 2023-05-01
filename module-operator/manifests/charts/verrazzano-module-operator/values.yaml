@@ -65,7 +65,7 @@ nodeSelector: {}
 tolerations: []
 
 leaderElection:
-  enabled: true
+  enabled: false
 
 affinity:
   podAntiAffinity:
