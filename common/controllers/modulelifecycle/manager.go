@@ -4,9 +4,9 @@
 package modulelifecycle
 
 import (
+	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/basecontroller"
 	spi "github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -19,7 +19,7 @@ var _ spi.Reconciler = Reconciler{}
 type Reconciler struct {
 	Client client.Client
 	Scheme *runtime.Scheme
-	comp   compspi.ActionHandlers
+	comp   actionspi.ActionHandlers
 }
 
 var _ spi.Reconciler = Reconciler{}
@@ -27,7 +27,7 @@ var _ spi.Reconciler = Reconciler{}
 var controller Reconciler
 
 // InitController start the  controller
-func InitController(mgr ctrlruntime.Manager, comp compspi.ActionHandlers, class moduleplatform.LifecycleClassType) error {
+func InitController(mgr ctrlruntime.Manager, comp actionspi.ActionHandlers, class moduleplatform.LifecycleClassType) error {
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
 		Reconciler: &controller,

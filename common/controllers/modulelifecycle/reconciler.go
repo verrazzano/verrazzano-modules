@@ -4,9 +4,9 @@
 package modulelifecycle
 
 import (
+	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/statemachine"
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -59,14 +59,14 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	return res, nil
 }
 
-func loadHelmInfo(cr *moduleplatform.ModuleLifecycle) compspi.HelmInfo {
-	helmInfo := compspi.HelmInfo{
+func loadHelmInfo(cr *moduleplatform.ModuleLifecycle) actionspi.HelmInfo {
+	helmInfo := actionspi.HelmInfo{
 		HelmRelease: cr.Spec.Installer.HelmRelease,
 	}
 	return helmInfo
 }
 
-func (r *Reconciler) getActionHandler(action moduleplatform.ActionType) compspi.LifecycleActionHandler {
+func (r *Reconciler) getActionHandler(action moduleplatform.ActionType) actionspi.LifecycleActionHandler {
 	switch action {
 	case moduleplatform.InstallAction:
 		return r.comp.InstallAction
