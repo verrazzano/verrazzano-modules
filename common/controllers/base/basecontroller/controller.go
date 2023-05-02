@@ -52,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		zap.S().Errorf("Failed to create controller logger for DNS controller", err)
 	}
 
-	log.Progressf("Reconciling resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
+	log.Progressf("Reconciling resource %v, GVK %v, generation %v", req.NamespacedName, gvk, cr.GetGeneration())
 
 	// Create a new context for this reconcile loop
 	rctx := spi.ReconcileContext{
@@ -144,7 +144,7 @@ func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured
 		return nil
 	}
 
-	log.Oncef("Adding finalizer %s", finalizerName)
+	log.Debugf("Adding finalizer %s", finalizerName)
 	finalizers = append(finalizers, finalizerName)
 	u.SetFinalizers(finalizers)
 	if err := r.Update(context.TODO(), u); err != nil {
@@ -161,7 +161,7 @@ func (r *Reconciler) deleteFinalizer(log vzlog.VerrazzanoLogger, u *unstructured
 	if !vzstring.SliceContainsString(finalizers, finalizerName) {
 		return nil
 	}
-	log.Oncef("Removing finalizer %s", finalizerName)
+	log.Debugf("Removing finalizer %s", finalizerName)
 	finalizers = vzstring.RemoveStringFromSlice(u.GetFinalizers(), finalizerName)
 	u.SetFinalizers(finalizers)
 	if err := r.Update(context.TODO(), u); err != nil {
