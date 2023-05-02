@@ -4,8 +4,9 @@
 package module
 
 import (
+	compspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/statemachine"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,16 +39,14 @@ func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatf
 		err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
 		return util.NewRequeueWithShortDelay(), err
 	}
-	tracker := getTracker(cr.ObjectMeta, stateInit)
-
-	smc := stateMachineContext{
-		cr:       cr,
-		tracker:  tracker,
-		helmInfo: &helmInfo,
-		handler:  handler,
+	sm := statemachine.StateMachine{
+		Scheme:   r.Scheme,
+		CR:       cr,
+		HelmInfo: &helmInfo,
+		Handler:  handler,
 	}
 
-	res := r.doStateMachine(ctx, smc)
+	res := sm.Execute(ctx)
 	return res, nil
 }
 

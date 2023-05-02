@@ -5,8 +5,8 @@ package main
 
 import (
 	"flag"
-	"github.com/verrazzano/verrazzano-modules/ccm-operator/lifecycle-actions/handlers/factory"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/factory"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano/pkg/log"
@@ -33,7 +33,7 @@ func main() {
 	}
 
 	// init ccm lifecycle controller
-	if err := modulelifecycle.InitController(mgr, factory.NewLifeCycleComponent(), moduleplatform.CCMLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, factory.NewLifecycleActionHandler(), moduleplatform.CCMLifecycleClass); err != nil {
 		log.Errorf("Failed to start CCM controller", err)
 		return
 	}

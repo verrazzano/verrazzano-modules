@@ -4,8 +4,8 @@
 package factory
 
 import (
-	calicoinstall "github.com/verrazzano/verrazzano-modules/calico-operator/lifecycle-actions/handlers/install"
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/install"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/uninstall"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/update"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/upgrade"
@@ -13,7 +13,7 @@ import (
 
 func NewLifecycleActionHandler() actionspi.ActionHandlers {
 	return actionspi.ActionHandlers{
-		InstallAction:   calicoinstall.NewComponent(),
+		InstallAction:   install.NewComponent(),
 		UninstallAction: uninstall.NewComponent(),
 		UpdateAction:    update.NewComponent(),
 		UpgradeAction:   upgrade.NewComponent(),

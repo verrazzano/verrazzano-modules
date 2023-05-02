@@ -1,7 +1,7 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package module
+package common
 
 import (
 	"fmt"
@@ -11,10 +11,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func AppendCondition(module *modulesplatform.Module, message string, conditionType modulesplatform.LifecycleCondition) {
+func AppendCondition(module *modulesplatform.ModuleLifecycle, message string, conditionType modulesplatform.LifecycleCondition) {
 	conditions := module.Status.Conditions
 	newCondition := NewCondition(message, conditionType)
-	var lastCondition modulesplatform.ModuleCondition
+	var lastCondition modulesplatform.ModuleLifecycleCondition
 	if len(conditions) > 0 {
 		lastCondition = conditions[len(conditions)-1]
 	}
@@ -29,9 +29,9 @@ func AppendCondition(module *modulesplatform.Module, message string, conditionTy
 	}
 }
 
-func NewCondition(message string, conditionType modulesplatform.LifecycleCondition) modulesplatform.ModuleCondition {
+func NewCondition(message string, conditionType modulesplatform.LifecycleCondition) modulesplatform.ModuleLifecycleCondition {
 	t := time.Now().UTC()
-	return modulesplatform.ModuleCondition{
+	return modulesplatform.ModuleLifecycleCondition{
 		Type:    conditionType,
 		Message: message,
 		Status:  corev1.ConditionTrue,
@@ -42,6 +42,6 @@ func NewCondition(message string, conditionType modulesplatform.LifecycleConditi
 }
 
 // needsConditionUpdate checks if the condition needs an update
-func needsConditionUpdate(last, new modulesplatform.ModuleCondition) bool {
+func needsConditionUpdate(last, new modulesplatform.ModuleLifecycleCondition) bool {
 	return last.Type != new.Type && last.Message != new.Message
 }

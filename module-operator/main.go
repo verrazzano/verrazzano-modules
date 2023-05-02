@@ -6,7 +6,7 @@ package main
 import (
 	"flag"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle"
-	helmfactory "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/factory"
+	helmfactory "github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/factory"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
 	modulefactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/factory"

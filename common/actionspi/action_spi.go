@@ -1,7 +1,7 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package action_spi
+package actionspi
 
 import (
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -17,14 +17,6 @@ type HelmInfo struct {
 
 	// CharDir is the local file system chart directory
 	ChartDir string
-}
-
-// StatusConditions are conditions written to the CR Status during statemachine execution
-type StatusConditions struct {
-	NotNeeded modulesv1alpha1.LifecycleCondition
-	PreAction modulesv1alpha1.LifecycleCondition
-	DoAction  modulesv1alpha1.LifecycleCondition
-	Completed modulesv1alpha1.LifecycleCondition
 }
 
 // ActionHandlers
@@ -45,9 +37,6 @@ type LifecycleActionHandler interface {
 	// GetActionName returns the action name
 	GetActionName() string
 
-	// GetStatusConditions returns the CR status conditions for various lifecycle stages
-	GetStatusConditions() StatusConditions
-
 	// Init initializes the component Hekn information
 	Init(context vzspi.ComponentContext, config HandlerConfig) (ctrl.Result, error)
 
@@ -57,8 +46,14 @@ type LifecycleActionHandler interface {
 	// PreAction does lifecycle pre-Action
 	PreAction(context vzspi.ComponentContext) (ctrl.Result, error)
 
+	// PreActionUpdateStatus does the lifecycle pre-Action status update
+	PreActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error)
+
 	// IsPreActionDone returns true if pre-Action done
 	IsPreActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+
+	// ActionUpdateStatus does the lifecycle action status update
+	ActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error)
 
 	// DoAction does the lifecycle Action
 	DoAction(context vzspi.ComponentContext) (ctrl.Result, error)
@@ -66,9 +61,15 @@ type LifecycleActionHandler interface {
 	// IsActionDone returns true if action is done
 	IsActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
 
+	// PostActionUpdateStatus does the lifecycle post-Action status update
+	PostActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error)
+
 	// PostAction does lifecycle post-Action
 	PostAction(context vzspi.ComponentContext) (ctrl.Result, error)
 
 	// IsPostActionDone returns true if action is done
 	IsPostActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+
+	// CompletedActionUpdateStatus does the lifecycle completed Action status update
+	CompletedActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error)
 }

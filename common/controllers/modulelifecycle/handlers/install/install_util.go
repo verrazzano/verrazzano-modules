@@ -8,11 +8,11 @@ import (
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 )
 
-func (h Component) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {
-	releaseChartVersion, err := helm.GetReleaseChartVersion(h.ReleaseName, h.ChartNamespace)
+func (h Handler) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {
+	releaseChartVersion, err := helm.GetReleaseChartVersion(h.BaseHandler.ReleaseName, h.BaseHandler.ChartNamespace)
 	if err != nil {
 		log.ErrorfThrottled("Error occurred getting release chart version: %v", err.Error())
 		return false
 	}
-	return h.Config.HelmInfo.ChartInfo.Version == releaseChartVersion
+	return h.BaseHandler.Config.HelmInfo.ChartInfo.Version == releaseChartVersion
 }

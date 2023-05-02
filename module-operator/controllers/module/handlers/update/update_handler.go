@@ -4,7 +4,7 @@
 package update
 
 import (
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -16,21 +16,11 @@ type Handler struct {
 }
 
 var (
-	_ compspi.LifecycleActionHandler = &Handler{}
+	_ actionspi.LifecycleActionHandler = &Handler{}
 )
 
-func NewHandler() compspi.LifecycleActionHandler {
+func NewHandler() actionspi.LifecycleActionHandler {
 	return &Handler{}
-}
-
-// GetStatusConditions returns the CR status conditions for various lifecycle stages
-func (h *Handler) GetStatusConditions() compspi.StatusConditions {
-	return compspi.StatusConditions{
-		NotNeeded: moduleplatform.CondAlreadyInstalled,
-		PreAction: moduleplatform.CondPreInstall,
-		DoAction:  moduleplatform.CondInstallStarted,
-		Completed: moduleplatform.CondInstallComplete,
-	}
 }
 
 // GetActionName returns the action name
@@ -39,7 +29,7 @@ func (h Handler) GetActionName() string {
 }
 
 // Init initializes the handler
-func (h *Handler) Init(ctx spi.ComponentContext, config compspi.HandlerConfig) (ctrl.Result, error) {
+func (h *Handler) Init(ctx spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
 	return h.BaseHandler.Init(ctx, config, moduleplatform.UpdateAction)
 }
 
@@ -55,6 +45,11 @@ func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, er
 	//return !installed, ctrl.Result{}, err
 }
 
+// PreActionUpdateStatus does the lifecycle pre-Action status update
+func (h Handler) PreActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondPreInstall, moduleplatform.ModuleStateReconciling)
+}
+
 // PreAction does installation pre-action
 func (h Handler) PreAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
@@ -63,6 +58,11 @@ func (h Handler) PreAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 // IsPreActionDone returns true if pre-action done
 func (h Handler) IsPreActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
+}
+
+// ActionUpdateStatus does the lifecycle Action status update
+func (h Handler) ActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondInstallStarted, moduleplatform.ModuleStateReconciling)
 }
 
 // DoAction installs the component using Helm
@@ -75,6 +75,11 @@ func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, erro
 	return h.BaseHandler.IsActionDone(ctx)
 }
 
+// PostActionUpdateStatue does installation post-action status update
+func (h Handler) PostActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
 // PostAction does installation post-action
 func (h Handler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	return h.BaseHandler.PostAction(ctx)
@@ -83,4 +88,9 @@ func (h Handler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 // IsPostActionDone returns true if post-action done
 func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
+}
+
+// CompletedActionUpdateStatus does the lifecycle action complete status update
+func (h Handler) CompletedActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondInstallComplete, moduleplatform.ModuleStateReady)
 }
