@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"sync"
 	"testing"
 )
@@ -16,13 +17,14 @@ func Test(t *testing.T) {
 	tests := []struct {
 		name        string
 		threadCount int
-		state       state
+		crName      string
+		crCount     int
 		trackerMap  map[string]*stateTracker
 	}{
 		{
 			name:        "test-init",
 			threadCount: 100,
-			state:       stateInit,
+			crName:      "test1",
 			trackerMap:  nil,
 		},
 	}
@@ -36,19 +38,20 @@ func Test(t *testing.T) {
 			var wg sync.WaitGroup
 			for i := 1; i <= test.threadCount; i++ {
 				wg.Add(1)
-				go func() {
+				go func(y int) {
 					defer wg.Done()
 					cr := &v1alpha1.ModuleLifecycle{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:       fmt.Sprintf("%s-%d", "fakeName", i),
+							Name:       fmt.Sprintf("%s-%d", "fakeName", y),
 							Namespace:  "mynamespace",
 							UID:        "uid-123",
 							Generation: 1,
 						},
 					}
-					tracker := ensureTracker(cr, test.state)
+					state := getRandomState()
+					tracker := ensureTracker(cr, state)
 					asserts.NotNil(tracker)
-					asserts.Equal(test.state, tracker.state)
+					asserts.Equal(state, tracker.state)
 					key := getTrackerKey(cr, cr.Generation)
 					tracker2 := getTracker(key)
 					if tracker2 == nil {
@@ -56,9 +59,15 @@ func Test(t *testing.T) {
 					}
 					asserts.NotNil(tracker2)
 					asserts.Equal(tracker.state, tracker2.state)
-				}()
+				}(i)
 			}
 			wg.Wait()
 		})
 	}
+}
+
+// get a random state
+func getRandomState() state {
+	states := []state{stateInit, stateAction, statePostAction, statePreAction, stateActionUpdateStatus, stateEnd}
+	return states[rand.IntnRange(0, len(states)-1)]
 }
