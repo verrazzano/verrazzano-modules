@@ -123,7 +123,7 @@ func (s StateMachine) Execute(compCtx vzspi.ComponentContext) ctrl.Result {
 			tracker.state = stateActionUpdateStatus
 
 		case stateActionUpdateStatus:
-			res, err := s.Handler.PreActionUpdateStatus(compContext)
+			res, err := s.Handler.ActionUpdateStatus(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
@@ -145,7 +145,7 @@ func (s StateMachine) Execute(compCtx vzspi.ComponentContext) ctrl.Result {
 			if !done {
 				return util.NewRequeueWithShortDelay()
 			}
-			tracker.state = statePostAction
+			tracker.state = statePostActionUpdateStatus
 
 		case statePostActionUpdateStatus:
 			res, err := s.Handler.PostActionUpdateStatus(compContext)
@@ -173,7 +173,7 @@ func (s StateMachine) Execute(compCtx vzspi.ComponentContext) ctrl.Result {
 			tracker.state = stateCompleteUpdateStatus
 
 		case stateCompleteUpdateStatus:
-			res, err := s.Handler.PostActionUpdateStatus(compContext)
+			res, err := s.Handler.CompletedActionUpdateStatus(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}

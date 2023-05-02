@@ -144,5 +144,5 @@ func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, 
 
 // CompletedActionUpdateStatus does the lifecycle completed Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondUpgradeComplete, moduleplatform.ModuleStateReady)
+	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondUpgradeComplete, moduleplatform.StateCompleted)
 }
