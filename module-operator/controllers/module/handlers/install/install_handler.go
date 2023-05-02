@@ -4,10 +4,13 @@
 package install
 
 import (
+	"context"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"time"
 
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 )
@@ -58,6 +61,17 @@ func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, er
 
 // PreAction does installation pre-action
 func (h Handler) PreAction(ctx spi.ComponentContext) (ctrl.Result, error) {
+	// Update the spev version if it is not set
+	if len(h.BaseHandler.ModuleCR.Spec.Version) == 0 {
+		// Update spec version to match chart, always requeue to get CR with version
+		h.BaseHandler.ModuleCR.Spec.Version = h.BaseHandler.Config.ChartInfo.Version
+		if err := ctx.Client().Update(context.TODO(), h.BaseHandler.ModuleCR); err != nil {
+			return util.NewRequeueWithShortDelay(), nil
+		}
+		// ALways reconcile so that we get a new tracker with the latest CR
+		return util.NewRequeueWithDelay(1, 2, time.Second), nil
+	}
+
 	return ctrl.Result{}, nil
 }
 
