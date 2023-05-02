@@ -51,7 +51,7 @@ func (h *Handler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (
 
 // GetActionName returns the action name
 func (h Handler) GetActionName() string {
-	return "update"
+	return "install"
 }
 
 // IsActionNeeded returns true if install is needed
