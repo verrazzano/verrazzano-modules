@@ -5,18 +5,14 @@ package factory
 
 import (
 	calicoinstall "github.com/verrazzano/verrazzano-modules/calico-operator/lifecycle-actions/handlers/install"
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/update"
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/upgrade"
-
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/uninstall"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/uninstall"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/update"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/upgrade"
 )
 
-// NewLifeCycleComponent creates a new lifecycle component
-func NewLifeCycleComponent() compspi.ActionHandlers {
-
-	// This is an example of how to override just the install lifecycle handler
-	return compspi.ActionHandlers{
+func NewLifecycleActionHandler() actionspi.ActionHandlers {
+	return actionspi.ActionHandlers{
 		InstallAction:   calicoinstall.NewComponent(),
 		UninstallAction: uninstall.NewComponent(),
 		UpdateAction:    update.NewComponent(),
