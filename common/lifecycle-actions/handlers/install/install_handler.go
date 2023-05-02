@@ -4,7 +4,6 @@
 package install
 
 import (
-	"context"
 	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
 	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
@@ -67,13 +66,7 @@ func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, er
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) PreActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	cond := moduleplatform.CondPreInstall
-	common.AppendCondition(h.BaseHandler.CR, string(cond), cond)
-	h.BaseHandler.CR.Status.State = moduleplatform.ModuleStateReconciling
-	if err := ctx.Client().Status().Update(context.TODO(), h.BaseHandler.CR); err != nil {
-		return util.NewRequeueWithShortDelay(), nil
-	}
-	return ctrl.Result{}, nil
+	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondPreInstall, moduleplatform.ModuleStateReconciling)
 }
 
 // PreAction does installation pre-action
@@ -88,13 +81,7 @@ func (h Handler) IsPreActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, e
 
 // ActionUpdateStatus does the lifecycle Action status update
 func (h Handler) ActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	cond := moduleplatform.CondInstallStarted
-	common.AppendCondition(h.BaseHandler.CR, string(cond), cond)
-	h.BaseHandler.CR.Status.State = moduleplatform.ModuleStateReconciling
-	if err := ctx.Client().Status().Update(context.TODO(), h.BaseHandler.CR); err != nil {
-		return util.NewRequeueWithShortDelay(), nil
-	}
-	return ctrl.Result{}, nil
+	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondInstallStarted, moduleplatform.ModuleStateReconciling)
 }
 
 // DoAction installs the component using Helm
@@ -161,11 +148,5 @@ func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, 
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	cond := moduleplatform.CondInstallComplete
-	common.AppendCondition(h.BaseHandler.CR, string(cond), cond)
-	h.BaseHandler.CR.Status.State = moduleplatform.ModuleStateReady
-	if err := ctx.Client().Status().Update(context.TODO(), h.BaseHandler.CR); err != nil {
-		return util.NewRequeueWithShortDelay(), nil
-	}
-	return ctrl.Result{}, nil
+	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondInstallComplete, moduleplatform.ModuleStateReady)
 }
