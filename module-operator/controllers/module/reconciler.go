@@ -59,7 +59,7 @@ func (r *Reconciler) getActionHandler(cr *moduleplatform.Module) compspi.Lifecyc
 	if len(cr.Spec.Version) > 0 && cr.Spec.Version != cr.Status.Version {
 		return r.comp.UpgradeAction
 	}
-	return nil
+	return r.comp.InstallAction
 }
 
 func isConditionPresent(cr *moduleplatform.Module, condition moduleplatform.LifecycleCondition) bool {
