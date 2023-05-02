@@ -4,21 +4,21 @@
 package module
 
 import (
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"path/filepath"
 )
 
-func loadHelmInfo(cr *moduleplatform.Module) (compspi.HelmInfo, error) {
+func loadHelmInfo(cr *moduleplatform.Module) (actionspi.HelmInfo, error) {
 	chartDir := lookupChartDir(cr)
 	chartInfo, err := vzhelm.GetChartInfo(chartDir)
 	if err != nil {
-		return compspi.HelmInfo{}, err
+		return actionspi.HelmInfo{}, err
 	}
 
-	helmInfo := compspi.HelmInfo{
+	helmInfo := actionspi.HelmInfo{
 		HelmRelease: &moduleplatform.HelmRelease{
 			Name:      cr.Name,
 			Namespace: cr.Spec.TargetNamespace,

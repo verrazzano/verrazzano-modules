@@ -4,15 +4,15 @@
 package factory
 
 import (
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/install"
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/uninstall"
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/update"
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/upgrade"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/install"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/uninstall"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/update"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/upgrade"
 )
 
-func NewLifecycleActionHandler() compspi.ActionHandlers {
-	return compspi.ActionHandlers{
+func NewLifecycleActionHandler() actionspi.ActionHandlers {
+	return actionspi.ActionHandlers{
 		InstallAction:   install.NewComponent(),
 		UninstallAction: uninstall.NewComponent(),
 		UpdateAction:    update.NewComponent(),

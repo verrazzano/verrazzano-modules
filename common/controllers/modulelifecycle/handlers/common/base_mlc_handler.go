@@ -5,7 +5,7 @@ package common
 
 import (
 	"context"
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -19,7 +19,7 @@ import (
 
 type BaseHandler struct {
 	helmcomp.HelmComponent
-	Config compspi.HandlerConfig
+	Config actionspi.HandlerConfig
 	CR     *moduleplatform.ModuleLifecycle
 }
 
@@ -31,7 +31,7 @@ var (
 )
 
 // Init initializes the component with Helm chart information
-func (h *BaseHandler) Init(_ spi.ComponentContext, config compspi.HandlerConfig) (ctrl.Result, error) {
+func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
 	h.HelmComponent = helmcomp.HelmComponent{
 		ReleaseName:             config.HelmInfo.HelmRelease.Name,
 		ChartNamespace:          config.HelmInfo.HelmRelease.Namespace,

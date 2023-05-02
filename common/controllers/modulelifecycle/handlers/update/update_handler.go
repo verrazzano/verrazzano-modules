@@ -4,8 +4,8 @@
 package update
 
 import (
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
-	"github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/common"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -26,17 +26,17 @@ type Handler struct {
 type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
 
 var (
-	_ compspi.LifecycleActionHandler = &Handler{}
+	_ actionspi.LifecycleActionHandler = &Handler{}
 
 	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
 )
 
-func NewComponent() compspi.LifecycleActionHandler {
+func NewComponent() actionspi.LifecycleActionHandler {
 	return &Handler{}
 }
 
 // Init initializes the component with Helm chart information
-func (h *Handler) Init(_ spi.ComponentContext, config compspi.HandlerConfig) (ctrl.Result, error) {
+func (h *Handler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
 	h.BaseHandler.HelmComponent = helmcomp.HelmComponent{
 		ReleaseName:             config.HelmInfo.HelmRelease.Name,
 		ChartNamespace:          config.HelmInfo.HelmRelease.Namespace,

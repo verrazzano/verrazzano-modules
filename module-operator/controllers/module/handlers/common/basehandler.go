@@ -5,7 +5,7 @@ package common
 
 import (
 	"context"
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -15,7 +15,7 @@ import (
 )
 
 type BaseHandler struct {
-	Config       compspi.HandlerConfig
+	Config       actionspi.HandlerConfig
 	ModuleCR     *moduleplatform.Module
 	Action       moduleplatform.ActionType
 	MlcName      string
@@ -23,7 +23,7 @@ type BaseHandler struct {
 }
 
 // Init initializes the handler with Helm chart information
-func (h *BaseHandler) Init(_ spi.ComponentContext, config compspi.HandlerConfig, action moduleplatform.ActionType) (ctrl.Result, error) {
+func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig, action moduleplatform.ActionType) (ctrl.Result, error) {
 	h.Config = config
 	h.ModuleCR = config.CR.(*moduleplatform.Module)
 	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleplatform.HelmLifecycleClass, moduleplatform.InstallAction)

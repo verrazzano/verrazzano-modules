@@ -5,7 +5,7 @@ package install
 
 import (
 	"context"
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -20,10 +20,10 @@ type Handler struct {
 }
 
 var (
-	_ compspi.LifecycleActionHandler = &Handler{}
+	_ actionspi.LifecycleActionHandler = &Handler{}
 )
 
-func NewHandler() compspi.LifecycleActionHandler {
+func NewHandler() actionspi.LifecycleActionHandler {
 	return &Handler{}
 }
 
@@ -33,7 +33,7 @@ func (h Handler) GetActionName() string {
 }
 
 // Init initializes the handler
-func (h *Handler) Init(ctx spi.ComponentContext, config compspi.HandlerConfig) (ctrl.Result, error) {
+func (h *Handler) Init(ctx spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
 	return h.BaseHandler.Init(ctx, config, moduleplatform.InstallAction)
 }
 
