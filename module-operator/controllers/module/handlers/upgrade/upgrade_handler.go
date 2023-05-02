@@ -27,16 +27,6 @@ func NewHandler() compspi.LifecycleActionHandler {
 	return &Handler{}
 }
 
-// GetStatusConditions returns the CR status conditions for various lifecycle stages
-func (h *Handler) GetStatusConditions() compspi.StatusConditions {
-	return compspi.StatusConditions{
-		NotNeeded: moduleplatform.CondAlreadyUpgraded,
-		PreAction: moduleplatform.CondPreUpgrade,
-		DoAction:  moduleplatform.CondUpgradeStarted,
-		Completed: moduleplatform.CondUpgradeComplete,
-	}
-}
-
 // GetActionName returns the action name
 func (h Handler) GetActionName() string {
 	return "upgrade"
@@ -59,6 +49,11 @@ func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, er
 	//return !installed, ctrl.Result{}, err
 }
 
+// PreActionUpdateStatus does the lifecycle pre-Action status update
+func (h Handler) PreActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondPreUpgrade, moduleplatform.ModuleStateReconciling)
+}
+
 // PreAction does installation pre-action
 func (h Handler) PreAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
@@ -67,6 +62,11 @@ func (h Handler) PreAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 // IsPreActionDone returns true if pre-action done
 func (h Handler) IsPreActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
+}
+
+// ActionUpdateStatus does the lifecycle Action status update
+func (h Handler) ActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondUpgradeStarted, moduleplatform.ModuleStateReconciling)
 }
 
 // DoAction installs the component using Helm
@@ -79,6 +79,11 @@ func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, erro
 	return h.BaseHandler.IsActionDone(ctx)
 }
 
+// PostActionUpdateStatue does installation post-action status update
+func (h Handler) PostActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
 // PostAction does installation post-action
 func (h Handler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	return h.BaseHandler.PostAction(ctx)
@@ -87,4 +92,9 @@ func (h Handler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 // IsPostActionDone returns true if post-action done
 func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
+}
+
+// CompletedActionUpdateStatus does the lifecycle pre-Action status update
+func (h Handler) CompletedActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+	return h.BaseHandler.UpdateStatusWithVersion(ctx, moduleplatform.CondUpgradeComplete, moduleplatform.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }

@@ -88,3 +88,26 @@ func (h BaseHandler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	}
 	return ctrl.Result{}, nil
 }
+
+// UpdateStatus does the lifecycle pre-Action status update
+func (h BaseHandler) UpdateStatusWithVersion(ctx spi.ComponentContext, cond moduleplatform.LifecycleCondition, state moduleplatform.ModuleStateType, version string) (ctrl.Result, error) {
+	AppendCondition(h.ModuleCR, string(cond), cond)
+	h.ModuleCR.Status.State = state
+	if len(version) > 0 {
+		h.ModuleCR.Status.Version = version
+	}
+	if err := ctx.Client().Status().Update(context.TODO(), h.ModuleCR); err != nil {
+		return util.NewRequeueWithShortDelay(), nil
+	}
+	return ctrl.Result{}, nil
+}
+
+// UpdateStatus does the lifecycle pre-Action status update
+func (h BaseHandler) UpdateStatus(ctx spi.ComponentContext, cond moduleplatform.LifecycleCondition, state moduleplatform.ModuleStateType) (ctrl.Result, error) {
+	AppendCondition(h.ModuleCR, string(cond), cond)
+	h.ModuleCR.Status.State = state
+	if err := ctx.Client().Status().Update(context.TODO(), h.ModuleCR); err != nil {
+		return util.NewRequeueWithShortDelay(), nil
+	}
+	return ctrl.Result{}, nil
+}

@@ -127,7 +127,7 @@ func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, erro
 	return true, ctrl.Result{}, err
 }
 
-// PostActionUpdateStatue does installation post-action
+// PostActionUpdateStatus does installation post-action
 func (h Handler) PostActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
@@ -142,7 +142,7 @@ func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, 
 	return true, ctrl.Result{}, nil
 }
 
-// PreActionUpdateStatus does the lifecycle pre-Action status update
+// CompletedActionUpdateStatus does the lifecycle completed Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondInstallComplete, moduleplatform.ModuleStateReady)
 }
