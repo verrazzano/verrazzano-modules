@@ -64,7 +64,7 @@ type StateMachine struct {
 	Handler  actionspi.LifecycleActionHandler
 }
 
-func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result {
+func (s StateMachine) Execute(compCtx vzspi.ComponentContext) ctrl.Result {
 	tracker := getTracker(s.CR, stateInit)
 
 	actionName := s.Handler.GetActionName()
