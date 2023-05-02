@@ -5,7 +5,7 @@ package main
 
 import (
 	"flag"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/lifecycle"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle"
 	helmfactory "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/handlers/factory"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
@@ -42,19 +42,19 @@ func main() {
 	}
 
 	// init Helm lifecycle controller
-	if err := lifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.HelmLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.HelmLifecycleClass); err != nil {
 		log.Errorf("Failed to start Helm controller", err)
 		return
 	}
 
 	// init Calico lifecycle controller
-	if err := lifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.CalicoLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.CalicoLifecycleClass); err != nil {
 		log.Errorf("Failed to start the Calico controller", err)
 		return
 	}
 
 	// init CCM lifecycle controller
-	if err := lifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.CCMLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.CCMLifecycleClass); err != nil {
 		log.Errorf("Failed to start OCI-CCM controller", err)
 		return
 	}
