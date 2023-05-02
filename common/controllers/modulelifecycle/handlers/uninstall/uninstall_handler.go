@@ -6,14 +6,11 @@ package uninstall
 import (
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/common"
-	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
-	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -21,13 +18,8 @@ type Handler struct {
 	BaseHandler common.BaseHandler
 }
 
-// upgradeFuncSig is a function needed for unit test override
-type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
-
 var (
 	_ actionspi.LifecycleActionHandler = &Handler{}
-
-	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
 )
 
 func NewComponent() actionspi.LifecycleActionHandler {

@@ -7,13 +7,10 @@ import (
 	"context"
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
-	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
-	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -22,13 +19,6 @@ type BaseHandler struct {
 	Config actionspi.HandlerConfig
 	CR     *moduleplatform.ModuleLifecycle
 }
-
-// upgradeFuncSig is a function needed for unit test override
-type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
-
-var (
-	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
-)
 
 // Init initializes the component with Helm chart information
 func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
