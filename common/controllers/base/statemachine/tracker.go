@@ -24,11 +24,11 @@ func getTrackerKey(meta metav1.ObjectMeta, gen int64) string {
 }
 
 // getTracker gets the install stateTracker for Verrazzano
-func getTracker(meta metav1.ObjectMeta, initialState state) *stateTracker {
+func getTracker(int64 generation, UID string, initialState state) *stateTracker {
 	mutex := sync.RWMutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
-	key := getTrackerKey(meta, meta.Generation)
+	key := getTrackerKey(meta, generation)
 	tracker, ok := trackerMap[key]
 	// If the entry is missing then create a new entry
 	if !ok {

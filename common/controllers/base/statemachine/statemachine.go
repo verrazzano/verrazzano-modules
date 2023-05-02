@@ -60,12 +60,13 @@ const (
 type StateMachine struct {
 	*runtime.Scheme
 	CR       client.Object
-	Tracker  *stateTracker
 	HelmInfo *compspi.HelmInfo
 	Handler  compspi.LifecycleActionHandler
 }
 
 func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result {
+	tracker := getTracker(s.CR.GetGeneration(), s.CR.GetUID())
+
 	actionName := s.Handler.GetActionName()
 	compContext := compCtx.Init("component").Operation(actionName)
 	nsn := fmt.Sprintf("%s/%s", s.CR.GetNamespace(), s.CR.GetName())
