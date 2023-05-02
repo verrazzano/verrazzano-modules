@@ -65,7 +65,7 @@ type StateMachine struct {
 }
 
 func (s StateMachine) Execute(compCtx vzspi.ComponentContext) ctrl.Result {
-	tracker := getTracker(s.CR, stateInit)
+	tracker := ensureTracker(s.CR, stateInit)
 
 	actionName := s.Handler.GetActionName()
 	compContext := compCtx.Init("component").Operation(actionName)

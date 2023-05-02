@@ -18,33 +18,50 @@ type stateTracker struct {
 // trackerMap has a map of trackers with key from VZ name, namespace, and UID
 var trackerMap = make(map[string]*stateTracker)
 
+// trackerMutex is used to access the map concurrently
+var trackerMutex = sync.RWMutex{}
+
 // getTrackerKey gets the stateTracker key for the Verrazzano resource
 func getTrackerKey(CR client.Object, gen int64) string {
 	return fmt.Sprintf("%s-%s-%v-%s", CR.GetNamespace(), CR.GetName(), gen, string(CR.GetUID()))
 }
 
-// getTracker gets the install stateTracker for Verrazzano
-func getTracker(CR client.Object, initialState state) *stateTracker {
-	gen := CR.GetGeneration()
-	mutex := sync.RWMutex{}
-	mutex.Lock()
-	defer mutex.Unlock()
-	key := getTrackerKey(CR, gen)
-	tracker, ok := trackerMap[key]
-	// If the entry is missing then create a new entry
-	if !ok {
-		tracker = &stateTracker{
-			state: initialState,
-			gen:   CR.GetGeneration(),
-		}
-		trackerMap[key] = tracker
+// ensureTracker gets the stateTracker, creating a new one if needed
+func ensureTracker(CR client.Object, initialState state) *stateTracker {
+	key := getTrackerKey(CR, CR.GetGeneration())
+	tracker := getTracker(key)
+	if tracker == nil {
+		tracker = createTracker(CR, initialState, key)
+	}
+	return tracker
+}
 
-		// Delete the previous entry if it exists
-		key := getTrackerKey(CR, gen-1)
-		_, ok := trackerMap[key]
-		if ok {
-			delete(trackerMap, key)
-		}
+// getTracker gets the stateTracker
+func getTracker(key string) *stateTracker {
+	trackerMutex.RLock()
+	defer trackerMutex.RUnlock()
+	tracker, _ := trackerMap[key]
+	return tracker
+}
+
+// createTracker creates a stateTracker
+func createTracker(CR client.Object, initialState state, key string) *stateTracker {
+	trackerMutex.Lock()
+	defer trackerMutex.Unlock()
+	tracker := &stateTracker{
+		state: initialState,
+		gen:   CR.GetGeneration(),
+	}
+	trackerMap[key] = tracker
+
+	// Delete the previous entry if it exists
+	if CR.GetGeneration() == 1 {
+		return tracker
+	}
+	keyPrev := getTrackerKey(CR, CR.GetGeneration()-1)
+	_, ok := trackerMap[keyPrev]
+	if ok {
+		delete(trackerMap, keyPrev)
 	}
 	return tracker
 }
