@@ -5,7 +5,7 @@ package statemachine
 
 import (
 	"fmt"
-	compspi "github.com/verrazzano/verrazzano-modules/common/lifecycle-actions/action_spi"
+	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -60,22 +60,22 @@ const (
 type StateMachine struct {
 	*runtime.Scheme
 	CR       client.Object
-	HelmInfo *compspi.HelmInfo
-	Handler  compspi.LifecycleActionHandler
+	HelmInfo *actionspi.HelmInfo
+	Handler  actionspi.LifecycleActionHandler
 }
 
 func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result {
-	tracker := getTracker(s.CR.GetGeneration(), s.CR.GetUID())
+	tracker := getTracker(s.CR, stateInit)
 
 	actionName := s.Handler.GetActionName()
 	compContext := compCtx.Init("component").Operation(actionName)
 	nsn := fmt.Sprintf("%s/%s", s.CR.GetNamespace(), s.CR.GetName())
 
-	for s.Tracker.state != stateEnd {
-		switch s.Tracker.state {
+	for tracker.state != stateEnd {
+		switch tracker.state {
 		case stateInit:
 			// Init the Handler
-			config := compspi.HandlerConfig{
+			config := actionspi.HandlerConfig{
 				HelmInfo: *s.HelmInfo,
 				CR:       s.CR,
 				Scheme:   s.Scheme,
@@ -84,7 +84,7 @@ func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			s.Tracker.state = stateCheckActionNeeded
+			tracker.state = stateCheckActionNeeded
 
 		case stateCheckActionNeeded:
 			needed, res, err := s.Handler.IsActionNeeded(compContext)
@@ -92,9 +92,9 @@ func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result
 				return res2
 			}
 			if !needed {
-				s.Tracker.state = stateEnd
+				tracker.state = stateEnd
 			} else {
-				s.Tracker.state = statePreActionUpdateStatus
+				tracker.state = statePreActionUpdateStatus
 			}
 
 		case statePreActionUpdateStatus:
@@ -102,7 +102,7 @@ func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			s.Tracker.state = statePreAction
+			tracker.state = statePreAction
 
 		case statePreAction:
 			compCtx.Log().Progressf("Doing pre-%s for %s", actionName, nsn)
@@ -110,7 +110,7 @@ func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			s.Tracker.state = statePreActionWaitDone
+			tracker.state = statePreActionWaitDone
 
 		case statePreActionWaitDone:
 			done, res, err := s.Handler.IsPreActionDone(compContext)
@@ -120,14 +120,14 @@ func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result
 			if !done {
 				return util.NewRequeueWithShortDelay()
 			}
-			s.Tracker.state = stateActionUpdateStatus
+			tracker.state = stateActionUpdateStatus
 
 		case stateActionUpdateStatus:
 			res, err := s.Handler.PreActionUpdateStatus(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			s.Tracker.state = stateAction
+			tracker.state = stateAction
 
 		case stateAction:
 			compCtx.Log().Progressf("Doing %s for %s", actionName, nsn)
@@ -135,7 +135,7 @@ func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			s.Tracker.state = stateActionWaitDone
+			tracker.state = stateActionWaitDone
 
 		case stateActionWaitDone:
 			done, res, err := s.Handler.IsActionDone(compContext)
@@ -145,14 +145,14 @@ func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result
 			if !done {
 				return util.NewRequeueWithShortDelay()
 			}
-			s.Tracker.state = statePostAction
+			tracker.state = statePostAction
 
 		case statePostActionUpdateStatus:
 			res, err := s.Handler.PostActionUpdateStatus(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			s.Tracker.state = statePostAction
+			tracker.state = statePostAction
 
 		case statePostAction:
 			compCtx.Log().Progressf("Doing post-%s for %s", actionName, nsn)
@@ -160,7 +160,7 @@ func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			s.Tracker.state = statePostActionWaitDone
+			tracker.state = statePostActionWaitDone
 
 		case statePostActionWaitDone:
 			done, res, err := s.Handler.IsPostActionDone(compContext)
@@ -170,14 +170,14 @@ func (s StateMachine) doStateMachine(compCtx vzspi.ComponentContext) ctrl.Result
 			if !done {
 				return util.NewRequeueWithShortDelay()
 			}
-			s.Tracker.state = stateCompleteUpdateStatus
+			tracker.state = stateCompleteUpdateStatus
 
 		case stateCompleteUpdateStatus:
 			res, err := s.Handler.PostActionUpdateStatus(compContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			s.Tracker.state = stateEnd
+			tracker.state = stateEnd
 		}
 	}
 	return ctrl.Result{}
