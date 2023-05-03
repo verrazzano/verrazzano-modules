@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -65,15 +66,7 @@ func getStatesInOrder() []string {
 	}
 }
 
-func getBehaviorMap() behaviorMap {
-	m := make(map[string]*behavior)
-	for _, s := range getStatesInOrder() {
-		m[s] = &behavior{boolResult: true}
-	}
-	return m
-}
-
-func TestVisited(t *testing.T) {
+func TestAllStatesSucceed(t *testing.T) {
 	asserts := assert.New(t)
 
 	h := handler{
@@ -82,7 +75,7 @@ func TestVisited(t *testing.T) {
 	}
 	cr := &v1alpha1.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:       "test",
+			Name:       "TestAllStatesSucceed",
 			Namespace:  "testns",
 			UID:        "uid-123",
 			Generation: 1,
@@ -105,6 +98,64 @@ func TestVisited(t *testing.T) {
 		b := h.behaviorMap[s]
 		asserts.True(b.visited, fmt.Sprintf("State %s not visited", s))
 	}
+}
+
+func TestEachStateRequeue(t *testing.T) {
+	asserts := assert.New(t)
+	ctx, err := vzspi.NewMinimalContext(nil, vzlog.DefaultLogger())
+	asserts.NoError(err)
+
+	// Check for a Requeue result for every state
+	for i, s := range getStatesInOrder() {
+		if s == getActionName {
+			continue
+		}
+
+		h := handler{
+			actionNeeded: true,
+			behaviorMap:  getBehaviorMap(),
+		}
+		cr := &v1alpha1.ModuleLifecycle{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "TestEachStateRequeue",
+				Namespace:  "testns",
+				UID:        "uid-123",
+				Generation: 1 + int64(i),
+			},
+		}
+		sm := StateMachine{
+			Scheme:   nil,
+			CR:       cr,
+			HelmInfo: &actionspi.HelmInfo{},
+			Handler:  h,
+		}
+		b := h.behaviorMap[s]
+		b.Result = util.NewRequeueWithShortDelay()
+
+		res := sm.Execute(ctx)
+		asserts.True(res.Requeue)
+
+		// Make sure all the states were visited only up to the one that requeued, check in order
+		expectedVisited := true
+		for _, s := range getStatesInOrder() {
+			if s == getActionName {
+				continue
+			}
+			b := h.behaviorMap[s]
+			asserts.Equal(expectedVisited, b.visited, fmt.Sprintf("State %s visited wrong, should be %v", s, b.visited))
+			if b.Requeue {
+				expectedVisited = false
+			}
+		}
+	}
+}
+
+func getBehaviorMap() behaviorMap {
+	m := make(map[string]*behavior)
+	for _, s := range getStatesInOrder() {
+		m[s] = &behavior{boolResult: true, methodName: s}
+	}
+	return m
 }
 
 // Implement the handler SPI
