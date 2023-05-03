@@ -1,7 +1,10 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-// Package statemachine provides a statemachine for executing the flow of life-cycle actions.
+// Package statemachine provides a state machine for executing the flow of life-cycle actions.
+// The current state of the state machine is stored in a tracker that is unique for each CR generation.
+// This allows the state machine to be initialized and called several times until all states have executed,
+// during a controller-runtime reconcile loop, where the Reconcile method is called repeatedly.
 package statemachine
 
 import (
