@@ -1,6 +1,7 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+// Package statemachine provides a statemachine for executing the flow of life-cycle actions.
 package statemachine
 
 import (
@@ -57,6 +58,7 @@ const (
 	stateEnd state = "stateEnd"
 )
 
+// StateMachine contains the fields needed to execute the state machine.
 type StateMachine struct {
 	*runtime.Scheme
 	CR       client.Object
@@ -64,6 +66,14 @@ type StateMachine struct {
 	Handler  actionspi.LifecycleActionHandler
 }
 
+// Execute runs the state machine starting at the state stored in the tracker.
+// Each CR has a unique tracker for a given generation that tracks the current state.
+// The state machine uses an action handler to implement module specific logic.  This
+// state machine code is used by different types of controllers, such as the Module and
+// ModuleLifeCycle controllers.
+// During state machine execution, a result may be returned to indicate that the
+// controller-runtime should requeue after a delay.  This is done when a handler is
+// waiting for a resource or some other condition.
 func (s *StateMachine) Execute(compCtx vzspi.ComponentContext) ctrl.Result {
 	tracker := ensureTracker(s.CR, stateInit)
 
