@@ -66,6 +66,10 @@ func getStatesInOrder() []string {
 	}
 }
 
+// TestAllStatesSucceed tests that all the states are visited
+// GIVEN a state machine
+// WHEN the state machine is executed and all handler methods return success
+// THEN ensure that every state in the state machine is executed
 func TestAllStatesSucceed(t *testing.T) {
 	asserts := assert.New(t)
 
@@ -100,6 +104,11 @@ func TestAllStatesSucceed(t *testing.T) {
 	}
 }
 
+// TestEachStateRequeue tests that all the states handle requeue
+// GIVEN multiple state machines
+// WHEN each state machine is executed from the beginning, and every state is tested to return requeue
+// THEN ensure that each state before the state that returns requeue result is visited,
+// and each state after is not visited
 func TestEachStateRequeue(t *testing.T) {
 	asserts := assert.New(t)
 	ctx, err := vzspi.NewMinimalContext(nil, vzlog.DefaultLogger())
