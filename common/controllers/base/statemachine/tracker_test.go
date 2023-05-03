@@ -18,15 +18,13 @@ import (
 // WHEN multiple CRs are tracked concurrently
 // THEN ensure that the correct tracker is returned
 func TestEnsureTracker(t *testing.T) {
-	const threadCount = 1000
-
 	asserts := assert.New(t)
-	tc := newTrackerContext()
-	asserts.NotNil(tc)
+
+	const threadCount = 1000
 	var wg sync.WaitGroup
 	for i := 1; i <= threadCount; i++ {
 		wg.Add(1)
-		go func(y int, tc *trackerContext) {
+		go func(y int) {
 			defer wg.Done()
 			cr := &v1alpha1.ModuleLifecycle{
 				ObjectMeta: metav1.ObjectMeta{
@@ -43,12 +41,12 @@ func TestEnsureTracker(t *testing.T) {
 			loop := 1
 			for loop < 5 {
 				loop++
-				tracker := tc.ensureTracker(cr, state)
+				tracker := ensureTracker(cr, state)
 				asserts.NotNil(tracker)
 				asserts.Equal(state, tracker.state)
 
 				// Get another tracker, should match the first
-				tracker2 := tc.ensureTracker(cr, state)
+				tracker2 := ensureTracker(cr, state)
 				if tracker2 == nil {
 					asserts.NotNil(tracker2)
 				}
@@ -60,20 +58,20 @@ func TestEnsureTracker(t *testing.T) {
 			loop = 1
 			for loop < 5 {
 				loop++
-				tracker := tc.ensureTracker(cr, state)
+				tracker := ensureTracker(cr, state)
 				asserts.NotNil(tracker)
 				asserts.Equal(state, tracker.state)
 
 				// update the state and make sure the new call to ensure tracker returns a tracker with correct state
 				state = getRandomState()
 				tracker.state = state
-				tracker3 := tc.ensureTracker(cr, state)
+				tracker3 := ensureTracker(cr, state)
 				asserts.Equal(tracker.state, tracker3.state)
 			}
-		}(i, tc)
+		}(i)
 	}
 	wg.Wait()
-	asserts.Equal(tc.lenMap(), threadCount)
+	asserts.Equal(len(trackerMap), threadCount)
 }
 
 // TestRemoveTracker tests that old trackers are deleted
@@ -81,43 +79,42 @@ func TestEnsureTracker(t *testing.T) {
 // WHEN multiple CRs are tracked concurrently and the generation changes
 // THEN ensure that trackers tracking old generations of CRs are deleted
 func TestRemoveTracker(t *testing.T) {
-	const threadCount = 1000
-
 	asserts := assert.New(t)
-	tc := newTrackerContext()
-	asserts.NotNil(tc)
+	startingMapSize := len(trackerMap)
+
+	const threadCount = 1000
 	var wg sync.WaitGroup
 	for i := 1; i <= threadCount; i++ {
 		wg.Add(1)
-		go func(y int, tc *trackerContext) {
+		go func(y int) {
 			defer wg.Done()
 			cr := &v1alpha1.ModuleLifecycle{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:       fmt.Sprintf("%s-%d", "fakeName", y),
+					Name:       fmt.Sprintf("%s-%d", "fakeName2", y),
 					Namespace:  "mynamespace",
-					UID:        "uid-123",
+					UID:        "uid-12345",
 					Generation: 1,
 				},
 			}
 			// Ensure tracker starts at state
 			startstate := getRandomState()
-			tracker := tc.ensureTracker(cr, startstate)
+			tracker := ensureTracker(cr, startstate)
 			asserts.NotNil(tracker)
 			asserts.Equal(startstate, tracker.state)
 
 			// Increment generation and get tracker again
 			cr.Generation++
-			tracker2 := tc.ensureTracker(cr, state("fakestate"))
+			tracker2 := ensureTracker(cr, state("fakestate"))
 
 			// state and gen should never match
 			asserts.NotEqual(tracker.state, tracker2.state)
 			asserts.NotEqual(tracker.gen, tracker2.gen)
-		}(i, tc)
+		}(i)
 	}
 	wg.Wait()
 
 	// Assert the old trackers were removed and map size stayed at the thread count
-	asserts.Equal(tc.lenMap(), threadCount)
+	asserts.Equal(threadCount+startingMapSize, len(trackerMap))
 }
 
 // get a random state

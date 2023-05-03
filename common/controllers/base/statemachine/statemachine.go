@@ -62,15 +62,10 @@ type StateMachine struct {
 	CR       client.Object
 	HelmInfo *actionspi.HelmInfo
 	Handler  actionspi.LifecycleActionHandler
-
-	*trackerContext
 }
 
 func (s *StateMachine) Execute(compCtx vzspi.ComponentContext) ctrl.Result {
-	if s.trackerContext == nil {
-		s.trackerContext = newTrackerContext()
-	}
-	tracker := s.ensureTracker(s.CR, stateInit)
+	tracker := ensureTracker(s.CR, stateInit)
 
 	actionName := s.Handler.GetActionName()
 	compContext := compCtx.Init("component").Operation(actionName)

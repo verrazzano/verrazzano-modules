@@ -9,63 +9,50 @@ import (
 	"sync"
 )
 
-// stateTracker keeps an in-memory state for a component doing actions
-type stateTracker struct {
+// statracker keeps an in-memory state for a component doing actions
+type statracker struct {
 	state state
 	gen   int64
+	key   string
 }
 
-// trackerContext contains context used to track the state of multiple resources
-type trackerContext struct {
-	// trackerMap has a map of trackers with key from VZ name, namespace, and UID
-	trackerMap map[string]*stateTracker
+// trackerMap has a map of trackers with key from VZ name, namespace, and UID
+var	trackerMap = make(map[string]*statracker)
 
-	// trackerMutex is used to access the map concurrently
-	trackerMutex sync.RWMutex
-}
+// trackerMutex is used to access the map concurrently
+var trackerMutex sync.RWMutex
 
-// newTrackerContext creates a new trackerContext
-func newTrackerContext() *trackerContext {
-	return &trackerContext{
-		trackerMap:   make(map[string]*stateTracker),
-		trackerMutex: sync.RWMutex{},
-	}
-}
-
-// getTrackerKey gets the stateTracker key for the Verrazzano resource
-func (t *trackerContext) getTrackerKey(CR client.Object, gen int64) string {
+// getTrackerKey gets the statracker key for the Verrazzano resource
+func getTrackerKey(CR client.Object, gen int64) string {
 	return fmt.Sprintf("%s-%s-%v-%s", CR.GetNamespace(), CR.GetName(), gen, string(CR.GetUID()))
 }
 
-// ensureTracker gets the stateTracker, creating a new one if needed
-func (t *trackerContext) ensureTracker(CR client.Object, initialState state) *stateTracker {
-	t.trackerMutex.Lock()
-	defer t.trackerMutex.Unlock()
-	key := t.getTrackerKey(CR, CR.GetGeneration())
-	tracker, ok := t.trackerMap[key]
+// ensureTracker gets the statracker, creating a new one if needed
+func ensureTracker(CR client.Object, initialState state) *statracker {
+	trackerMutex.Lock()
+	defer trackerMutex.Unlock()
+	key := getTrackerKey(CR, CR.GetGeneration())
+	tracker, ok := trackerMap[key]
 	if ok {
 		return tracker
 	}
 
 	// create a new tracker and save it in the map
-	tracker = &stateTracker{
+	tracker = &statracker{
 		state: initialState,
 		gen:   CR.GetGeneration(),
+		key:   key,
 	}
-	t.trackerMap[key] = tracker
+	trackerMap[key] = tracker
 
 	// Delete the previous entry if it exists
 	if CR.GetGeneration() == 1 {
 		return tracker
 	}
-	keyPrev := t.getTrackerKey(CR, CR.GetGeneration()-1)
-	_, ok = t.trackerMap[keyPrev]
+	keyPrev := getTrackerKey(CR, CR.GetGeneration()-1)
+	_, ok = trackerMap[keyPrev]
 	if ok {
-		delete(t.trackerMap, keyPrev)
+		delete(trackerMap, keyPrev)
 	}
 	return tracker
-}
-
-func (t *trackerContext) lenMap() int {
-	return len(t.trackerMap)
 }
