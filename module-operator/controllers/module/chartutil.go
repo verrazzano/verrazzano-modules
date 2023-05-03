@@ -46,7 +46,7 @@ func lookupChartLeafDirName(mod *moduleplatform.Module) string {
 	case string(moduleplatform.CalicoLifecycleClass):
 		dir = "calico"
 	case string(moduleplatform.CCMLifecycleClass):
-		dir = "verrazzano-ccm-operator"
+		dir = "ccm"
 	case string(moduleplatform.HelmLifecycleClass):
 		dir = "vz-test"
 	}
