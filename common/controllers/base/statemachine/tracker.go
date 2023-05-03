@@ -17,7 +17,7 @@ type statracker struct {
 }
 
 // trackerMap has a map of trackers with key from VZ name, namespace, and UID
-var	trackerMap = make(map[string]*statracker)
+var trackerMap = make(map[string]*statracker)
 
 // trackerMutex is used to access the map concurrently
 var trackerMutex sync.RWMutex
