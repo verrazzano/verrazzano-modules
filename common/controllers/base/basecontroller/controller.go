@@ -196,16 +196,16 @@ func (r *Reconciler) controllerResourceExists(nsn types.NamespacedName) bool {
 	if r.controllerResources == nil {
 		return false
 	}
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	return r.controllerResources[nsn]
 }
 
 // GetControllerResources returns the list of controller resources
 func (r *Reconciler) GetControllerResources() []types.NamespacedName {
 	nsns := []types.NamespacedName{}
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	for k := range r.controllerResources {
 		nsns = append(nsns, k)
 	}

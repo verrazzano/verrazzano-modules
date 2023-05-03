@@ -19,26 +19,22 @@ func Test(t *testing.T) {
 		threadCount int
 		crName      string
 		crCount     int
-		trackerMap  map[string]*stateTracker
 	}{
 		{
 			name:        "test-init",
-			threadCount: 100,
+			threadCount: 500,
 			crName:      "test1",
-			trackerMap:  nil,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			asserts := assert.New(t)
-			if test.trackerMap != nil {
-				trackerMap = test.trackerMap
-			}
-			asserts.NotNil(trackerMap)
+			tc := newTrackerContext()
+			asserts.NotNil(tc)
 			var wg sync.WaitGroup
 			for i := 1; i <= test.threadCount; i++ {
 				wg.Add(1)
-				go func(y int) {
+				go func(y int, tc *trackerContext) {
 					defer wg.Done()
 					cr := &v1alpha1.ModuleLifecycle{
 						ObjectMeta: metav1.ObjectMeta{
@@ -49,17 +45,24 @@ func Test(t *testing.T) {
 						},
 					}
 					state := getRandomState()
-					tracker := ensureTracker(cr, state)
+					tracker := tc.ensureTracker(cr, state)
 					asserts.NotNil(tracker)
 					asserts.Equal(state, tracker.state)
-					key := getTrackerKey(cr, cr.Generation)
-					tracker2 := getTracker(key)
+
+					// Get another tracker, should match the first
+					tracker2 := tc.ensureTracker(cr, state)
 					if tracker2 == nil {
 						asserts.NotNil(tracker2)
 					}
 					asserts.NotNil(tracker2)
 					asserts.Equal(tracker.state, tracker2.state)
-				}(i)
+
+					// update the state and make sure the new call to ensure tracker returns a tracker with correct state
+					tracker.state = getRandomState()
+					tracker3 := tc.ensureTracker(cr, state)
+					asserts.Equal(tracker.state, tracker3.state)
+
+				}(i, tc)
 			}
 			wg.Wait()
 		})

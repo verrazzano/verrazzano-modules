@@ -15,53 +15,53 @@ type stateTracker struct {
 	gen   int64
 }
 
-// trackerMap has a map of trackers with key from VZ name, namespace, and UID
-var trackerMap = make(map[string]*stateTracker)
+// trackerContext contains context used to track the state of multiple resources
+type trackerContext struct {
+	// trackerMap has a map of trackers with key from VZ name, namespace, and UID
+	trackerMap map[string]*stateTracker
 
-// trackerMutex is used to access the map concurrently
-var trackerMutex = sync.RWMutex{}
+	// trackerMutex is used to access the map concurrently
+	trackerMutex sync.RWMutex
+}
+
+// newTrackerContext creates a new trackerContext
+func newTrackerContext() *trackerContext {
+	return &trackerContext{
+		trackerMap:   make(map[string]*stateTracker),
+		trackerMutex: sync.RWMutex{},
+	}
+}
 
 // getTrackerKey gets the stateTracker key for the Verrazzano resource
-func getTrackerKey(CR client.Object, gen int64) string {
+func (t *trackerContext) getTrackerKey(CR client.Object, gen int64) string {
 	return fmt.Sprintf("%s-%s-%v-%s", CR.GetNamespace(), CR.GetName(), gen, string(CR.GetUID()))
 }
 
 // ensureTracker gets the stateTracker, creating a new one if needed
-func ensureTracker(CR client.Object, initialState state) *stateTracker {
-	key := getTrackerKey(CR, CR.GetGeneration())
-	tracker := getTracker(key)
-	if tracker == nil {
-		tracker = createTracker(CR, initialState, key)
+func (t *trackerContext) ensureTracker(CR client.Object, initialState state) *stateTracker {
+	t.trackerMutex.Lock()
+	defer t.trackerMutex.Unlock()
+	key := t.getTrackerKey(CR, CR.GetGeneration())
+	tracker, ok := t.trackerMap[key]
+	if ok {
+		return tracker
 	}
-	return tracker
-}
 
-// getTracker gets the stateTracker
-func getTracker(key string) *stateTracker {
-	trackerMutex.RLock()
-	defer trackerMutex.RUnlock()
-	tracker, _ := trackerMap[key]
-	return tracker
-}
-
-// createTracker creates a stateTracker
-func createTracker(CR client.Object, initialState state, key string) *stateTracker {
-	trackerMutex.Lock()
-	defer trackerMutex.Unlock()
-	tracker := &stateTracker{
+	// create a new tracker and save it in the map
+	tracker = &stateTracker{
 		state: initialState,
 		gen:   CR.GetGeneration(),
 	}
-	trackerMap[key] = tracker
+	t.trackerMap[key] = tracker
 
 	// Delete the previous entry if it exists
 	if CR.GetGeneration() == 1 {
 		return tracker
 	}
-	keyPrev := getTrackerKey(CR, CR.GetGeneration()-1)
-	_, ok := trackerMap[keyPrev]
+	keyPrev := t.getTrackerKey(CR, CR.GetGeneration()-1)
+	_, ok = t.trackerMap[keyPrev]
 	if ok {
-		delete(trackerMap, keyPrev)
+		delete(t.trackerMap, keyPrev)
 	}
 	return tracker
 }
