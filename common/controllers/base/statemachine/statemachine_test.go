@@ -4,17 +4,30 @@
 package statemachine
 
 import (
+	"fmt"
+	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
+	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"testing"
 )
 
 type behavior struct {
-	returnError bool
-	visited     bool
+	methodName string
+	visited    bool
+	done       bool
+	ctrl.Result
 }
 
-type handler struct{}
+type behaviorMap map[string]behavior
+
+type handler struct {
+	behaviorMap
+}
 
 const (
 	getActionName               = "GetActionName"
@@ -32,24 +45,59 @@ const (
 	completedActionUpdateStatus = "CompletedActionUpdateStatus"
 )
 
-func getBehaviors() map[string]behavior {
-
-	return map[string]behavior{
-		getActionName:          {},
-		initFunc:               {},
-		isActionNeeded:         {},
-		preActionUpdateStatus:  {},
-		preAction:              {},
-		isPreActionDone:        {},
-		actionUpdateStatus:     {},
-		actionfunc:             {},
-		isActionDone:           {},
-		postActionUpdateStatus: {},
-		postAction:             {},
-		isPostActionDone:       {},
+func getStates() []string {
+	return []string{
+		getActionName,
+		initFunc,
+		isActionNeeded,
+		preActionUpdateStatus,
+		preAction,
+		isPreActionDone,
+		actionUpdateStatus,
+		actionfunc,
+		isActionDone,
+		postActionUpdateStatus,
+		postAction,
+		isPostActionDone,
 	}
 }
 
+func getBehaviorMap() behaviorMap {
+	m := make(map[string]behavior)
+	for _, s := range getStates() {
+		m[s] = behavior{}
+	}
+	return m
+}
+
+func Test(t *testing.T) {
+	asserts := assert.New(t)
+
+	h := handler{
+		behaviorMap: getBehaviorMap(),
+	}
+	cr := &v1alpha1.ModuleLifecycle{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       fmt.Sprintf("%s-%d", "fakeName", y),
+			Namespace:  "mynamespace",
+			UID:        "uid-123",
+			Generation: 1,
+		},
+	}
+	sm := StateMachine{
+		Scheme:   nil,
+		CR:       cr,
+		HelmInfo: nil,
+		Handler:  h,
+	}
+	ctx, err := vzspi.NewMinimalContext(nil, vzlog.DefaultLogger())
+	asserts.Fail(fmt.Sprintf("Failed to get context %s", err))
+
+	res := sm.Execute(ctx)
+	asserts.False(res.Requeue)
+}
+
+// Implement the handler SPI
 func (h handler) GetActionName() string {
 	//TODO implement me
 	panic("implement me")
@@ -106,11 +154,21 @@ func (h handler) PostAction(context spi.ComponentContext) (ctrl.Result, error) {
 }
 
 func (h handler) IsPostActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerCall(isPostActionDone)
 }
 
 func (h handler) CompletedActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerCall(completedActionUpdateStatus)
+}
+
+func (h handler) procHandlerCall(name string) (ctrl.Result, error) {
+	b := h.behaviorMap[name]
+	b.visited = true
+	return b.Result, nil
+}
+
+func (h handler) procHandlerBool(name string) (bool, ctrl.Result, error) {
+	b := h.behaviorMap[name]
+	b.visited = true
+	return b.done, b.Result, nil
 }
