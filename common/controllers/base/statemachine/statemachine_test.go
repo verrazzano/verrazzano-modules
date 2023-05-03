@@ -19,13 +19,14 @@ import (
 type behavior struct {
 	methodName string
 	visited    bool
-	done       bool
+	boolResult bool
 	ctrl.Result
 }
 
-type behaviorMap map[string]behavior
+type behaviorMap map[string]*behavior
 
 type handler struct {
+	actionNeeded bool
 	behaviorMap
 }
 
@@ -60,13 +61,14 @@ func getStatesInOrder() []string {
 		postActionUpdateStatus,
 		postAction,
 		isPostActionDone,
+		completedActionUpdateStatus,
 	}
 }
 
 func getBehaviorMap() behaviorMap {
-	m := make(map[string]behavior)
+	m := make(map[string]*behavior)
 	for _, s := range getStatesInOrder() {
-		m[s] = behavior{}
+		m[s] = &behavior{boolResult: true}
 	}
 	return m
 }
@@ -75,7 +77,8 @@ func TestVisited(t *testing.T) {
 	asserts := assert.New(t)
 
 	h := handler{
-		behaviorMap: getBehaviorMap(),
+		actionNeeded: true,
+		behaviorMap:  getBehaviorMap(),
 	}
 	cr := &v1alpha1.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
@@ -88,25 +91,27 @@ func TestVisited(t *testing.T) {
 	sm := StateMachine{
 		Scheme:   nil,
 		CR:       cr,
-		HelmInfo: nil,
+		HelmInfo: &actionspi.HelmInfo{},
 		Handler:  h,
 	}
 	ctx, err := vzspi.NewMinimalContext(nil, vzlog.DefaultLogger())
-	asserts.Fail(fmt.Sprintf("Failed to get context %s", err))
+	asserts.NoError(err)
 
 	res := sm.Execute(ctx)
 	asserts.False(res.Requeue)
 
-	// Make sure all the states were visited
-	for _, b := range h.behaviorMap {
-		asserts.True(b.visited)
+	// Make sure all the states were visited, check in order
+	for _, s := range getStatesInOrder() {
+		b := h.behaviorMap[s]
+		asserts.True(b.visited, fmt.Sprintf("State %s not visited", s))
 	}
 }
 
 // Implement the handler SPI
 func (h handler) GetActionName() string {
-	//TODO implement me
-	panic("implement me")
+	b := h.behaviorMap[getActionName]
+	b.visited = true
+	return "install"
 }
 
 func (h handler) Init(context spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
@@ -119,7 +124,6 @@ func (h handler) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result
 
 func (h handler) PreAction(context spi.ComponentContext) (ctrl.Result, error) {
 	return h.procHandlerCall(preAction)
-
 }
 
 func (h handler) PreActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
@@ -136,12 +140,10 @@ func (h handler) ActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, 
 
 func (h handler) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
 	return h.procHandlerCall(doAction)
-
 }
 
 func (h handler) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
 	return h.procHandlerBool(isActionDone)
-
 }
 
 func (h handler) PostActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
@@ -169,5 +171,5 @@ func (h handler) procHandlerCall(name string) (ctrl.Result, error) {
 func (h handler) procHandlerBool(name string) (bool, ctrl.Result, error) {
 	b := h.behaviorMap[name]
 	b.visited = true
-	return b.done, b.Result, nil
+	return b.boolResult, b.Result, nil
 }
