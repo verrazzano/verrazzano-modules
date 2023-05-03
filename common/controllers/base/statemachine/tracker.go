@@ -65,3 +65,7 @@ func (t *trackerContext) ensureTracker(CR client.Object, initialState state) *st
 	}
 	return tracker
 }
+
+func (t *trackerContext) lenMap() int {
+	return len(t.trackerMap)
+}
