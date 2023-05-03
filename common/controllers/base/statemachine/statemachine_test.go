@@ -37,7 +37,7 @@ const (
 	preAction                   = "preAction"
 	isPreActionDone             = "isPreActionDone"
 	actionUpdateStatus          = "ActionUpdateStatus"
-	actionfunc                  = "Action"
+	doAction                    = "doAction"
 	isActionDone                = "isActionDone"
 	postAction                  = "postAction"
 	postActionUpdateStatus      = "postActionUpdateStatus"
@@ -45,7 +45,8 @@ const (
 	completedActionUpdateStatus = "CompletedActionUpdateStatus"
 )
 
-func getStates() []string {
+// getStatesInOrder returns the states in order of execution
+func getStatesInOrder() []string {
 	return []string{
 		getActionName,
 		initFunc,
@@ -54,7 +55,7 @@ func getStates() []string {
 		preAction,
 		isPreActionDone,
 		actionUpdateStatus,
-		actionfunc,
+		doAction,
 		isActionDone,
 		postActionUpdateStatus,
 		postAction,
@@ -64,13 +65,13 @@ func getStates() []string {
 
 func getBehaviorMap() behaviorMap {
 	m := make(map[string]behavior)
-	for _, s := range getStates() {
+	for _, s := range getStatesInOrder() {
 		m[s] = behavior{}
 	}
 	return m
 }
 
-func Test(t *testing.T) {
+func TestVisited(t *testing.T) {
 	asserts := assert.New(t)
 
 	h := handler{
@@ -78,8 +79,8 @@ func Test(t *testing.T) {
 	}
 	cr := &v1alpha1.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:       fmt.Sprintf("%s-%d", "fakeName", y),
-			Namespace:  "mynamespace",
+			Name:       "test",
+			Namespace:  "testns",
 			UID:        "uid-123",
 			Generation: 1,
 		},
@@ -95,6 +96,11 @@ func Test(t *testing.T) {
 
 	res := sm.Execute(ctx)
 	asserts.False(res.Requeue)
+
+	// Make sure all the states were visited
+	for _, b := range h.behaviorMap {
+		asserts.True(b.visited)
+	}
 }
 
 // Implement the handler SPI
@@ -104,57 +110,50 @@ func (h handler) GetActionName() string {
 }
 
 func (h handler) Init(context spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerCall(initFunc)
 }
 
 func (h handler) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerBool(isActionNeeded)
 }
 
 func (h handler) PreAction(context spi.ComponentContext) (ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerCall(preAction)
+
 }
 
 func (h handler) PreActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerCall(preActionUpdateStatus)
 }
 
 func (h handler) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerBool(isPreActionDone)
 }
 
 func (h handler) ActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerCall(actionUpdateStatus)
 }
 
 func (h handler) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerCall(doAction)
+
 }
 
 func (h handler) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerBool(isActionDone)
+
 }
 
 func (h handler) PostActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerCall(postActionUpdateStatus)
 }
 
 func (h handler) PostAction(context spi.ComponentContext) (ctrl.Result, error) {
-	//TODO implement me
-	panic("implement me")
+	return h.procHandlerCall(postAction)
 }
 
 func (h handler) IsPostActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	return h.procHandlerCall(isPostActionDone)
+	return h.procHandlerBool(isPostActionDone)
 }
 
 func (h handler) CompletedActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
