@@ -71,9 +71,13 @@ type StateMachine struct {
 // The state machine uses an action handler to implement module specific logic.  This
 // state machine code is used by different types of controllers, such as the Module and
 // ModuleLifeCycle controllers.
+//
 // During state machine execution, a result may be returned to indicate that the
 // controller-runtime should requeue after a delay.  This is done when a handler is
 // waiting for a resource or some other condition.
+//
+// It is important to note that if the CR generation increments, then a new tracker is created
+// and the state machine starts from the beginning.
 func (s *StateMachine) Execute(compCtx vzspi.ComponentContext) ctrl.Result {
 	tracker := ensureTracker(s.CR, stateInit)
 

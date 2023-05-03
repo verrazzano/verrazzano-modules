@@ -107,8 +107,8 @@ func TestAllStatesSucceed(t *testing.T) {
 // TestEachStateRequeue tests that all the states handle requeue
 // GIVEN multiple state machines
 // WHEN each state machine is executed from the beginning, and every state is tested to return requeue
-// THEN ensure that each state before the state that returns requeue result is visited,
-// and each state after is not visited
+// THEN ensure that each state before the state that returns requeue result is executed,
+// AND each subsequent state is not executed
 func TestEachStateRequeue(t *testing.T) {
 	asserts := assert.New(t)
 	ctx, err := vzspi.NewMinimalContext(nil, vzlog.DefaultLogger())
@@ -156,6 +156,85 @@ func TestEachStateRequeue(t *testing.T) {
 				expectedVisited = false
 			}
 		}
+	}
+}
+
+// TestNotDone tests that all the states that check for done are working correctly
+// GIVEN multiple state machines
+// WHEN each state machine is executed from the beginning
+// THEN ensure that each state that checks for done returns a requeue when the handler returns `not done`
+// AND ensure that each state before the requeue state is executed
+// AND each subsequent state is not executed
+func TestNotDone(t *testing.T) {
+	asserts := assert.New(t)
+	ctx, err := vzspi.NewMinimalContext(nil, vzlog.DefaultLogger())
+	asserts.NoError(err)
+
+	tests := []struct {
+		name          string
+		stateNotDone  string
+		expectRequeue bool
+	}{
+		{
+			name:          "isActionNeeded",
+			stateNotDone:  isActionNeeded,
+			expectRequeue: false,
+		},
+		{
+			name:          "isPreActionDone",
+			stateNotDone:  isPreActionDone,
+			expectRequeue: true,
+		},
+		{
+			name:          "isActionDone",
+			stateNotDone:  isActionDone,
+			expectRequeue: true,
+		},
+		{
+			name:          "isPostActionDone",
+			stateNotDone:  isPostActionDone,
+			expectRequeue: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := handler{
+				actionNeeded: true,
+				behaviorMap:  getBehaviorMap(),
+			}
+			cr := &v1alpha1.ModuleLifecycle{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "TestEachStateRequeue-" + test.stateNotDone,
+					Namespace:  "testns",
+					UID:        "uid-123",
+					Generation: 1,
+				},
+			}
+			sm := StateMachine{
+				Scheme:   nil,
+				CR:       cr,
+				HelmInfo: &actionspi.HelmInfo{},
+				Handler:  h,
+			}
+			b := h.behaviorMap[test.stateNotDone]
+			b.boolResult = false
+
+			res := sm.Execute(ctx)
+			asserts.Equal(test.expectRequeue, res.Requeue, fmt.Sprintf("State %s should cause requeue", test.stateNotDone))
+
+			// Make sure all the states were visited only up to the one that requeued, check in order
+			expectedVisited := true
+			for _, s := range getStatesInOrder() {
+				if s == getActionName {
+					continue
+				}
+				b := h.behaviorMap[s]
+				asserts.Equal(expectedVisited, b.visited, fmt.Sprintf("State %s visited wrong, should be %v", s, b.visited))
+				if !b.boolResult {
+					expectedVisited = false
+				}
+			}
+		})
 	}
 }
 
