@@ -40,14 +40,6 @@ pipeline {
         DOCKER_MODULE_PUBLISH_IMAGE_NAME = 'verrazzano-module-operator'
         DOCKER_MODULE_IMAGE_NAME = "${env.BRANCH_NAME ==~ /^release-.*/ || env.BRANCH_NAME == 'main' ? env.DOCKER_MODULE_PUBLISH_IMAGE_NAME : env.DOCKER_MODULE_CI_IMAGE_NAME}"
 
-        DOCKER_HELM_CI_IMAGE_NAME = 'verrazzano-helm-operator-jenkins'
-        DOCKER_HELM_PUBLISH_IMAGE_NAME = 'verrazzano-helm-operator'
-        DOCKER_HELM_IMAGE_NAME = "${env.BRANCH_NAME ==~ /^release-.*/ || env.BRANCH_NAME == 'main' ? env.DOCKER_HELM_PUBLISH_IMAGE_NAME : env.DOCKER_HELM_CI_IMAGE_NAME}"
-
-        DOCKER_CALICO_CI_IMAGE_NAME = 'verrazzano-calico-operator-jenkins'
-        DOCKER_CALICO_PUBLISH_IMAGE_NAME = 'verrazzano-calico-operator'
-        DOCKER_CALICO_IMAGE_NAME = "${env.BRANCH_NAME ==~ /^release-.*/ || env.BRANCH_NAME == 'main' ? env.DOCKER_CALICO_PUBLISH_IMAGE_NAME : env.DOCKER_CALICO_CI_IMAGE_NAME}"
-
         CREATE_LATEST_TAG = "${env.BRANCH_NAME == 'main' ? '1' : '0'}"
         GOPATH = '/home/opc/go'
         GO_REPO_PATH = "${GOPATH}/src/github.com/verrazzano"
@@ -276,9 +268,7 @@ def buildImages(dockerImageTag) {
         make docker-push \
             DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} \
             DOCKER_IMAGE_TAG=${dockerImageTag} \
-            VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} \
-            VERRAZZANO_HELM_OPERATOR_IMAGE_NAME=${DOCKER_HELM_IMAGE_NAME} \
-            VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME=${DOCKER_CALICO_IMAGE_NAME} \
+            VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME}
             CREATE_LATEST_TAG=${CREATE_LATEST_TAG}
         #${GO_REPO_PATH}/${GIT_REPO_DIR}/tools/scripts/generate_image_list.sh $WORKSPACE/generated-verrazzano-bom.json $WORKSPACE/verrazzano_images.txt
     """
@@ -299,9 +289,7 @@ def generateOperatorYaml(dockerImageTag) {
         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
         make generate-operator-artifacts BUILD_DEPLOY=${WORKSPACE}/generated \
             DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} \
-            VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME} \
-            VERRAZZANO_HELM_OPERATOR_IMAGE_NAME=${DOCKER_HELM_IMAGE_NAME} \
-            VERRAZZANO_CALICO_OPERATOR_IMAGE_NAME=${DOCKER_CALICO_IMAGE_NAME}
+            VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME}
     """
 }
 
