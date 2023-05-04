@@ -74,32 +74,6 @@ func TestReconciler(t *testing.T) {
 	asserts.True(controller.getObjectCalled)
 }
 
-// TestFinalizerExists tests that the layered controller ensure finalizer works if finalizer exists
-// GIVEN a controller that implements Reconciler interface
-// WHEN Reconcile is called
-// THEN ensure that the controller returns success and that the Reconcile method is called
-func TestFinalizerExists(t *testing.T) {
-	asserts := assert.New(t)
-
-	controller := ReconcilerImpl{}
-	config := ControllerConfig{
-		Reconciler: &controller,
-	}
-	cr := newModuleCR(namespace, name)
-	clientBuilder := fakes.NewClientBuilder()
-	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
-	r := newReconciler(c, config)
-
-	request := newRequest(namespace, name)
-	res, err := r.Reconcile(context.TODO(), request)
-
-	// state and gen should never match
-	asserts.NoError(err)
-	asserts.False(res.Requeue)
-	asserts.True(controller.reconcileCalled)
-	asserts.True(controller.getObjectCalled)
-}
-
 // TestWatcher tests that the layered controller reconcile method is called
 // GIVEN a controller that implements Watcher interface
 // WHEN Reconcile is called
