@@ -50,7 +50,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			r.removeControllerResource(req.NamespacedName)
 			return reconcile.Result{}, nil
 		}
-		zap.S().Errorf("Failed to fetch DNS resource: %v", err)
+		zap.S().Errorf("Failed to fetch resource %v: %v", req.NamespacedName, err)
 		return util.NewRequeueWithShortDelay(), nil
 	}
 

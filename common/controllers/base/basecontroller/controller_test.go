@@ -74,6 +74,32 @@ func TestReconciler(t *testing.T) {
 	asserts.True(controller.getObjectCalled)
 }
 
+// TestFinalizerExists tests that the layered controller ensure finalizer works if finalizer exists
+// GIVEN a controller that implements Reconciler interface
+// WHEN Reconcile is called
+// THEN ensure that the controller returns success and that the Reconcile method is called
+func TestFinalizerExists(t *testing.T) {
+	asserts := assert.New(t)
+
+	controller := ReconcilerImpl{}
+	config := ControllerConfig{
+		Reconciler: &controller,
+	}
+	cr := newModuleCR(namespace, name)
+	clientBuilder := fakes.NewClientBuilder()
+	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
+	r := newReconciler(c, config)
+
+	request := newRequest(namespace, name)
+	res, err := r.Reconcile(context.TODO(), request)
+
+	// state and gen should never match
+	asserts.NoError(err)
+	asserts.False(res.Requeue)
+	asserts.True(controller.reconcileCalled)
+	asserts.True(controller.getObjectCalled)
+}
+
 // TestWatcher tests that the layered controller reconcile method is called
 // GIVEN a controller that implements Watcher interface
 // WHEN Reconcile is called
@@ -140,7 +166,42 @@ func TestEnsureFinalizer(t *testing.T) {
 	updatedCR := moduleapi.Module{}
 	err = r.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, &updatedCR)
 	asserts.NoError(err)
-	asserts.Len(cr.Finalizers, 0)
+	asserts.Len(updatedCR.Finalizers, 1)
+}
+
+// TestFinalizerAlreadyExists tests that a finalizer is mot added to the CR if it exists
+// GIVEN a controller that implements Finalizer interface
+// WHEN Reconcile is called and the finalizer exists in the CR
+// THEN ensure that the CR is not updated with another finalizer
+func TestFinalizerAlreadyExists(t *testing.T) {
+	asserts := assert.New(t)
+
+	reconciler := ReconcilerImpl{}
+	finalizer := FinalizerImpl{}
+	config := ControllerConfig{
+		Reconciler: &reconciler,
+		Finalizer:  &finalizer,
+	}
+	cr := newModuleCR(namespace, name)
+	addFinalizer(cr)
+	clientBuilder := fakes.NewClientBuilder()
+	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
+	r := newReconciler(c, config)
+
+	request := newRequest(namespace, name)
+	res, err := r.Reconcile(context.TODO(), request)
+
+	// state and gen should never match
+	asserts.NoError(err)
+	asserts.False(res.Requeue)
+	asserts.True(finalizer.getNameCalled)
+	asserts.False(finalizer.preCleanupCalled)
+	asserts.False(finalizer.postCleanupCalled)
+
+	updatedCR := moduleapi.Module{}
+	err = r.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, &updatedCR)
+	asserts.NoError(err)
+	asserts.Len(updatedCR.Finalizers, 1)
 }
 
 // TestDelete tests that the layered controller finalizer methods are called
