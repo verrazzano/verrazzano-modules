@@ -19,6 +19,7 @@ import (
 // THEN ensure that the correct tracker is returned
 func TestEnsureTracker(t *testing.T) {
 	asserts := assert.New(t)
+	startingMapSize := len(trackerMap)
 
 	const threadCount = 1000
 	var wg sync.WaitGroup
@@ -71,7 +72,7 @@ func TestEnsureTracker(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-	asserts.Equal(len(trackerMap), threadCount)
+	asserts.Equal(threadCount+startingMapSize, len(trackerMap))
 }
 
 // TestRemoveTracker tests that old trackers are deleted
