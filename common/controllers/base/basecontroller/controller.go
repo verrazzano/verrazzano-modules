@@ -5,6 +5,7 @@ package basecontroller
 
 import (
 	"context"
+	"errors"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
@@ -24,7 +25,18 @@ import (
 // This code will always return a nil error, and will set the ctrl.Result.Requeue to true (with a delay) if a requeue is needed.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	cr := &unstructured.Unstructured{}
-	gvk, _, err := r.Scheme.ObjectKinds(r.GetReconcileObject())
+	if r.Reconciler == nil {
+		err := errors.New("Failed, Reconciler interface in ControllerConfig must be implemented")
+		zap.S().Error(err)
+		return util.NewRequeueWithShortDelay(), err
+	}
+	ro := r.GetReconcileObject()
+	if ro == nil {
+		err := errors.New("Failed, Reconciler.GetReconcileObject returns nil")
+		zap.S().Error(err)
+		return util.NewRequeueWithShortDelay(), nil
+	}
+	gvk, _, err := r.Scheme.ObjectKinds(ro)
 	if err != nil {
 		zap.S().Errorf("Failed to get object GVK for %v: %v", r.GetReconcileObject(), err)
 		return util.NewRequeueWithShortDelay(), nil
