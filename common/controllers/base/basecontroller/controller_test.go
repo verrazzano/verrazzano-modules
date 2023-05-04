@@ -39,7 +39,9 @@ type ReconcilerImpl struct {
 type WatcherImpl struct {
 	visited bool
 }
-type FinalizerImpl struct{}
+type FinalizerImpl struct{
+
+}
 
 // TestReconciler tests that the layered controller reconcile method is called
 // GIVEN a controller that implements Reconciler interface
@@ -52,7 +54,7 @@ func TestReconciler(t *testing.T) {
 	config := ControllerConfig{
 		Reconciler: &controller,
 	}
-	cr := newModuleCR(namespace, name)
+	cr := newModuleCR(namespace, name, false)
 	clientBuilder := fakes.NewClientBuilder()
 	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
 	r := newReconciler(c, config)
@@ -80,7 +82,7 @@ func TestWatcher(t *testing.T) {
 		Watcher:    &watcher,
 		Reconciler: &reconciler,
 	}
-	cr := newModuleCR(namespace, name)
+	cr := newModuleCR(namespace, name, false)
 	clientBuilder := fakes.NewClientBuilder()
 	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
 	r := newReconciler(c, config)
@@ -107,7 +109,7 @@ func TestFinalizer(t *testing.T) {
 		Watcher:    &watcher,
 		Reconciler: &reconciler,
 	}
-	cr := newModuleCR(namespace, name)
+	cr := newModuleCR(namespace, name, true)
 	clientBuilder := fakes.NewClientBuilder()
 	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
 	r := newReconciler(c, config)
@@ -130,7 +132,7 @@ func TestReconcilerMissing(t *testing.T) {
 
 	controller := ReconcilerImpl{}
 	config := ControllerConfig{}
-	cr := newModuleCR(namespace, name)
+	cr := newModuleCR(namespace, name, false)
 	clientBuilder := fakes.NewClientBuilder()
 	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
 	r := newReconciler(c, config)
@@ -173,7 +175,7 @@ func newRequest(namespace string, name string) ctrl.Request {
 			Name:      name}}
 }
 
-func newModuleCR(namespace string, name string) *moduleapi.Module {
+func newModuleCR(namespace string, name string, deleted bool) *moduleapi.Module {
 	return &moduleapi.Module{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

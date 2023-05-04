@@ -83,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 		} else {
 			// CR is being deleted
-			res, err := r.Cleanup(rctx, cr)
+			res, err := r.PreRemoveFinalizer(rctx, cr)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2, nil
 			}
@@ -94,6 +94,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 			// all done, CR will be deleted from etcd
 			log.Oncef("Successfully deleted resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
+			r.PostRemoveFinalizer(rctx, cr)
 			r.removeControllerResource(req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
