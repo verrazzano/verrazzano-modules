@@ -5,6 +5,7 @@ package basecontroller
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
@@ -23,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"sync"
 	"testing"
 )
 
@@ -48,7 +50,62 @@ type FinalizerImpl struct {
 	postCleanupCalled bool
 }
 
-// TestReconciler tests that the layered controller reconcile method is called
+// TestConcurrentReconcile tests that the layered controller interfaces are called
+// GIVEN a controller that implements the controllers spi interfaces
+// WHEN Reconcile is called
+// THEN ensure that the controller returns success and that the interface methods are all called
+func TestConcurrentReconcile(t *testing.T) {
+	asserts := assert.New(t)
+
+	const threadCount = 100
+	var wg sync.WaitGroup
+
+	// Load CRs
+	controller := ReconcilerImpl{}
+	watcher := WatcherImpl{}
+	finalizer := FinalizerImpl{}
+	config := ControllerConfig{
+		Reconciler: &controller,
+		Watcher:    &watcher,
+		Finalizer:  &finalizer,
+	}
+	clientBuilder := fakes.NewClientBuilder().WithScheme(newScheme())
+	for i := 1; i <= threadCount; i++ {
+		crName := fmt.Sprintf("%s-%v", name, i)
+		cr := newModuleCR(namespace, crName)
+		clientBuilder = clientBuilder.WithObjects(cr)
+	}
+	c := clientBuilder.Build()
+	r := newReconciler(c, config)
+
+	// Reconcile CRs in parallel
+	for i := 1; i <= threadCount; i++ {
+		wg.Add(1)
+		go func(y int) {
+			defer wg.Done()
+
+			crName := fmt.Sprintf("%s-%v", name, y)
+			request := newRequest(namespace, crName)
+			res, err := r.Reconcile(context.TODO(), request)
+
+			// state and gen should never match
+			asserts.NoError(err)
+			asserts.False(res.Requeue)
+			asserts.True(controller.reconcileCalled)
+			asserts.True(controller.getObjectCalled)
+			asserts.True(watcher.called)
+			asserts.True(finalizer.getNameCalled)
+			asserts.False(finalizer.preCleanupCalled)
+			asserts.False(finalizer.postCleanupCalled)
+		}(i)
+	}
+	wg.Wait()
+
+	crList := r.GetControllerResources()
+	asserts.Len(crList, threadCount)
+}
+
+// TestReconciler tests that the layered controller Reconcile interface works alone
 // GIVEN a controller that implements Reconciler interface
 // WHEN Reconcile is called
 // THEN ensure that the controller returns success and that the Reconcile method is called
