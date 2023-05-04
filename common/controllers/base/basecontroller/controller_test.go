@@ -10,6 +10,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -134,6 +135,11 @@ func TestEnsureFinalizer(t *testing.T) {
 	asserts.True(finalizer.getNameCalled)
 	asserts.False(finalizer.preCleanupCalled)
 	asserts.False(finalizer.postCleanupCalled)
+
+	updatedCR := moduleapi.Module{}
+	err = r.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, &updatedCR)
+	asserts.NoError(err)
+	asserts.Len(cr.Finalizers, 0)
 }
 
 // TestDelete tests that the layered controller finalizer methods are called
@@ -165,6 +171,10 @@ func TestDelete(t *testing.T) {
 	asserts.True(finalizer.getNameCalled)
 	asserts.True(finalizer.preCleanupCalled)
 	asserts.True(finalizer.postCleanupCalled)
+
+	updatedCR := moduleapi.Module{}
+	err = r.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, &updatedCR)
+	asserts.True(errors.IsNotFound(err))
 }
 
 // TestReconcilerMissing tests that an error is returned when the reconciler implementation is missing
