@@ -61,7 +61,7 @@ func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, er
 		ctx.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.BaseHandler.ReleaseName)
 		return true, ctrl.Result{}, err
 	}
-	return !installed, ctrl.Result{}, err
+	return installed, ctrl.Result{}, err
 }
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update

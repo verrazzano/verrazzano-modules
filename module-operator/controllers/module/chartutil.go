@@ -48,7 +48,10 @@ func lookupChartLeafDirName(mod *moduleplatform.Module) string {
 	case string(moduleplatform.CCMLifecycleClass):
 		dir = "ccm"
 	case string(moduleplatform.HelmLifecycleClass):
-		dir = "vz-test"
+		dir = filepath.Join("vz-test", mod.Spec.Version)
+		if mod.Spec.Version == "" {
+			dir = filepath.Join("vz-test", "0.1.0")
+		}
 	}
 	return dir
 }

@@ -26,7 +26,7 @@ type BaseHandler struct {
 func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig, action moduleplatform.ActionType) (ctrl.Result, error) {
 	h.Config = config
 	h.ModuleCR = config.CR.(*moduleplatform.Module)
-	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleplatform.HelmLifecycleClass, moduleplatform.InstallAction)
+	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleplatform.HelmLifecycleClass, action)
 	h.MlcNamespace = h.ModuleCR.Namespace
 	h.Action = action
 	return ctrl.Result{}, nil
