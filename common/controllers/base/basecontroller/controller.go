@@ -123,7 +123,7 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, nsn types.Namespace
 		w := &watcher.WatchContext{
 			Controller:                 r.Controller,
 			Log:                        log,
-			ResourceKind:               wds[i].Kind,
+			ResourceKind:               wds[i].WatchKind,
 			ShouldReconcile:            wds[i].FuncShouldReconcile,
 			FuncGetControllerResources: r.GetControllerResources,
 		}

@@ -30,7 +30,7 @@ const (
 
 // WatchDescriptor described an object being watched
 type WatchDescriptor struct {
-	Kind source.Kind
+	WatchKind source.Kind
 	FuncShouldReconcile
 }
 

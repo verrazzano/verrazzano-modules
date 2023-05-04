@@ -16,10 +16,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	fakes "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 	"testing"
 )
 
-type LayeredReconciler struct{}
+type ReconcilerImpl struct{}
+type WatcherImpl struct{}
+type FinalizerImpl struct{}
 
 // TestEmptyControllerContig tests that the layered controller reconcile method is called
 // GIVEN a Reconciler
@@ -31,9 +34,9 @@ func TestEmptyControllerContig(t *testing.T) {
 	const namespace = "testns"
 	const name = "test"
 
-	layeredReconciler := LayeredReconciler{}
+	reconcilerImpl := ReconcilerImpl{}
 	config := ControllerConfig{
-		Reconciler: layeredReconciler,
+		Reconciler: reconcilerImpl,
 	}
 	cr := &moduleapi.Module{
 		ObjectMeta: metav1.ObjectMeta{
@@ -80,15 +83,23 @@ func newRequest(namespace string, name string) ctrl.Request {
 }
 
 // GetReconcileObject returns the kind of object being reconciled
-func (r LayeredReconciler) GetReconcileObject() client.Object {
+func (r ReconcilerImpl) GetReconcileObject() client.Object {
 	return &moduleapi.Module{}
 }
 
 // Reconcile reconciles the ModuleLifecycle CR
-func (r LayeredReconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (r ReconcilerImpl) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
+}
+
+// GetWatchDescriptors returns the list of object kinds being watched
+func (r WatcherImpl) GetWatchDescriptors() []spi.WatchDescriptor {
+	return []spi.WatchDescriptor{{
+		WatchKind:           source.Kind{Type: &moduleapi.ModuleLifecycle{}},
+		FuncShouldReconcile: nil,
+	}}
 }
