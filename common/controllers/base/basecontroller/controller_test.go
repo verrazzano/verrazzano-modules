@@ -35,8 +35,9 @@ type fakeController struct{}
 var _ controllerruntime.Controller = &fakeController{}
 
 type ReconcilerImpl struct {
-	reconcileCalled  bool
-	getObjectsCalled bool
+	reconcileCalled bool
+	getObjectCalled bool
+	returnNilObject bool
 }
 type WatcherImpl struct {
 	called bool
@@ -70,7 +71,7 @@ func TestReconciler(t *testing.T) {
 	asserts.NoError(err)
 	asserts.False(res.Requeue)
 	asserts.True(controller.reconcileCalled)
-	asserts.True(controller.getObjectsCalled)
+	asserts.True(controller.getObjectCalled)
 }
 
 // TestWatcher tests that the layered controller reconcile method is called
@@ -198,7 +199,59 @@ func TestReconcilerMissing(t *testing.T) {
 	asserts.Error(err)
 	asserts.True(res.Requeue)
 	asserts.False(controller.reconcileCalled)
-	asserts.False(controller.getObjectsCalled)
+	asserts.False(controller.getObjectCalled)
+}
+
+// TestReconcilerGetObjectMissing tests that an error is returned
+// GIVEN a controller that implements Reconciler interface
+// WHEN Reconcile is called and GetReconcileObject returns nil
+// THEN ensure that the controller returns and error
+func TestReconcilerGetObjectMissing(t *testing.T) {
+	asserts := assert.New(t)
+
+	reconciler := ReconcilerImpl{returnNilObject: true}
+	config := ControllerConfig{
+		Reconciler: &reconciler,
+	}
+	cr := newModuleCR(namespace, name)
+	clientBuilder := fakes.NewClientBuilder()
+	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
+	r := newReconciler(c, config)
+
+	request := newRequest(namespace, name)
+	res, err := r.Reconcile(context.TODO(), request)
+
+	// state and gen should never match
+	asserts.Error(err)
+	asserts.True(res.Requeue)
+	asserts.False(reconciler.reconcileCalled)
+	asserts.True(reconciler.getObjectCalled)
+}
+
+// TestNotFound tests that the controller handles not found
+// GIVEN a controller that implements Reconciler interface
+// WHEN Reconcile is called
+// THEN ensure that the controller returns success if CR doesn't exist
+func TestNotFound(t *testing.T) {
+	asserts := assert.New(t)
+
+	reconciler := ReconcilerImpl{}
+	config := ControllerConfig{
+		Reconciler: &reconciler,
+	}
+	clientBuilder := fakes.NewClientBuilder()
+	c := clientBuilder.WithScheme(newScheme()).Build()
+	r := newReconciler(c, config)
+
+	request := newRequest(namespace, name)
+	res, err := r.Reconcile(context.TODO(), request)
+
+	// state and gen should never match
+	asserts.NoError(err)
+	asserts.False(res.Requeue)
+
+	crList := r.GetControllerResources()
+	asserts.Len(crList, 0)
 }
 
 // newReconciler creates a new reconciler for testing
@@ -250,7 +303,10 @@ func addFinalizer(m *moduleapi.Module) {
 
 // GetReconcileObject returns the kind of object being reconciled
 func (r *ReconcilerImpl) GetReconcileObject() client.Object {
-	r.getObjectsCalled = true
+	r.getObjectCalled = true
+	if r.returnNilObject {
+		return nil
+	}
 	return &moduleapi.Module{}
 }
 

@@ -34,7 +34,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if ro == nil {
 		err := errors.New("Failed, Reconciler.GetReconcileObject returns nil")
 		zap.S().Error(err)
-		return util.NewRequeueWithShortDelay(), nil
+		return util.NewRequeueWithShortDelay(), err
 	}
 	gvk, _, err := r.Scheme.ObjectKinds(ro)
 	if err != nil {
