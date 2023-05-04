@@ -347,7 +347,7 @@ func TestNotFound(t *testing.T) {
 }
 
 // newReconciler creates a new reconciler for testing
-func newReconciler(c client.Client, controllerConfig ControllerConfig) Reconciler {
+func newReconciler(c client.Client, controllerConfig ControllerConfig) *Reconciler {
 	scheme := newScheme()
 	reconciler := Reconciler{
 		Client:              c,
@@ -356,7 +356,7 @@ func newReconciler(c client.Client, controllerConfig ControllerConfig) Reconcile
 		Controller:          fakeController{},
 		controllerResources: make(map[types.NamespacedName]bool),
 	}
-	return reconciler
+	return &reconciler
 }
 
 // newScheme creates a new scheme that includes this package's object to use for testing
