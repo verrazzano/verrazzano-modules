@@ -27,6 +27,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	gvk, _, err := r.Scheme.ObjectKinds(r.GetReconcileObject())
 	if err != nil {
 		zap.S().Errorf("Failed to get object GVK for %v: %v", r.GetReconcileObject(), err)
+		return util.NewRequeueWithShortDelay(), nil
 	}
 
 	cr.SetGroupVersionKind(gvk[0])
@@ -50,6 +51,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	})
 	if err != nil {
 		zap.S().Errorf("Failed to create controller logger for DNS controller", err)
+		return util.NewRequeueWithShortDelay(), nil
 	}
 
 	log.Progressf("Reconciling resource %v, GVK %v, generation %v", req.NamespacedName, gvk, cr.GetGeneration())

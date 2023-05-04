@@ -44,8 +44,3 @@ func InitController(mgr ctrlruntime.Manager, comp actionspi.ActionHandlers, clas
 	controller.comp = comp
 	return nil
 }
-
-// GetReconcileObject returns the kind of object being reconciled
-func (r Reconciler) GetReconcileObject() client.Object {
-	return &moduleplatform.ModuleLifecycle{}
-}
