@@ -27,20 +27,23 @@ import (
 
 const namespace = "testns"
 const name = "test"
+const finalizerName = "fimalizer"
 
 type fakeController struct{}
 
 var _ controllerruntime.Controller = &fakeController{}
 
 type ReconcilerImpl struct {
-	reconcileVisited  bool
-	getObjectsVisited bool
+	reconcileCalled  bool
+	getObjectsCalled bool
 }
 type WatcherImpl struct {
-	visited bool
+	called bool
 }
-type FinalizerImpl struct{
-
+type FinalizerImpl struct {
+	getNameCalled     bool
+	preCleanupCalled  bool
+	postCleanupCalled bool
 }
 
 // TestReconciler tests that the layered controller reconcile method is called
@@ -54,7 +57,7 @@ func TestReconciler(t *testing.T) {
 	config := ControllerConfig{
 		Reconciler: &controller,
 	}
-	cr := newModuleCR(namespace, name, false)
+	cr := newModuleCR(namespace, name)
 	clientBuilder := fakes.NewClientBuilder()
 	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
 	r := newReconciler(c, config)
@@ -65,8 +68,8 @@ func TestReconciler(t *testing.T) {
 	// state and gen should never match
 	asserts.NoError(err)
 	asserts.False(res.Requeue)
-	asserts.True(controller.reconcileVisited)
-	asserts.True(controller.getObjectsVisited)
+	asserts.True(controller.reconcileCalled)
+	asserts.True(controller.getObjectsCalled)
 }
 
 // TestWatcher tests that the layered controller reconcile method is called
@@ -76,13 +79,13 @@ func TestReconciler(t *testing.T) {
 func TestWatcher(t *testing.T) {
 	asserts := assert.New(t)
 
-	watcher := WatcherImpl{}
 	reconciler := ReconcilerImpl{}
+	watcher := WatcherImpl{}
 	config := ControllerConfig{
-		Watcher:    &watcher,
 		Reconciler: &reconciler,
+		Watcher:    &watcher,
 	}
-	cr := newModuleCR(namespace, name, false)
+	cr := newModuleCR(namespace, name)
 	clientBuilder := fakes.NewClientBuilder()
 	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
 	r := newReconciler(c, config)
@@ -93,23 +96,62 @@ func TestWatcher(t *testing.T) {
 	// state and gen should never match
 	asserts.NoError(err)
 	asserts.False(res.Requeue)
-	asserts.True(watcher.visited)
+	asserts.True(watcher.called)
+
+	// Make sure the CR has been added to controller resources
+	crList := r.GetControllerResources()
+	asserts.Len(crList, 1)
+
+	r.removeControllerResource(crList[0])
+	crList = r.GetControllerResources()
+	asserts.Len(crList, 0)
 }
 
-// TestFinalizer tests that the layered controller finalizer methods are called
+// TestEnsureFinalizer tests that a finalizer is added to the CR
+// GIVEN a controller that implements Finalizer interface
+// WHEN Reconcile is called
+// THEN ensure that the CR is updated with the finalizer
+func TestEnsureFinalizer(t *testing.T) {
+	asserts := assert.New(t)
+
+	reconciler := ReconcilerImpl{}
+	finalizer := FinalizerImpl{}
+	config := ControllerConfig{
+		Reconciler: &reconciler,
+		Finalizer:  &finalizer,
+	}
+	cr := newModuleCR(namespace, name)
+	clientBuilder := fakes.NewClientBuilder()
+	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
+	r := newReconciler(c, config)
+
+	request := newRequest(namespace, name)
+	res, err := r.Reconcile(context.TODO(), request)
+
+	// state and gen should never match
+	asserts.NoError(err)
+	asserts.False(res.Requeue)
+	asserts.True(finalizer.getNameCalled)
+	asserts.False(finalizer.preCleanupCalled)
+	asserts.False(finalizer.postCleanupCalled)
+}
+
+// TestDelete tests that the layered controller finalizer methods are called
 // GIVEN a controller that implements Finalizer interface
 // WHEN Reconcile is called
 // THEN ensure that the controller returns success and that the Finalizer methods are called
-func TestFinalizer(t *testing.T) {
+func TestDelete(t *testing.T) {
 	asserts := assert.New(t)
 
-	watcher := WatcherImpl{}
 	reconciler := ReconcilerImpl{}
+	finalizer := FinalizerImpl{}
 	config := ControllerConfig{
-		Watcher:    &watcher,
 		Reconciler: &reconciler,
+		Finalizer:  &finalizer,
 	}
-	cr := newModuleCR(namespace, name, true)
+	cr := newModuleCR(namespace, name)
+	addFinalizer(cr)
+	addDeletionTimestamp(cr)
 	clientBuilder := fakes.NewClientBuilder()
 	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
 	r := newReconciler(c, config)
@@ -120,7 +162,9 @@ func TestFinalizer(t *testing.T) {
 	// state and gen should never match
 	asserts.NoError(err)
 	asserts.False(res.Requeue)
-	asserts.True(watcher.visited)
+	asserts.True(finalizer.getNameCalled)
+	asserts.True(finalizer.preCleanupCalled)
+	asserts.True(finalizer.postCleanupCalled)
 }
 
 // TestReconcilerMissing tests that an error is returned when the reconciler implementation is missing
@@ -132,7 +176,7 @@ func TestReconcilerMissing(t *testing.T) {
 
 	controller := ReconcilerImpl{}
 	config := ControllerConfig{}
-	cr := newModuleCR(namespace, name, false)
+	cr := newModuleCR(namespace, name)
 	clientBuilder := fakes.NewClientBuilder()
 	c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
 	r := newReconciler(c, config)
@@ -143,8 +187,8 @@ func TestReconcilerMissing(t *testing.T) {
 	// state and gen should never match
 	asserts.Error(err)
 	asserts.True(res.Requeue)
-	asserts.False(controller.reconcileVisited)
-	asserts.False(controller.getObjectsVisited)
+	asserts.False(controller.reconcileCalled)
+	asserts.False(controller.getObjectsCalled)
 }
 
 // newReconciler creates a new reconciler for testing
@@ -175,24 +219,34 @@ func newRequest(namespace string, name string) ctrl.Request {
 			Name:      name}}
 }
 
-func newModuleCR(namespace string, name string, deleted bool) *moduleapi.Module {
-	return &moduleapi.Module{
+func newModuleCR(namespace string, name string) *moduleapi.Module {
+	m := &moduleapi.Module{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 	}
+	return m
+}
+
+func addDeletionTimestamp(m *moduleapi.Module) {
+	t := metav1.Now()
+	m.ObjectMeta.DeletionTimestamp = &t
+}
+
+func addFinalizer(m *moduleapi.Module) {
+	m.ObjectMeta.Finalizers = []string{finalizerName}
 }
 
 // GetReconcileObject returns the kind of object being reconciled
 func (r *ReconcilerImpl) GetReconcileObject() client.Object {
-	r.getObjectsVisited = true
+	r.getObjectsCalled = true
 	return &moduleapi.Module{}
 }
 
 // Reconcile reconciles the ModuleLifecycle CR
 func (r *ReconcilerImpl) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
-	r.reconcileVisited = true
+	r.reconcileCalled = true
 	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
@@ -202,11 +256,25 @@ func (r *ReconcilerImpl) Reconcile(spictx spi.ReconcileContext, u *unstructured.
 
 // GetWatchDescriptors returns the list of object kinds being watched
 func (r *WatcherImpl) GetWatchDescriptors() []spi.WatchDescriptor {
-	r.visited = true
+	r.called = true
 	return []spi.WatchDescriptor{{
 		WatchKind:           source.Kind{Type: &moduleapi.ModuleLifecycle{}},
 		FuncShouldReconcile: nil,
 	}}
+}
+
+func (f *FinalizerImpl) GetName() string {
+	f.getNameCalled = true
+	return finalizerName
+}
+
+func (f *FinalizerImpl) PreRemoveFinalizer(reconcileContext spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+	f.preCleanupCalled = true
+	return ctrl.Result{}, nil
+}
+
+func (f *FinalizerImpl) PostRemoveFinalizer(reconcileContext spi.ReconcileContext, u *unstructured.Unstructured) {
+	f.postCleanupCalled = true
 }
 
 func (f fakeController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
