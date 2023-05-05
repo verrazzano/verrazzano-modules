@@ -75,13 +75,13 @@ func loadHelmInfo(cr *moduleplatform.ModuleLifecycle) actionspi.HelmInfo {
 func (r *Reconciler) getActionHandler(action moduleplatform.ActionType) actionspi.LifecycleActionHandler {
 	switch action {
 	case moduleplatform.InstallAction:
-		return r.comp.InstallAction
+		return r.handlers.InstallAction
 	case moduleplatform.UninstallAction:
-		return r.comp.UninstallAction
+		return r.handlers.UninstallAction
 	case moduleplatform.UpdateAction:
-		return r.comp.UpdateAction
+		return r.handlers.UpdateAction
 	case moduleplatform.UpgradeAction:
-		return r.comp.UpgradeAction
+		return r.handlers.UpgradeAction
 	}
 	return nil
 }

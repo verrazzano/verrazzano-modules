@@ -21,6 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
+var newControllerManagedBy = ctrl.NewControllerManagedBy
+
 // ControllerConfig specifies the config of the controller using this base controller
 type ControllerConfig struct {
 	spi.Finalizer
@@ -58,11 +60,11 @@ func InitBaseController(mgr controllerruntime.Manager, controllerConfig Controll
 
 	var err error
 	if class == "" {
-		r.Controller, err = ctrl.NewControllerManagedBy(mgr).
+		r.Controller, err = newControllerManagedBy(mgr).
 			For(controllerConfig.Reconciler.GetReconcileObject()).
 			Build(&r)
 	} else {
-		r.Controller, err = ctrl.NewControllerManagedBy(mgr).
+		r.Controller, err = newControllerManagedBy(mgr).
 			For(controllerConfig.Reconciler.GetReconcileObject()).
 			WithEventFilter(r.createPredicateFilter()).
 			Build(&r)

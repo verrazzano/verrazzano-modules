@@ -6,24 +6,28 @@ package modulelifecycle
 import (
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/basecontroller"
-	spi "github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Specify the SPI interfaces that this controller implements
-var _ spi.Reconciler = Reconciler{}
-
+// Reconciler contains the fields needed by the layered controller.
 type Reconciler struct {
+	// Client is the controller runtime client.
 	Client client.Client
+
+	// Scheme is the scheme for this controller.  I must contain the schemes of all Kubernetes API objects that it accesses
+	// through the client.
 	Scheme *runtime.Scheme
-	comp   actionspi.ActionHandlers
+
+	// handlers contains the action handlers
+	handlers actionspi.ActionHandlers
 }
 
+// Specify the SPI interfaces that this controller implements
 var _ spi.Reconciler = Reconciler{}
-
 var controller Reconciler
 
 // InitController start the  controller
@@ -41,6 +45,6 @@ func InitController(mgr ctrlruntime.Manager, comp actionspi.ActionHandlers, clas
 	// init other controller fields
 	controller.Client = baseController.Client
 	controller.Scheme = baseController.Scheme
-	controller.comp = comp
+	controller.handlers = comp
 	return nil
 }
