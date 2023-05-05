@@ -8,9 +8,12 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/statemachine"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
+	"github.com/verrazzano/verrazzano/tests/e2e/pkg"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"strings"
+	"time"
 
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
@@ -24,6 +27,11 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 		return ctrl.Result{}, err
 	}
 	handler := r.getActionHandler(cr)
+	if handler == nil {
+		spictx.Log.Errorf("Not a valid Action")
+		// Dont requeue, this is a fatal error
+		return ctrl.Result{}, nil
+	}
 	return r.reconcileAction(spictx, cr, handler)
 }
 
@@ -36,6 +44,10 @@ func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatf
 
 	helmInfo, err := loadHelmInfo(cr)
 	if err != nil {
+		if strings.Contains(err.Error(), "FileNotFound") {
+			spictx.Log.ErrorfNewErr("Failed loading file information: %v", err)
+			return util.NewRequeueWithDelay(10, 15, time.Second), err
+		}
 		err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
 		return util.NewRequeueWithShortDelay(), err
 	}
@@ -56,7 +68,11 @@ func (r *Reconciler) getActionHandler(cr *moduleplatform.Module) compspi.Lifecyc
 		return r.comp.InstallAction
 	}
 	// return UpgradeAction only when the desired version is different from current
-	if len(cr.Spec.Version) > 0 && cr.Spec.Version != cr.Status.Version {
+	isGreaterVersion, err := pkg.IsMinVersion(cr.Spec.Version, cr.Status.Version)
+	if err != nil {
+		return nil
+	}
+	if isGreaterVersion {
 		return r.comp.UpgradeAction
 	}
 	return r.comp.InstallAction
