@@ -9,26 +9,26 @@ import (
 	"sync"
 )
 
-// statracker keeps an in-memory state for a component doing actions
-type statracker struct {
+// stateTracker keeps an in-memory state for a CR execute the state machine.
+type stateTracker struct {
 	state state
 	gen   int64
 	key   string
 }
 
-// trackerMap has a map of trackers with key from VZ name, namespace, and UID
-var trackerMap = make(map[string]*statracker)
+// trackerMap has a map of trackers with key from VZ name, namespace, and UID.
+var trackerMap = make(map[string]*stateTracker)
 
-// trackerMutex is used to access the map concurrently
+// trackerMutex is used to access the map concurrently.
 var trackerMutex sync.RWMutex
 
-// getTrackerKey gets the statracker key for the Verrazzano resource
+// getTrackerKey gets the stateTracker key for a CR.
 func getTrackerKey(CR client.Object, gen int64) string {
 	return fmt.Sprintf("%s-%s-%v-%s", CR.GetNamespace(), CR.GetName(), gen, string(CR.GetUID()))
 }
 
-// ensureTracker gets the statracker, creating a new one if needed
-func ensureTracker(CR client.Object, initialState state) *statracker {
+// ensureTracker gets the stateTracker, creating a new one if needed.
+func ensureTracker(CR client.Object, initialState state) *stateTracker {
 	trackerMutex.Lock()
 	defer trackerMutex.Unlock()
 	key := getTrackerKey(CR, CR.GetGeneration())
@@ -38,7 +38,7 @@ func ensureTracker(CR client.Object, initialState state) *statracker {
 	}
 
 	// create a new tracker and save it in the map
-	tracker = &statracker{
+	tracker = &stateTracker{
 		state: initialState,
 		gen:   CR.GetGeneration(),
 		key:   key,

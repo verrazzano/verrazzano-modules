@@ -30,7 +30,7 @@ const (
 
 // WatchDescriptor described an object being watched
 type WatchDescriptor struct {
-	Kind source.Kind
+	WatchKind source.Kind
 	FuncShouldReconcile
 }
 
@@ -60,6 +60,11 @@ type Finalizer interface {
 	// GetName returns the name of the finalizer
 	GetName() string
 
-	// Cleanup garbage collects any related resources that were created by the controller
-	Cleanup(ReconcileContext, *unstructured.Unstructured) (ctrl.Result, error)
+	// PreRemoveFinalizer is called when the resource is being deleted, before the finalizer
+	// is removed.  Use this method to delete Kubernetes resources, etc.
+	PreRemoveFinalizer(ReconcileContext, *unstructured.Unstructured) (ctrl.Result, error)
+
+	// PostRemoveFinalizer is called after the finalizer is successfully removed.
+	// This method does garbage collection and other tasks that can never return an error
+	PostRemoveFinalizer(ReconcileContext, *unstructured.Unstructured)
 }

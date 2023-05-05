@@ -18,11 +18,17 @@ func (r Reconciler) GetName() string {
 	return finalizerName
 }
 
-// Cleanup uninstalls the module
-func (r Reconciler) Cleanup(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+// PreRemoveFinalizer is called when the resource is being deleted, before the finalizer
+// is removed.  Use this method to delete Kubernetes resources, etc.
+func (r Reconciler) PreRemoveFinalizer(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleplatform.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
 	return r.reconcileAction(spictx, cr, r.comp.UninstallAction)
+}
+
+// PostRemoveFinalizer is called after the finalizer is successfully removed.
+// This method does garbage collection and other tasks that can never return an error
+func (r Reconciler) PostRemoveFinalizer(spictx spi.ReconcileContext, u *unstructured.Unstructured) {
 }
