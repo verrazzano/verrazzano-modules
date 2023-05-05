@@ -8,6 +8,7 @@ go 1.19
 require github.com/verrazzano/verrazzano v0.17.1-0.20230414130230-43908c21553a
 
 require (
+	github.com/go-logr/logr v1.2.3
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.21.0
 	helm.sh/helm/v3 v3.10.3
@@ -54,7 +55,6 @@ require (
 	github.com/gertd/go-pluralize v0.2.0 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-gorp/gorp/v3 v3.0.2 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
