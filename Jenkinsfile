@@ -169,6 +169,7 @@ pipeline {
                            echo "Run precommit check"
                            cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
                            make precommit
+                           go version
                        """
                    }
                    post {
