@@ -5,6 +5,7 @@ package basecontroller
 
 import (
 	"context"
+	"errors"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
@@ -24,9 +25,21 @@ import (
 // This code will always return a nil error, and will set the ctrl.Result.Requeue to true (with a delay) if a requeue is needed.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	cr := &unstructured.Unstructured{}
-	gvk, _, err := r.Scheme.ObjectKinds(r.GetReconcileObject())
+	if r.Reconciler == nil {
+		err := errors.New("Failed, Reconciler interface in ControllerConfig must be implemented")
+		zap.S().Error(err)
+		return util.NewRequeueWithShortDelay(), err
+	}
+	ro := r.GetReconcileObject()
+	if ro == nil {
+		err := errors.New("Failed, Reconciler.GetReconcileObject returns nil")
+		zap.S().Error(err)
+		return util.NewRequeueWithShortDelay(), err
+	}
+	gvk, _, err := r.Scheme.ObjectKinds(ro)
 	if err != nil {
 		zap.S().Errorf("Failed to get object GVK for %v: %v", r.GetReconcileObject(), err)
+		return util.NewRequeueWithShortDelay(), nil
 	}
 
 	cr.SetGroupVersionKind(gvk[0])
@@ -37,7 +50,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			r.removeControllerResource(req.NamespacedName)
 			return reconcile.Result{}, nil
 		}
-		zap.S().Errorf("Failed to fetch DNS resource: %v", err)
+		zap.S().Errorf("Failed to fetch resource %v: %v", req.NamespacedName, err)
 		return util.NewRequeueWithShortDelay(), nil
 	}
 
@@ -50,6 +63,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	})
 	if err != nil {
 		zap.S().Errorf("Failed to create controller logger for DNS controller", err)
+		return util.NewRequeueWithShortDelay(), nil
 	}
 
 	log.Progressf("Reconciling resource %v, GVK %v, generation %v", req.NamespacedName, gvk, cr.GetGeneration())
@@ -69,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 		} else {
 			// CR is being deleted
-			res, err := r.Cleanup(rctx, cr)
+			res, err := r.PreRemoveFinalizer(rctx, cr)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2, nil
 			}
@@ -80,6 +94,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 			// all done, CR will be deleted from etcd
 			log.Oncef("Successfully deleted resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
+			r.PostRemoveFinalizer(rctx, cr)
 			r.removeControllerResource(req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
@@ -121,7 +136,7 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, nsn types.Namespace
 		w := &watcher.WatchContext{
 			Controller:                 r.Controller,
 			Log:                        log,
-			ResourceKind:               wds[i].Kind,
+			ResourceKind:               wds[i].WatchKind,
 			ShouldReconcile:            wds[i].FuncShouldReconcile,
 			FuncGetControllerResources: r.GetControllerResources,
 		}

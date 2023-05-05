@@ -14,7 +14,13 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// GetReconcileObject returns the kind of object being reconciled
+func (r Reconciler) GetReconcileObject() client.Object {
+	return &moduleplatform.ModuleLifecycle{}
+}
 
 // Reconcile reconciles the ModuleLifecycle CR
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
