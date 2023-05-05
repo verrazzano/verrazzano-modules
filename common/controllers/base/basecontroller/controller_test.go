@@ -6,6 +6,7 @@ package basecontroller
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -18,6 +19,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	fakes "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	controllerruntime "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sync"
 	"testing"
@@ -27,10 +32,15 @@ const namespace = "testns"
 const name = "test"
 const finalizerName = "fimalizer"
 
+type fakeController struct{}
+
+var _ controllerruntime.Controller = &fakeController{}
+
 type ReconcilerImpl struct {
 	reconcileCalled bool
 	getObjectCalled bool
 	returnNilObject bool
+	className       string
 }
 type WatcherImpl struct {
 	called bool
@@ -424,4 +434,20 @@ func (f *FinalizerImpl) PreRemoveFinalizer(reconcileContext spi.ReconcileContext
 
 func (f *FinalizerImpl) PostRemoveFinalizer(reconcileContext spi.ReconcileContext, u *unstructured.Unstructured) {
 	f.postCleanupCalled = true
+}
+
+func (f fakeController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+func (f fakeController) Watch(src source.Source, eventhandler handler.EventHandler, predicates ...predicate.Predicate) error {
+	return nil
+}
+
+func (f fakeController) Start(ctx context.Context) error {
+	return nil
+}
+
+func (f fakeController) GetLogger() logr.Logger {
+	return logr.Logger{}
 }
