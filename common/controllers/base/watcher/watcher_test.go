@@ -4,6 +4,7 @@
 package watcher
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/fake"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
@@ -23,8 +24,10 @@ import (
 
 type watchController struct {
 	fake.FakeController
-	reqs []reconcile.Request
-	t    *testing.T
+	reqs         []reconcile.Request
+	t            *testing.T
+	numResources int
+	predicate    bool
 }
 
 // TestWatch tests that a watch can be created and that predicate return true
@@ -34,16 +37,60 @@ type watchController struct {
 func TestWatch(t *testing.T) {
 	asserts := assert.New(t)
 
-	c := watchController{t: t}
-	w := &WatchContext{
-		Controller:                 c,
-		Log:                        vzlog.DefaultLogger(),
-		ResourceKind:               source.Kind{Type: &moduleapi.Module{}},
-		ShouldReconcile:            shouldReconcile,
-		FuncGetControllerResources: getControllerResources,
+	tests := []struct {
+		name         string
+		numResources int
+		predicate    bool
+	}{
+		{
+			name:         "test1",
+			numResources: 0,
+			predicate:    true,
+		},
+		{
+			name:         "test2",
+			numResources: 0,
+			predicate:    false,
+		},
+		{
+			name:         "test3",
+			numResources: 1,
+			predicate:    true,
+		},
+		{
+			name:         "test4",
+			numResources: 1,
+			predicate:    false,
+		},
+		{
+			name:         "test5",
+			numResources: 2,
+			predicate:    true,
+		},
+		{
+			name:         "test6",
+			numResources: 2,
+			predicate:    false,
+		},
 	}
-	err := w.Watch()
-	asserts.NoError(err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := watchController{
+				t:            t,
+				numResources: test.numResources,
+				predicate:    test.predicate,
+			}
+			w := &WatchContext{
+				Controller:                 c,
+				Log:                        vzlog.DefaultLogger(),
+				ResourceKind:               source.Kind{Type: &moduleapi.Module{}},
+				ShouldReconcile:            c.shouldReconcile,
+				FuncGetControllerResources: c.getControllerResources,
+			}
+			err := w.Watch()
+			asserts.NoError(err)
+		})
+	}
 }
 
 func (w watchController) Watch(src source.Source, eventhandler handler.EventHandler, predicates ...predicate.Predicate) error {
@@ -52,18 +99,32 @@ func (w watchController) Watch(src source.Source, eventhandler handler.EventHand
 	cr2 := newModuleLifecycleCR("test2", "test2", "")
 
 	for _, p := range predicates {
-		asserts.True(p.Create(event.CreateEvent{Object: cr}))
-		asserts.True(p.Delete(event.DeleteEvent{Object: cr}))
-		asserts.True(p.Generic(event.GenericEvent{Object: cr}))
+		asserts.Equal(w.predicate, p.Create(event.CreateEvent{Object: cr}))
+		asserts.Equal(w.predicate, p.Delete(event.DeleteEvent{Object: cr}))
+		asserts.Equal(w.predicate, p.Update(event.UpdateEvent{ObjectOld: cr, ObjectNew: cr2}))
 		asserts.False(p.Update(event.UpdateEvent{ObjectOld: cr, ObjectNew: cr}))
-		asserts.True(p.Update(event.UpdateEvent{ObjectOld: cr, ObjectNew: cr2}))
 	}
 
 	// Call event handler directly to get requests
 	q := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	eventhandler.Create(event.CreateEvent{Object: cr}, q)
-	asserts.Equal(1, q.Len())
+	asserts.Equal(w.numResources, q.Len())
 	return nil
+}
+
+func (w watchController) getControllerResources() []types.NamespacedName {
+	nsList := []types.NamespacedName{}
+	for i := 1; i <= w.numResources; i++ {
+		nsList = append(nsList, types.NamespacedName{
+			Namespace: "namespace",
+			Name:      fmt.Sprintf("name-%v", i),
+		})
+	}
+	return nsList
+}
+
+func (w watchController) shouldReconcile(object client.Object, event spi.WatchEvent) bool {
+	return w.predicate
 }
 
 func newModuleLifecycleCR(namespace string, name string, className string) *moduleapi.ModuleLifecycle {
@@ -77,15 +138,4 @@ func newModuleLifecycleCR(namespace string, name string, className string) *modu
 		},
 	}
 	return m
-}
-
-func getControllerResources() []types.NamespacedName {
-	return []types.NamespacedName{{
-		Namespace: "namespace",
-		Name:      "name",
-	}}
-}
-
-func shouldReconcile(object client.Object, event spi.WatchEvent) bool {
-	return true
 }
