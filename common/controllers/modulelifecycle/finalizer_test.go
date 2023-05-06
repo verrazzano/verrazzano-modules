@@ -29,5 +29,7 @@ func TestFinalizer(t *testing.T) {
 	asserts.NoError(err)
 	asserts.False(res.Requeue)
 
-	r.PreRemoveFinalizer(rctx, nil)
+	res, err = r.PreRemoveFinalizer(rctx, nil)
+	asserts.NoError(err)
+	asserts.False(res.Requeue)
 }
