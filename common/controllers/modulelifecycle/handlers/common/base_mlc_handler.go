@@ -7,7 +7,7 @@ import (
 	"context"
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -17,7 +17,7 @@ import (
 type BaseHandler struct {
 	helmcomp.HelmComponent
 	Config actionspi.HandlerConfig
-	CR     *moduleplatform.ModuleLifecycle
+	CR     *moduleapi.ModuleLifecycle
 }
 
 // Init initializes the component with Helm chart information
@@ -29,13 +29,13 @@ func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfi
 		IgnoreNamespaceOverride: true,
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
-	h.CR = config.CR.(*moduleplatform.ModuleLifecycle)
+	h.CR = config.CR.(*moduleapi.ModuleLifecycle)
 	h.Config = config
 	return ctrl.Result{}, nil
 }
 
 // UpdateStatus does the lifecycle pre-Action status update
-func (h BaseHandler) UpdateStatus(ctx spi.ComponentContext, cond moduleplatform.LifecycleCondition, state moduleplatform.ModuleLifecycleState) (ctrl.Result, error) {
+func (h BaseHandler) UpdateStatus(ctx spi.ComponentContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleLifecycleState) (ctrl.Result, error) {
 	AppendCondition(h.CR, string(cond), cond)
 	h.CR.Status.State = state
 	if err := ctx.Client().Status().Update(context.TODO(), h.CR); err != nil {

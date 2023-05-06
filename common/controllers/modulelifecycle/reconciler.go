@@ -9,7 +9,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/statemachine"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,19 +19,19 @@ import (
 
 // GetReconcileObject returns the kind of object being reconciled
 func (r Reconciler) GetReconcileObject() client.Object {
-	return &moduleplatform.ModuleLifecycle{}
+	return &moduleapi.ModuleLifecycle{}
 }
 
 // Reconcile reconciles the ModuleLifecycle CR
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
-	cr := &moduleplatform.ModuleLifecycle{}
+	cr := &moduleapi.ModuleLifecycle{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
 	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
 
 	// This is an imperative command, don't rerun it
-	if cr.Status.State == moduleplatform.StateCompleted || cr.Status.State == moduleplatform.StateNotNeeded {
+	if cr.Status.State == moduleapi.StateCompleted || cr.Status.State == moduleapi.StateNotNeeded {
 		spictx.Log.Oncef("Resource %v has already been processed, nothing to do", nsn)
 		return ctrl.Result{}, nil
 	}
@@ -65,22 +65,22 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	return res, nil
 }
 
-func loadHelmInfo(cr *moduleplatform.ModuleLifecycle) actionspi.HelmInfo {
+func loadHelmInfo(cr *moduleapi.ModuleLifecycle) actionspi.HelmInfo {
 	helmInfo := actionspi.HelmInfo{
 		HelmRelease: cr.Spec.Installer.HelmRelease,
 	}
 	return helmInfo
 }
 
-func (r *Reconciler) getActionHandler(action moduleplatform.ActionType) actionspi.LifecycleActionHandler {
+func (r *Reconciler) getActionHandler(action moduleapi.ActionType) actionspi.LifecycleActionHandler {
 	switch action {
-	case moduleplatform.InstallAction:
+	case moduleapi.InstallAction:
 		return r.handlers.InstallAction
-	case moduleplatform.UninstallAction:
+	case moduleapi.UninstallAction:
 		return r.handlers.UninstallAction
-	case moduleplatform.UpdateAction:
+	case moduleapi.UpdateAction:
 		return r.handlers.UpdateAction
-	case moduleplatform.UpgradeAction:
+	case moduleapi.UpgradeAction:
 		return r.handlers.UpgradeAction
 	}
 	return nil
