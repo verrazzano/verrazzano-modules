@@ -16,8 +16,8 @@ import (
 
 type BaseHandler struct {
 	helmcomp.HelmComponent
-	Config actionspi.HandlerConfig
-	CR     *moduleapi.ModuleLifecycle
+	Config   actionspi.HandlerConfig
+	ModuleCR *moduleapi.ModuleLifecycle
 }
 
 // Init initializes the component with Helm chart information
@@ -29,16 +29,16 @@ func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfi
 		IgnoreNamespaceOverride: true,
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
-	h.CR = config.CR.(*moduleapi.ModuleLifecycle)
+	h.ModuleCR = config.CR.(*moduleapi.ModuleLifecycle)
 	h.Config = config
 	return ctrl.Result{}, nil
 }
 
 // UpdateStatus does the lifecycle pre-Action status update
 func (h BaseHandler) UpdateStatus(ctx spi.ComponentContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleLifecycleState) (ctrl.Result, error) {
-	AppendCondition(h.CR, string(cond), cond)
-	h.CR.Status.State = state
-	if err := ctx.Client().Status().Update(context.TODO(), h.CR); err != nil {
+	AppendCondition(h.ModuleCR, string(cond), cond)
+	h.ModuleCR.Status.State = state
+	if err := ctx.Client().Status().Update(context.TODO(), h.ModuleCR); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	return ctrl.Result{}, nil

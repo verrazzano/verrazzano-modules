@@ -35,7 +35,7 @@ func (h *Handler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (
 		IgnoreNamespaceOverride: true,
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
-	h.BaseHandler.CR = config.CR.(*moduleapi.ModuleLifecycle)
+	h.BaseHandler.ModuleCR = config.CR.(*moduleapi.ModuleLifecycle)
 	h.BaseHandler.Config = config
 	return ctrl.Result{}, nil
 }

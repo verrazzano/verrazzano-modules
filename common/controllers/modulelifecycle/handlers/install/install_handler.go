@@ -44,7 +44,7 @@ func (h *Handler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (
 		IgnoreNamespaceOverride: true,
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
-	h.BaseHandler.CR = config.CR.(*moduleapi.ModuleLifecycle)
+	h.BaseHandler.ModuleCR = config.CR.(*moduleapi.ModuleLifecycle)
 	h.BaseHandler.Config = config
 	return ctrl.Result{}, nil
 }
@@ -88,7 +88,7 @@ func (h Handler) ActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, erro
 func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.BaseHandler.Config.HelmInfo.HelmRelease
-	helmOverrides, err := helm.LoadOverrideFiles(ctx, helmRelease.Name, h.BaseHandler.CR.Namespace, helmRelease.Overrides)
+	helmOverrides, err := helm.LoadOverrideFiles(ctx, helmRelease.Name, h.BaseHandler.ModuleCR.Namespace, helmRelease.Overrides)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

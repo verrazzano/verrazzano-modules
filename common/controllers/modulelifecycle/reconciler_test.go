@@ -10,11 +10,11 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	fakes "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
 )
 
@@ -33,9 +33,12 @@ func TestReconcile(t *testing.T) {
 	if u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr); err != nil {
 		return ctrl.Result{}, err
 	}
+	scheme := initScheme()
+	clientBuilder := fakes.NewClientBuilder().WithScheme(scheme)
+
 	r := Reconciler{
 		Client:   nil,
-		Scheme:   nil,
+		Scheme:   initScheme(),
 		handlers: actionspi.ActionHandlers{},
 	}
 

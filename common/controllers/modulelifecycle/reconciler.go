@@ -22,7 +22,7 @@ func (r Reconciler) GetReconcileObject() client.Object {
 	return &moduleapi.ModuleLifecycle{}
 }
 
-// Reconcile reconciles the ModuleLifecycle CR
+// Reconcile reconciles the ModuleLifecycle ModuleCR
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleapi.ModuleLifecycle{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
@@ -49,7 +49,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	helmInfo := loadHelmInfo(cr)
 	handler := r.getActionHandler(cr.Spec.Action)
 	if handler == nil {
-		spictx.Log.Errorf("Invalid ModuleLifecycle CR handler %s", cr.Spec.Action)
+		spictx.Log.Errorf("Invalid ModuleLifecycle ModuleCR handler %s", cr.Spec.Action)
 		// Dont requeue, this is a fatal error
 		return ctrl.Result{}, nil
 	}
@@ -75,13 +75,13 @@ func loadHelmInfo(cr *moduleapi.ModuleLifecycle) actionspi.HelmInfo {
 func (r *Reconciler) getActionHandler(action moduleapi.ActionType) actionspi.LifecycleActionHandler {
 	switch action {
 	case moduleapi.InstallAction:
-		return r.handlers.InstallAction
+		return r.handlers.InstallActionHandler
 	case moduleapi.UninstallAction:
-		return r.handlers.UninstallAction
+		return r.handlers.UninstallActionHandler
 	case moduleapi.UpdateAction:
-		return r.handlers.UpdateAction
+		return r.handlers.UpdateActionHandler
 	case moduleapi.UpgradeAction:
-		return r.handlers.UpgradeAction
+		return r.handlers.UpgradeActionHandler
 	}
 	return nil
 }

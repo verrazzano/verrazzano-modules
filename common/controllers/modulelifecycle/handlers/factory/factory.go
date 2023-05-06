@@ -13,9 +13,9 @@ import (
 
 func NewLifecycleActionHandler() actionspi.ActionHandlers {
 	return actionspi.ActionHandlers{
-		InstallAction:   install.NewComponent(),
-		UninstallAction: uninstall.NewComponent(),
-		UpdateAction:    update.NewComponent(),
-		UpgradeAction:   upgrade.NewComponent(),
+		InstallActionHandler:   install.NewComponent(),
+		UninstallActionHandler: uninstall.NewComponent(),
+		UpdateActionHandler:    update.NewComponent(),
+		UpgradeActionHandler:   upgrade.NewComponent(),
 	}
 }

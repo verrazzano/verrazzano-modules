@@ -17,7 +17,7 @@ import (
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
-// Reconcile reconciles the Module CR
+// Reconcile reconciles the Module ModuleCR
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleplatform.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
@@ -27,7 +27,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	return r.reconcileAction(spictx, cr, handler)
 }
 
-// reconcileAction reconciles the Module CR for a particular action
+// reconcileAction reconciles the Module ModuleCR for a particular action
 func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatform.Module, handler compspi.LifecycleActionHandler) (ctrl.Result, error) {
 	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
 	if err != nil {
@@ -52,5 +52,5 @@ func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatf
 
 func (r *Reconciler) getActionHandler(cr *moduleplatform.Module) compspi.LifecycleActionHandler {
 
-	return r.comp.InstallAction
+	return r.comp.InstallActionHandler
 }

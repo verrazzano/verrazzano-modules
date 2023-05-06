@@ -76,13 +76,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Handle finalizer
 	if r.Finalizer != nil {
-		// Make sure the CR has a finalizer
+		// Make sure the ModuleCR has a finalizer
 		if cr.GetDeletionTimestamp().IsZero() {
 			if err := r.ensureFinalizer(log, cr); err != nil {
 				return util.NewRequeueWithShortDelay(), nil
 			}
 		} else {
-			// CR is being deleted
+			// ModuleCR is being deleted
 			res, err := r.PreRemoveFinalizer(rctx, cr)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2, nil
@@ -92,7 +92,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				return util.NewRequeueWithShortDelay(), nil
 			}
 
-			// all done, CR will be deleted from etcd
+			// all done, ModuleCR will be deleted from etcd
 			log.Oncef("Successfully deleted resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
 			r.PostRemoveFinalizer(rctx, cr)
 			r.removeControllerResource(req.NamespacedName)
@@ -151,7 +151,7 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, nsn types.Namespace
 	return nil
 }
 
-// ensureFinalizer ensures that a finalizer exists and updates the CR if it doesn't
+// ensureFinalizer ensures that a finalizer exists and updates the ModuleCR if it doesn't
 func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) error {
 	finalizerName := r.Finalizer.GetName()
 	finalizers := u.GetFinalizers()
