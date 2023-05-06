@@ -24,7 +24,7 @@ import (
 // The controller-runtime will call this method repeatedly if the ctrl.Result.Requeue is true, or an error is returned
 // This code will always return a nil error, and will set the ctrl.Result.Requeue to true (with a delay) if a requeue is needed.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	cr := &unstructured.Unstructured{}
+	// Do some validation then get the GVK of the resource
 	if r.Reconciler == nil {
 		err := errors.New("Failed, Reconciler interface in ControllerConfig must be implemented")
 		zap.S().Error(err)
@@ -42,6 +42,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return util.NewRequeueWithShortDelay(), nil
 	}
 
+	// Get the CR as unstructured
+	cr := &unstructured.Unstructured{}
 	cr.SetGroupVersionKind(gvk[0])
 	if err := r.Get(ctx, req.NamespacedName, cr); err != nil {
 		// If the resource is not found, that means all the finalizers have been removed,

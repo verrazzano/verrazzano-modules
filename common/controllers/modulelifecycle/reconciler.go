@@ -49,7 +49,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	helmInfo := loadHelmInfo(cr)
 	handler := r.getActionHandler(cr.Spec.Action)
 	if handler == nil {
-		spictx.Log.Errorf("Invalid ModuleLifecycle ModuleCR handler %s", cr.Spec.Action)
+		spictx.Log.Errorf("Failed, invalid ModuleLifecycle ModuleCR handler %s", cr.Spec.Action)
 		// Dont requeue, this is a fatal error
 		return ctrl.Result{}, nil
 	}
