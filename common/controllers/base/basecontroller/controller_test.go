@@ -74,6 +74,7 @@ func TestConcurrentReconcile(t *testing.T) {
 	for i := 1; i <= threadCount; i++ {
 		crName := fmt.Sprintf("%s-%v", name, i)
 		cr := newModuleCR(namespace, crName)
+		addFinalizer(cr)
 		clientBuilder = clientBuilder.WithObjects(cr)
 	}
 	c := clientBuilder.Build()
@@ -190,7 +191,7 @@ func TestEnsureFinalizer(t *testing.T) {
 
 	// state and gen should never match
 	asserts.NoError(err)
-	asserts.False(res.Requeue)
+	asserts.True(res.Requeue)
 	asserts.True(finalizer.getNameCalled)
 	asserts.False(finalizer.preCleanupCalled)
 	asserts.False(finalizer.postCleanupCalled)
