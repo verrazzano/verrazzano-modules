@@ -80,8 +80,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if r.Finalizer != nil {
 		// Make sure the ModuleCR has a finalizer
 		if cr.GetDeletionTimestamp().IsZero() {
-			if err := r.ensureFinalizer(log, cr); err != nil {
-				return util.NewRequeueWithShortDelay(), nil
+			if res := r.ensureFinalizer(log, cr); res.Requeue {
+				return res, nil
 			}
 		} else {
 			// ModuleCR is being deleted
@@ -154,21 +154,21 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, nsn types.Namespace
 }
 
 // ensureFinalizer ensures that a finalizer exists and updates the ModuleCR if it doesn't
-func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) error {
+func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) ctrl.Result {
 	finalizerName := r.Finalizer.GetName()
 	finalizers := u.GetFinalizers()
 	if vzstring.SliceContainsString(finalizers, finalizerName) {
-		return nil
+		return ctrl.Result{}
 	}
 
 	log.Debugf("Adding finalizer %s", finalizerName)
 	finalizers = append(finalizers, finalizerName)
 	u.SetFinalizers(finalizers)
 	if err := r.Update(context.TODO(), u); err != nil {
-		return err
+		return util.NewRequeueWithShortDelay()
 	}
-
-	return nil
+	// Always requeue to make sure we don't reconcile until the status is finalizer is present
+	return util.NewRequeueWithShortDelay()
 }
 
 // deleteFinalizer deletes the finalizer

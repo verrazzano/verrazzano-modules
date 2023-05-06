@@ -47,12 +47,7 @@ func (h Handler) GetActionName() string {
 
 // IsActionNeeded returns true if uninstall is needed
 func (h Handler) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.BaseHandler.ReleaseName, h.BaseHandler.Config.Namespace)
-	if err != nil {
-		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.BaseHandler.ReleaseName)
-		return true, ctrl.Result{}, err
-	}
-	return installed, ctrl.Result{}, err
+	return true, ctrl.Result{}, nil
 }
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
