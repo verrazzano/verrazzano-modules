@@ -45,10 +45,11 @@ func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatf
 	helmInfo, err := loadHelmInfo(cr)
 	if err != nil {
 		if strings.Contains(err.Error(), "FileNotFound") {
-			spictx.Log.ErrorfNewErr("Failed loading file information: %v", err)
+			err := spictx.Log.ErrorfNewErr("Failed loading file information: %v", err)
 			return util.NewRequeueWithDelay(10, 15, time.Second), err
 		}
-		return util.NewRequeueWithShortDelay(), spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
+		err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
+		return util.NewRequeueWithShortDelay(), err
 	}
 	sm := statemachine.StateMachine{
 		Scheme:   r.Scheme,
