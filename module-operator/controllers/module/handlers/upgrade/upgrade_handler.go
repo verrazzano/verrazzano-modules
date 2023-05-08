@@ -5,6 +5,7 @@ package upgrade
 
 import (
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -76,7 +77,19 @@ func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 
 // IsActionDone Indicates whether a component is installed and ready
 func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
-	return h.BaseHandler.IsActionDone(ctx)
+	if ctx.IsDryRun() {
+		return true, ctrl.Result{}, nil
+	}
+
+	mlc, err := h.BaseHandler.GetModuleLifecycle(ctx)
+	if err != nil {
+		return false, util.NewRequeueWithShortDelay(), nil
+	}
+	if mlc.Status.State == moduleplatform.StateReady || mlc.Status.State == moduleplatform.StateCompleted || mlc.Status.State == moduleplatform.StateNotNeeded {
+		return true, ctrl.Result{}, nil
+	}
+	ctx.Log().Progressf("Waiting for ModuleLifecycle %s to be completed", h.BaseHandler.MlcName)
+	return false, ctrl.Result{}, nil
 }
 
 // PostActionUpdateStatue does installation post-action status update
