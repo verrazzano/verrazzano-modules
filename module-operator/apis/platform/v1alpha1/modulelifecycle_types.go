@@ -93,23 +93,23 @@ const (
 
 	// CalicoLifecycleClass defines the class name used by the Calico operator
 	CalicoLifecycleClass LifecycleClassType = "calico"
-	CCMLifecycleClass    LifecycleClassType = "ccm"
+	CCMLifecycleClass LifecycleClassType = "ccm"
 )
 
 // ActionType defines the type of action to be performed in a ModuleLifecycle instance
 type ActionType string
 
 const (
-	// InstallAction indicates the ModuleLifecycle ModuleCR is for an install action
+	// InstallAction indicates the ModuleLifecycle CR is for an install action
 	InstallAction ActionType = "install"
 
-	// UninstallAction indicates the ModuleLifecycle ModuleCR is for an uninstall action
+	// UninstallAction indicates the ModuleLifecycle CR is for an uninstall action
 	UninstallAction ActionType = "uninstall"
 
-	// UpdateAction indicates the ModuleLifecycle ModuleCR is for an update action
+	// UpdateAction indicates the ModuleLifecycle CR is for an update action
 	UpdateAction ActionType = "update"
 
-	// UpgradeAction indicates the ModuleLifecycle ModuleCR is for an upgrade action
+	// UpgradeAction indicates the ModuleLifecycle CR is for an upgrade action
 	UpgradeAction ActionType = "upgrade"
 )
 
