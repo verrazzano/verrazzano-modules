@@ -25,37 +25,67 @@ const namespace = "testns"
 const name = "test"
 
 type handler struct {
+	statemachineError  bool
+	statemachineCalled bool
 }
 
 var _ actionspi.LifecycleActionHandler = &handler{}
 
-func TestReconcile(t *testing.T) {
+func Test(t *testing.T) {
 	asserts := assert.New(t)
 
-	rctx := controllerspi.ReconcileContext{
-		Log:       vzlog.DefaultLogger(),
-		ClientCtx: context.TODO(),
-	}
-
-	cr := newModuleLifecycleCR(namespace, name, "", moduleapi.InstallAction)
-	scheme := initScheme()
-	clientBuilder := fakes.NewClientBuilder().WithScheme(scheme).WithObjects(cr)
-	r := Reconciler{
-		Client: clientBuilder.Build(),
-		Scheme: initScheme(),
-		handlers: actionspi.ActionHandlers{
-			InstallActionHandler: &handler{},
+	tests := []struct {
+		name                       string
+		startingStatusState        moduleapi.ModuleLifecycleState
+		expectedStatemachineCalled bool
+		statemachineError          bool
+		expectedRequeue            bool
+		expectedError              bool
+	}{
+		{
+			name:                       "test1",
+			startingStatusState:        "",
+			statemachineError:          false,
+			expectedStatemachineCalled: true,
+			expectedRequeue:            false,
+			expectedError:              false,
 		},
 	}
-	uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
-	asserts.NoError(err)
-	res, err := r.Reconcile(rctx, &unstructured.Unstructured{Object: uObj})
-	asserts.NoError(err)
-	asserts.False(res.Requeue)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &handler{
+				statemachineError: test.statemachineError,
+			}
+			executeStateMachine = h.testExecuteStateMachine
+			defer func() { executeStateMachine = defaultExecuteStateMachine }()
 
+			rctx := controllerspi.ReconcileContext{
+				Log:       vzlog.DefaultLogger(),
+				ClientCtx: context.TODO(),
+			}
+
+			cr := newModuleLifecycleCR(namespace, name, "", moduleapi.InstallAction, test.startingStatusState)
+			scheme := initScheme()
+			clientBuilder := fakes.NewClientBuilder().WithScheme(scheme)
+			r := Reconciler{
+				Client: clientBuilder.Build(),
+				Scheme: initScheme(),
+				handlers: actionspi.ActionHandlers{
+					InstallActionHandler: &handler{},
+				},
+			}
+			uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
+			asserts.NoError(err)
+			res, err := r.Reconcile(rctx, &unstructured.Unstructured{Object: uObj})
+
+			asserts.Equal(test.expectedStatemachineCalled, h.statemachineCalled)
+			asserts.Equal(test.expectedError, err != nil)
+			asserts.Equal(test.expectedRequeue, res.Requeue)
+		})
+	}
 }
 
-func newModuleLifecycleCR(namespace string, name string, className string, action moduleapi.ActionType) *moduleapi.ModuleLifecycle {
+func newModuleLifecycleCR(namespace string, name string, className string, action moduleapi.ActionType, startingStatusState moduleapi.ModuleLifecycleState) *moduleapi.ModuleLifecycle {
 	m := &moduleapi.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
@@ -65,6 +95,9 @@ func newModuleLifecycleCR(namespace string, name string, className string, actio
 		Spec: moduleapi.ModuleLifecycleSpec{
 			Action:             action,
 			LifecycleClassName: moduleapi.LifecycleClassType(className),
+		},
+		Status: moduleapi.ModuleLifecycleStatus{
+			State: startingStatusState,
 		},
 	}
 	return m
@@ -78,7 +111,7 @@ func initScheme() *runtime.Scheme {
 	return scheme
 }
 
-func testExecuteStateMachine(sm statemachine.StateMachine, ctx vzspi.ComponentContext) ctrl.Result {
+func (h handler) testExecuteStateMachine(sm statemachine.StateMachine, ctx vzspi.ComponentContext) ctrl.Result {
 	return ctrl.Result{}
 }
 
