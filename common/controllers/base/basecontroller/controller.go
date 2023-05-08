@@ -6,7 +6,7 @@ package basecontroller
 import (
 	"context"
 	"errors"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	vzctrl "github.com/verrazzano/verrazzano/pkg/controller"
@@ -71,7 +71,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	log.Progressf("Reconciling resource %v, GVK %v, generation %v", req.NamespacedName, gvk, cr.GetGeneration())
 
 	// Create a new context for this reconcile loop
-	rctx := spi.ReconcileContext{
+	rctx := controllerspi.ReconcileContext{
 		Log:       vzlog.DefaultLogger(),
 		ClientCtx: ctx,
 	}
