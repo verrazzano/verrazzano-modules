@@ -17,7 +17,7 @@ import (
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
-// Reconcile reconciles the Module ModuleCR
+// Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleplatform.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
