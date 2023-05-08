@@ -48,8 +48,7 @@ func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatf
 			spictx.Log.ErrorfNewErr("Failed loading file information: %v", err)
 			return util.NewRequeueWithDelay(10, 15, time.Second), err
 		}
-		err1 := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
-		return util.NewRequeueWithShortDelay(), err1
+		return util.NewRequeueWithShortDelay(), spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
 	}
 	sm := statemachine.StateMachine{
 		Scheme:   r.Scheme,
