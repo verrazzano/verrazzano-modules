@@ -58,12 +58,12 @@ func (h Handler) PreActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, e
 func (h Handler) PreAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	// Update the spev version if it is not set
 	if len(h.BaseHandler.ModuleCR.Spec.Version) == 0 {
-		// Update spec version to match chart, always requeue to get CR with version
+		// Update spec version to match chart, always requeue to get ModuleCR with version
 		h.BaseHandler.ModuleCR.Spec.Version = h.BaseHandler.Config.ChartInfo.Version
 		if err := ctx.Client().Update(context.TODO(), h.BaseHandler.ModuleCR); err != nil {
 			return util.NewRequeueWithShortDelay(), nil
 		}
-		// ALways reconcile so that we get a new tracker with the latest CR
+		// ALways reconcile so that we get a new tracker with the latest ModuleCR
 		return util.NewRequeueWithDelay(1, 2, time.Second), nil
 	}
 

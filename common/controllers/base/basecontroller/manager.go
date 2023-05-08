@@ -7,7 +7,7 @@ import (
 	"context"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,7 +34,7 @@ type Reconciler struct {
 	Scheme     *runtime.Scheme
 	Controller controller.Controller
 	ControllerConfig
-	LifecycleClass      moduleplatform.LifecycleClassType
+	LifecycleClass      moduleapi.LifecycleClassType
 	watchersInitialized bool
 	watchContexts       []*watcher.WatchContext
 
@@ -46,7 +46,7 @@ type Reconciler struct {
 }
 
 // InitBaseController inits the base controller
-func InitBaseController(mgr controllerruntime.Manager, controllerConfig ControllerConfig, class moduleplatform.LifecycleClassType) (*Reconciler, error) {
+func InitBaseController(mgr controllerruntime.Manager, controllerConfig ControllerConfig, class moduleapi.LifecycleClassType) (*Reconciler, error) {
 	r := Reconciler{
 		Client:              mgr.GetClient(),
 		Scheme:              mgr.GetScheme(),
@@ -92,7 +92,7 @@ func (r *Reconciler) createPredicateFilter() predicate.Predicate {
 }
 
 func (r *Reconciler) handlesEvent(object client.Object) bool {
-	mlc := moduleplatform.ModuleLifecycle{}
+	mlc := moduleapi.ModuleLifecycle{}
 	objectkey := client.ObjectKeyFromObject(object)
 	if err := r.Get(context.TODO(), objectkey, &mlc); err != nil {
 		return false

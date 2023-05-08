@@ -8,7 +8,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
@@ -44,7 +44,7 @@ func (h *Handler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (
 		IgnoreNamespaceOverride: true,
 		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
 	}
-	h.BaseHandler.CR = config.CR.(*moduleplatform.ModuleLifecycle)
+	h.BaseHandler.ModuleCR = config.CR.(*moduleapi.ModuleLifecycle)
 	h.BaseHandler.Config = config
 	return ctrl.Result{}, nil
 }
@@ -56,17 +56,15 @@ func (h Handler) GetActionName() string {
 
 // IsActionNeeded returns true if install is needed
 func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.BaseHandler.ReleaseName, h.BaseHandler.Config.Namespace)
-	if err != nil {
-		ctx.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.BaseHandler.ReleaseName)
-		return true, ctrl.Result{}, err
+	if h.BaseHandler.ModuleCR.Status.State == moduleapi.StateCompleted || h.BaseHandler.ModuleCR.Status.State == moduleapi.StateNotNeeded {
+		return false, ctrl.Result{}, nil
 	}
-	return !installed, ctrl.Result{}, err
+	return true, ctrl.Result{}, nil
 }
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) PreActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondPreInstall, moduleplatform.ModuleStateReconciling)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
 }
 
 // PreAction does installation pre-action
@@ -81,14 +79,23 @@ func (h Handler) IsPreActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, e
 
 // ActionUpdateStatus does the lifecycle Action status update
 func (h Handler) ActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondInstallStarted, moduleplatform.ModuleStateReconciling)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallStarted, moduleapi.ModuleStateReconciling)
 }
 
 // DoAction installs the component using Helm
 func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
+	installed, err := vzhelm.IsReleaseInstalled(h.BaseHandler.ReleaseName, h.BaseHandler.Config.Namespace)
+	if err != nil {
+		ctx.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.BaseHandler.ReleaseName)
+		return ctrl.Result{}, err
+	}
+	if installed {
+		return ctrl.Result{}, nil
+	}
+
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.BaseHandler.Config.HelmInfo.HelmRelease
-	helmOverrides, err := helm.LoadOverrideFiles(ctx, helmRelease.Name, h.BaseHandler.CR.Namespace, helmRelease.Overrides)
+	helmOverrides, err := helm.LoadOverrideFiles(ctx, helmRelease.Name, h.BaseHandler.ModuleCR.Namespace, helmRelease.Overrides)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -148,5 +155,5 @@ func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, 
 
 // CompletedActionUpdateStatus does the lifecycle completed Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondInstallComplete, moduleplatform.StateCompleted)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallComplete, moduleapi.StateCompleted)
 }

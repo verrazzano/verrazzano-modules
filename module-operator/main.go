@@ -7,7 +7,7 @@ import (
 	"flag"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle"
 	helmfactory "github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/factory"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
 	modulefactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/factory"
 	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
@@ -42,19 +42,19 @@ func main() {
 	}
 
 	// init Helm lifecycle controller
-	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.HelmLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleapi.HelmLifecycleClass); err != nil {
 		log.Errorf("Failed to start Helm controller", err)
 		return
 	}
 
 	// init Calico lifecycle controller
-	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.CalicoLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleapi.CalicoLifecycleClass); err != nil {
 		log.Errorf("Failed to start the Calico controller", err)
 		return
 	}
 
 	// init CCM lifecycle controller
-	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleplatform.CCMLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleapi.CCMLifecycleClass); err != nil {
 		log.Errorf("Failed to start OCI-CCM controller", err)
 		return
 	}
@@ -73,7 +73,7 @@ func initScheme() *runtime.Scheme {
 	// Create a scheme then add each GKV group to the scheme
 	scheme := runtime.NewScheme()
 
-	utilruntime.Must(moduleplatform.AddToScheme(scheme))
+	utilruntime.Must(moduleapi.AddToScheme(scheme))
 	utilruntime.Must(corev1.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme

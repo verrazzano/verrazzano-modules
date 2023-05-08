@@ -24,7 +24,7 @@ import (
 // The controller-runtime will call this method repeatedly if the ctrl.Result.Requeue is true, or an error is returned
 // This code will always return a nil error, and will set the ctrl.Result.Requeue to true (with a delay) if a requeue is needed.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	cr := &unstructured.Unstructured{}
+	// Do some validation then get the GVK of the resource
 	if r.Reconciler == nil {
 		err := errors.New("Failed, Reconciler interface in ControllerConfig must be implemented")
 		zap.S().Error(err)
@@ -42,6 +42,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return util.NewRequeueWithShortDelay(), nil
 	}
 
+	// Get the CR as unstructured
+	cr := &unstructured.Unstructured{}
 	cr.SetGroupVersionKind(gvk[0])
 	if err := r.Get(ctx, req.NamespacedName, cr); err != nil {
 		// If the resource is not found, that means all the finalizers have been removed,
@@ -76,13 +78,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Handle finalizer
 	if r.Finalizer != nil {
-		// Make sure the CR has a finalizer
+		// Make sure the ModuleCR has a finalizer
 		if cr.GetDeletionTimestamp().IsZero() {
-			if err := r.ensureFinalizer(log, cr); err != nil {
-				return util.NewRequeueWithShortDelay(), nil
+			if res := r.ensureFinalizer(log, cr); res.Requeue {
+				return res, nil
 			}
 		} else {
-			// CR is being deleted
+			// ModuleCR is being deleted
 			res, err := r.PreRemoveFinalizer(rctx, cr)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2, nil
@@ -92,7 +94,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				return util.NewRequeueWithShortDelay(), nil
 			}
 
-			// all done, CR will be deleted from etcd
+			// all done, ModuleCR will be deleted from etcd
 			log.Oncef("Successfully deleted resource %v, generation %v", req.NamespacedName, cr.GetGeneration())
 			r.PostRemoveFinalizer(rctx, cr)
 			r.removeControllerResource(req.NamespacedName)
@@ -151,22 +153,22 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, nsn types.Namespace
 	return nil
 }
 
-// ensureFinalizer ensures that a finalizer exists and updates the CR if it doesn't
-func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) error {
+// ensureFinalizer ensures that a finalizer exists and updates the ModuleCR if it doesn't
+func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) ctrl.Result {
 	finalizerName := r.Finalizer.GetName()
 	finalizers := u.GetFinalizers()
 	if vzstring.SliceContainsString(finalizers, finalizerName) {
-		return nil
+		return ctrl.Result{}
 	}
 
 	log.Debugf("Adding finalizer %s", finalizerName)
 	finalizers = append(finalizers, finalizerName)
 	u.SetFinalizers(finalizers)
 	if err := r.Update(context.TODO(), u); err != nil {
-		return err
+		return util.NewRequeueWithShortDelay()
 	}
-
-	return nil
+	// Always requeue to make sure we don't reconcile until the status is finalizer is present
+	return util.NewRequeueWithShortDelay()
 }
 
 // deleteFinalizer deletes the finalizer

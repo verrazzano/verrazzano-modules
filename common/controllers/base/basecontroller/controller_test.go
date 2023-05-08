@@ -40,6 +40,7 @@ type ReconcilerImpl struct {
 	reconcileCalled bool
 	getObjectCalled bool
 	returnNilObject bool
+	className       string
 }
 type WatcherImpl struct {
 	called bool
@@ -73,6 +74,7 @@ func TestConcurrentReconcile(t *testing.T) {
 	for i := 1; i <= threadCount; i++ {
 		crName := fmt.Sprintf("%s-%v", name, i)
 		cr := newModuleCR(namespace, crName)
+		addFinalizer(cr)
 		clientBuilder = clientBuilder.WithObjects(cr)
 	}
 	c := clientBuilder.Build()
@@ -157,7 +159,7 @@ func TestWatcher(t *testing.T) {
 	asserts.False(res.Requeue)
 	asserts.True(watcher.called)
 
-	// Make sure the CR has been added to controller resources
+	// Make sure the ModuleCR has been added to controller resources
 	crList := r.GetControllerResources()
 	asserts.Len(crList, 1)
 
@@ -166,10 +168,10 @@ func TestWatcher(t *testing.T) {
 	asserts.Len(crList, 0)
 }
 
-// TestEnsureFinalizer tests that a finalizer is added to the CR
+// TestEnsureFinalizer tests that a finalizer is added to the ModuleCR
 // GIVEN a controller that implements Finalizer interface
 // WHEN Reconcile is called
-// THEN ensure that the CR is updated with the finalizer
+// THEN ensure that the ModuleCR is updated with the finalizer
 func TestEnsureFinalizer(t *testing.T) {
 	asserts := assert.New(t)
 
@@ -189,7 +191,7 @@ func TestEnsureFinalizer(t *testing.T) {
 
 	// state and gen should never match
 	asserts.NoError(err)
-	asserts.False(res.Requeue)
+	asserts.True(res.Requeue)
 	asserts.True(finalizer.getNameCalled)
 	asserts.False(finalizer.preCleanupCalled)
 	asserts.False(finalizer.postCleanupCalled)
@@ -200,10 +202,10 @@ func TestEnsureFinalizer(t *testing.T) {
 	asserts.Len(updatedCR.Finalizers, 1)
 }
 
-// TestFinalizerAlreadyExists tests that a finalizer is mot added to the CR if it exists
+// TestFinalizerAlreadyExists tests that a finalizer is mot added to the ModuleCR if it exists
 // GIVEN a controller that implements Finalizer interface
-// WHEN Reconcile is called and the finalizer exists in the CR
-// THEN ensure that the CR is not updated with another finalizer
+// WHEN Reconcile is called and the finalizer exists in the ModuleCR
+// THEN ensure that the ModuleCR is not updated with another finalizer
 func TestFinalizerAlreadyExists(t *testing.T) {
 	asserts := assert.New(t)
 
@@ -323,7 +325,7 @@ func TestReconcilerGetObjectMissing(t *testing.T) {
 // TestNotFound tests that the controller handles not found
 // GIVEN a controller that implements Reconciler interface
 // WHEN Reconcile is called
-// THEN ensure that the controller returns success if CR doesn't exist
+// THEN ensure that the controller returns success if ModuleCR doesn't exist
 func TestNotFound(t *testing.T) {
 	asserts := assert.New(t)
 
@@ -402,7 +404,7 @@ func (r *ReconcilerImpl) GetReconcileObject() client.Object {
 	return &moduleapi.Module{}
 }
 
-// Reconcile reconciles the ModuleLifecycle CR
+// Reconcile reconciles the ModuleLifecycle ModuleCR
 func (r *ReconcilerImpl) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	r.reconcileCalled = true
 	cr := &moduleapi.Module{}

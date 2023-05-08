@@ -21,10 +21,10 @@ type HelmInfo struct {
 
 // ActionHandlers
 type ActionHandlers struct {
-	InstallAction   LifecycleActionHandler
-	UninstallAction LifecycleActionHandler
-	UpdateAction    LifecycleActionHandler
-	UpgradeAction   LifecycleActionHandler
+	InstallActionHandler   LifecycleActionHandler
+	UninstallActionHandler LifecycleActionHandler
+	UpdateActionHandler    LifecycleActionHandler
+	UpgradeActionHandler   LifecycleActionHandler
 }
 
 type HandlerConfig struct {

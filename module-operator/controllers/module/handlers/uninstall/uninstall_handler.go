@@ -36,13 +36,6 @@ func (h *Handler) Init(ctx spi.ComponentContext, config actionspi.HandlerConfig)
 // IsActionNeeded returns true if install is needed
 func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
-
-	//installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
-	//if err != nil {
-	//	ctx.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
-	//	return true, ctrl.Result{}, err
-	//}
-	//return !installed, ctrl.Result{}, err
 }
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
