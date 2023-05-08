@@ -61,7 +61,7 @@ func (w *WatchContext) Watch() error {
 }
 
 // createReconcileEventHandler creates an event handler that will get called
-// when a watched event results in a true predicate.  Each CR resource that this controller
+// when a watched event results in a true predicate.  Each ModuleCR resource that this controller
 // manages (meaning it exists) will be in the WatcherContext.reconcileResources list.
 // A reconcile.Request will be returned for each resource, causing the controller-runtime
 // to call Reconcile for that resource.

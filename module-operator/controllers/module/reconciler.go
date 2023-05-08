@@ -65,7 +65,7 @@ func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatf
 func (r *Reconciler) getActionHandler(cr *moduleplatform.Module) compspi.LifecycleActionHandler {
 	// Check for install complete
 	if !isConditionPresent(cr, moduleplatform.CondInstallComplete) {
-		return r.comp.InstallAction
+		return r.comp.InstallActionHandler
 	}
 	// return UpgradeAction only when the desired version is different from current
 	isGreaterVersion, err := pkg.IsMinVersion(cr.Spec.Version, cr.Status.Version)
@@ -73,9 +73,9 @@ func (r *Reconciler) getActionHandler(cr *moduleplatform.Module) compspi.Lifecyc
 		return nil
 	}
 	if isGreaterVersion {
-		return r.comp.UpgradeAction
+		return r.comp.UpgradeActionHandler
 	}
-	return r.comp.InstallAction
+	return r.comp.InstallActionHandler
 }
 
 func isConditionPresent(cr *moduleplatform.Module, condition moduleplatform.LifecycleCondition) bool {

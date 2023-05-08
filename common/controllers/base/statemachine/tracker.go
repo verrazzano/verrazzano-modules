@@ -5,11 +5,12 @@ package statemachine
 
 import (
 	"fmt"
+	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sync"
 )
 
-// stateTracker keeps an in-memory state for a CR execute the state machine.
+// stateTracker keeps an in-memory state for a ModuleCR execute the state machine.
 type stateTracker struct {
 	state state
 	gen   int64
@@ -22,9 +23,9 @@ var trackerMap = make(map[string]*stateTracker)
 // trackerMutex is used to access the map concurrently.
 var trackerMutex sync.RWMutex
 
-// getTrackerKey gets the stateTracker key for a CR.
+// getTrackerKey gets the stateTracker key for a ModuleCR.
 func getTrackerKey(CR client.Object, gen int64) string {
-	return fmt.Sprintf("%s-%s-%v-%s", CR.GetNamespace(), CR.GetName(), gen, string(CR.GetUID()))
+	return fmt.Sprintf("%s-%s-%s-gen-%v", CR.GetNamespace(), CR.GetName(), string(CR.GetUID()), gen)
 }
 
 // ensureTracker gets the stateTracker, creating a new one if needed.
@@ -45,6 +46,7 @@ func ensureTracker(CR client.Object, initialState state) *stateTracker {
 	}
 	trackerMap[key] = tracker
 
+	vzlog.DefaultLogger().Infof("Creating a tracker for key: %s ", key)
 	// Delete the previous entry if it exists
 	if CR.GetGeneration() == 1 {
 		return tracker
@@ -53,6 +55,8 @@ func ensureTracker(CR client.Object, initialState state) *stateTracker {
 	_, ok = trackerMap[keyPrev]
 	if ok {
 		delete(trackerMap, keyPrev)
+		vzlog.DefaultLogger().Infof("Deleting a tracker for key: %s ", keyPrev)
+
 	}
 	return tracker
 }
