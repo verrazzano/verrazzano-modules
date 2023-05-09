@@ -39,8 +39,6 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return ctrl.Result{}, nil
 	}
 
-	ctx := actionspi.HandlerContext{Client: nil, Log: spictx.Log}
-
 	helmInfo := loadHelmInfo(cr)
 	handler := r.getActionHandler(cr.Spec.Action)
 	if handler == nil {
@@ -54,6 +52,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		HelmInfo: &helmInfo,
 		Handler:  handler,
 	}
+	ctx := actionspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 
 	res := executeStateMachine(sm, ctx)
 	return res, nil

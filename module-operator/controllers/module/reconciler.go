@@ -35,7 +35,6 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 
 // reconcileAction reconciles the Module CR for a particular action
 func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler actionspi.LifecycleActionHandler) (ctrl.Result, error) {
-
 	ctx := actionspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 
 	helmInfo, err := loadHelmInfo(cr)
