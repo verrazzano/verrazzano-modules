@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano/pkg/log"
 	kzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"go.uber.org/zap"
@@ -291,7 +290,7 @@ func TestZap(t *testing.T) {
 	testOpts := kzap.Options{}
 	testOpts.Development = true
 	testOpts.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
-	log.InitLogs(testOpts)
+	InitLogs(testOpts)
 	const rKey = "testns/test3"
 	l := EnsureContext(rKey).EnsureLogger("test", zap.S(), zap.S())
 	l.Progress("testmsg")

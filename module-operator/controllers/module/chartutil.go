@@ -6,9 +6,9 @@ package module
 import (
 	"fmt"
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
-	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"os"
 	"path/filepath"
 )
@@ -22,7 +22,7 @@ func loadHelmInfo(cr *moduleapi.Module) (actionspi.HelmInfo, error) {
 	if !isChartFound {
 		return actionspi.HelmInfo{}, fmt.Errorf("FileNotFound at %s/Chart.yaml", chartDir)
 	}
-	chartInfo, err := vzhelm.GetChartInfo(chartDir)
+	chartInfo, err := helm.GetChartInfo(chartDir)
 	if err != nil {
 		return actionspi.HelmInfo{}, err
 	}
