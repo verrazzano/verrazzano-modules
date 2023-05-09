@@ -9,26 +9,34 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
-	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type BaseHandler struct {
-	helmcomp.HelmComponent
 	Config   actionspi.HandlerConfig
 	ModuleCR *moduleapi.ModuleLifecycle
+
+	actionspi.HelmInfo
+
+	// ReleaseName is the helm chart release name
+	ReleaseName string
+
+	// ChartDir is the helm chart directory
+	ChartDir string
+
+	// ChartNamespace is the namespace passed to the helm command
+	ChartNamespace string
+
+	// ImagePullSecretKeyname is the Helm Value Key for the image pull secret for a chart
+	ImagePullSecretKeyname string
 }
 
 // Init initializes the component with Helm chart information
 func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
-	h.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             config.HelmInfo.HelmRelease.Name,
-		ChartNamespace:          config.HelmInfo.HelmRelease.Namespace,
-		ChartDir:                config.ChartDir,
-		IgnoreNamespaceOverride: true,
-		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
-	}
+	h.HelmInfo = config.HelmInfo
+	h.ImagePullSecretKeyname = constants.GlobalImagePullSecName
+
 	h.ModuleCR = config.CR.(*moduleapi.ModuleLifecycle)
 	h.Config = config
 	return ctrl.Result{}, nil
