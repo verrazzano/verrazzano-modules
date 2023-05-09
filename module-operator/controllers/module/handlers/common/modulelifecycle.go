@@ -7,12 +7,11 @@ import (
 	"context"
 	"fmt"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (h BaseHandler) GetModuleLifecycle(ctx spi.ComponentContext) (*moduleapi.ModuleLifecycle, error) {
+func (h BaseHandler) GetModuleLifecycle(ctx actionspi.HandlerContext) (*moduleapi.ModuleLifecycle, error) {
 	mlc := moduleapi.ModuleLifecycle{}
 	nsn := types.NamespacedName{
 		Name:      h.MlcName,
@@ -27,7 +26,7 @@ func (h BaseHandler) GetModuleLifecycle(ctx spi.ComponentContext) (*moduleapi.Mo
 }
 
 // DeleteModuleLifecycle deletes a moduleLifecycle
-func (h BaseHandler) DeleteModuleLifecycle(ctx spi.ComponentContext) error {
+func (h BaseHandler) DeleteModuleLifecycle(ctx actionspi.HandlerContext) error {
 	mlc := moduleapi.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      h.MlcName,

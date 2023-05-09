@@ -10,8 +10,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
-	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
@@ -91,8 +89,7 @@ func TestAllStatesSucceed(t *testing.T) {
 		HelmInfo: &actionspi.HelmInfo{},
 		Handler:  h,
 	}
-	ctx, err := vzspi.NewMinimalContext(nil, vzlog.DefaultLogger())
-	asserts.NoError(err)
+	ctx := actionspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
 
 	res := sm.Execute(ctx)
 	asserts.False(res.Requeue)
@@ -111,8 +108,7 @@ func TestAllStatesSucceed(t *testing.T) {
 // AND each subsequent state is not executed
 func TestEachStateRequeue(t *testing.T) {
 	asserts := assert.New(t)
-	ctx, err := vzspi.NewMinimalContext(nil, vzlog.DefaultLogger())
-	asserts.NoError(err)
+	ctx := actionspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
 
 	// Check for a Requeue result for every state
 	for i, s := range getStatesInOrder() {
@@ -167,8 +163,7 @@ func TestEachStateRequeue(t *testing.T) {
 // AND each subsequent state is not executed
 func TestNotDone(t *testing.T) {
 	asserts := assert.New(t)
-	ctx, err := vzspi.NewMinimalContext(nil, vzlog.DefaultLogger())
-	asserts.NoError(err)
+	ctx := actionspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
 
 	tests := []struct {
 		name          string
@@ -253,51 +248,51 @@ func (h handler) GetActionName() string {
 	return "install"
 }
 
-func (h handler) Init(context spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h handler) Init(context actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
 	return h.procHandlerCall(initFunc)
 }
 
-func (h handler) IsActionNeeded(context spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h handler) IsActionNeeded(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return h.procHandlerBool(isActionNeeded)
 }
 
-func (h handler) PreAction(context spi.ComponentContext) (ctrl.Result, error) {
+func (h handler) PreAction(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(preAction)
 }
 
-func (h handler) PreActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
+func (h handler) PreActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(preActionUpdateStatus)
 }
 
-func (h handler) IsPreActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h handler) IsPreActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return h.procHandlerBool(isPreActionDone)
 }
 
-func (h handler) ActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
+func (h handler) ActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(actionUpdateStatus)
 }
 
-func (h handler) DoAction(context spi.ComponentContext) (ctrl.Result, error) {
+func (h handler) DoAction(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(doAction)
 }
 
-func (h handler) IsActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h handler) IsActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return h.procHandlerBool(isActionDone)
 }
 
-func (h handler) PostActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
+func (h handler) PostActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(postActionUpdateStatus)
 }
 
-func (h handler) PostAction(context spi.ComponentContext) (ctrl.Result, error) {
+func (h handler) PostAction(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(postAction)
 }
 
-func (h handler) IsPostActionDone(context spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h handler) IsPostActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return h.procHandlerBool(isPostActionDone)
 }
 
-func (h handler) CompletedActionUpdateStatus(context spi.ComponentContext) (ctrl.Result, error) {
+func (h handler) CompletedActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(completedActionUpdateStatus)
 }
 

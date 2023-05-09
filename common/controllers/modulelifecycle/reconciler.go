@@ -90,6 +90,6 @@ func (r *Reconciler) getActionHandler(action moduleapi.ActionType) actionspi.Lif
 	}
 }
 
-func defaultExecuteStateMachine(sm statemachine.StateMachine, ctx vzspi.ComponentContext) ctrl.Result {
+func defaultExecuteStateMachine(sm statemachine.StateMachine, ctx actionspi.HandlerContext) ctrl.Result {
 	return sm.Execute(ctx)
 }

@@ -4,14 +4,13 @@
 package install
 
 import (
-	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -34,7 +33,7 @@ func NewComponent() actionspi.LifecycleActionHandler {
 }
 
 // Init initializes the component with Helm chart information
-func (h *Handler) Init(ctx spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
 	return h.BaseHandler.Init(ctx, config)
 }
 
@@ -44,7 +43,7 @@ func (h Handler) GetActionName() string {
 }
 
 // IsActionNeeded returns true if install is needed
-func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h Handler) IsActionNeeded(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	if h.ModuleCR.Status.State == moduleapi.StateCompleted || h.BaseHandler.ModuleCR.Status.State == moduleapi.StateNotNeeded {
 		return false, ctrl.Result{}, nil
 	}
@@ -52,30 +51,30 @@ func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, er
 }
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
-func (h Handler) PreActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+func (h Handler) PreActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
 }
 
 // PreAction does installation pre-action
-func (h Handler) PreAction(ctx spi.ComponentContext) (ctrl.Result, error) {
+func (h Handler) PreAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
 // IsPreActionDone returns true if pre-action done
-func (h Handler) IsPreActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h Handler) IsPreActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
 // ActionUpdateStatus does the lifecycle Action status update
-func (h Handler) ActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+func (h Handler) ActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.UpdateStatus(ctx, moduleapi.CondInstallStarted, moduleapi.ModuleStateReconciling)
 }
 
 // DoAction installs the component using Helm
-func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.BaseHandler.Name, h.BaseHandler.Namespace)
+func (h Handler) DoAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
+	installed, err := vzhelm.IsReleaseInstalled(h.HelmRelease.Name, h.HelmRelease.Namespace)
 	if err != nil {
-		ctx.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.BaseHandler.Name)
+		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.HelmRelease.Name)
 		return ctrl.Result{}, err
 	}
 	if installed {
@@ -84,7 +83,7 @@ func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.BaseHandler.Config.HelmInfo.HelmRelease
-	helmOverrides, err := helm.LoadOverrideFiles(ctx, helmRelease.Name, h.BaseHandler.ModuleCR.Namespace, helmRelease.Overrides)
+	helmOverrides, err := helm.LoadOverrideFiles(ctx.Log, ctx.Client, helmRelease.Name, h.BaseHandler.ModuleCR.Namespace, helmRelease.Overrides)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -99,27 +98,27 @@ func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 		//Username:     "",
 		//Password:     "",
 	}
-	_, err = upgradeFunc(ctx.Log(), opts, h.BaseHandler.WaitForInstall, ctx.IsDryRun())
+	_, err = upgradeFunc(ctx.Log, opts, false, ctx.DryRun)
 	return ctrl.Result{}, err
 }
 
 // IsActionDone Indicates whether a component is installed and ready
-func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
-	if ctx.IsDryRun() {
-		ctx.Log().Debugf("IsReady() dry run for %s", h.BaseHandler.ReleaseName)
+func (h Handler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
+	if ctx.DryRun {
+		ctx.Log.Debugf("IsReady() dry run for %s", h.BaseHandler.Name)
 		return true, ctrl.Result{}, nil
 	}
 
-	deployed, err := vzhelm.IsReleaseDeployed(h.BaseHandler.ReleaseName, h.BaseHandler.ChartNamespace)
+	deployed, err := vzhelm.IsReleaseDeployed(h.BaseHandler.Name, h.BaseHandler.Namespace)
 	if err != nil {
-		ctx.Log().ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
+		ctx.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
 		return false, ctrl.Result{}, err
 	}
 	if !deployed {
 		return false, util.NewRequeueWithShortDelay(), nil
 	}
 	// check if helm release at the correct version
-	if !h.releaseVersionMatches(ctx.Log()) {
+	if !h.releaseVersionMatches(ctx.Log) {
 		return false, util.NewRequeueWithShortDelay(), nil
 	}
 
@@ -128,21 +127,21 @@ func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, erro
 }
 
 // PostActionUpdateStatus does installation post-action
-func (h Handler) PostActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+func (h Handler) PostActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
 // PostAction does installation pre-action
-func (h Handler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
+func (h Handler) PostAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
 // IsPostActionDone returns true if post-action done
-func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
+func (h Handler) IsPostActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
 // CompletedActionUpdateStatus does the lifecycle completed Action status update
-func (h Handler) CompletedActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
+func (h Handler) CompletedActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallComplete, moduleapi.StateCompleted)
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -188,7 +187,7 @@ func initScheme() *runtime.Scheme {
 	return scheme
 }
 
-func (h *handler) testExecuteStateMachine(sm statemachine.StateMachine, ctx vzspi.ComponentContext) ctrl.Result {
+func (h *handler) testExecuteStateMachine(sm statemachine.StateMachine, ctx actionspi.HandlerContext) ctrl.Result {
 	h.statemachineCalled = true
 	if h.statemachineError {
 		return util.NewRequeueWithShortDelay()
@@ -200,50 +199,50 @@ func (h handler) GetActionName() string {
 	return "install"
 }
 
-func (h handler) Init(context vzspi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h handler) Init(context actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsActionNeeded(context vzspi.ComponentContext) (bool, ctrl.Result, error) {
+func (h handler) IsActionNeeded(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) PreAction(context vzspi.ComponentContext) (ctrl.Result, error) {
+func (h handler) PreAction(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) PreActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error) {
+func (h handler) PreActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsPreActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error) {
+func (h handler) IsPreActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) ActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error) {
+func (h handler) ActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) DoAction(context vzspi.ComponentContext) (ctrl.Result, error) {
+func (h handler) DoAction(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error) {
+func (h handler) IsActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) PostActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error) {
+func (h handler) PostActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) PostAction(context vzspi.ComponentContext) (ctrl.Result, error) {
+func (h handler) PostAction(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsPostActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error) {
+func (h handler) IsPostActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) CompletedActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error) {
+func (h handler) CompletedActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }

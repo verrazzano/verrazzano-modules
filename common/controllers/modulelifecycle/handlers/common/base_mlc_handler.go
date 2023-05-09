@@ -9,7 +9,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/constants"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -31,7 +30,7 @@ type BaseHandler struct {
 }
 
 // Init initializes the component with Helm chart information
-func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h *BaseHandler) Init(_ actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
 	h.Config = config
 	h.HelmInfo = config.HelmInfo
 	h.ImagePullSecretKeyname = constants.GlobalImagePullSecName
@@ -40,10 +39,10 @@ func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfi
 }
 
 // UpdateStatus does the lifecycle pre-Action status update
-func (h BaseHandler) UpdateStatus(ctx spi.ComponentContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleLifecycleState) (ctrl.Result, error) {
+func (h BaseHandler) UpdateStatus(ctx actionspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleLifecycleState) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
 	h.ModuleCR.Status.State = state
-	if err := ctx.Client().Status().Update(context.TODO(), h.ModuleCR); err != nil {
+	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	return ctrl.Result{}, nil
