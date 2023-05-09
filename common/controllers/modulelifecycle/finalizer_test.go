@@ -6,7 +6,7 @@ package modulelifecycle
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	"testing"
 )
@@ -18,7 +18,7 @@ import (
 func TestFinalizer(t *testing.T) {
 	asserts := assert.New(t)
 
-	rctx := spi.ReconcileContext{
+	rctx := controllerspi.ReconcileContext{
 		Log:       vzlog.DefaultLogger(),
 		ClientCtx: context.TODO(),
 	}

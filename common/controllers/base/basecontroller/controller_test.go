@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -405,7 +405,7 @@ func (r *ReconcilerImpl) GetReconcileObject() client.Object {
 }
 
 // Reconcile reconciles the ModuleLifecycle ModuleCR
-func (r *ReconcilerImpl) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *ReconcilerImpl) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	r.reconcileCalled = true
 	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
@@ -415,9 +415,9 @@ func (r *ReconcilerImpl) Reconcile(spictx spi.ReconcileContext, u *unstructured.
 }
 
 // GetWatchDescriptors returns the list of object kinds being watched
-func (r *WatcherImpl) GetWatchDescriptors() []spi.WatchDescriptor {
+func (r *WatcherImpl) GetWatchDescriptors() []controllerspi.WatchDescriptor {
 	r.called = true
-	return []spi.WatchDescriptor{{
+	return []controllerspi.WatchDescriptor{{
 		WatchKind:           source.Kind{Type: &moduleapi.ModuleLifecycle{}},
 		FuncShouldReconcile: nil,
 	}}
@@ -428,12 +428,12 @@ func (f *FinalizerImpl) GetName() string {
 	return finalizerName
 }
 
-func (f *FinalizerImpl) PreRemoveFinalizer(reconcileContext spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (f *FinalizerImpl) PreRemoveFinalizer(reconcileContext controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	f.preCleanupCalled = true
 	return ctrl.Result{}, nil
 }
 
-func (f *FinalizerImpl) PostRemoveFinalizer(reconcileContext spi.ReconcileContext, u *unstructured.Unstructured) {
+func (f *FinalizerImpl) PostRemoveFinalizer(reconcileContext controllerspi.ReconcileContext, u *unstructured.Unstructured) {
 	f.postCleanupCalled = true
 }
 

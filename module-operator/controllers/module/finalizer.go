@@ -4,7 +4,7 @@
 package module
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,7 +20,7 @@ func (r Reconciler) GetName() string {
 
 // PreRemoveFinalizer is called when the resource is being deleted, before the finalizer
 // is removed.  Use this method to delete Kubernetes resources, etc.
-func (r Reconciler) PreRemoveFinalizer(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (r Reconciler) PreRemoveFinalizer(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleplatform.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
@@ -30,5 +30,5 @@ func (r Reconciler) PreRemoveFinalizer(spictx spi.ReconcileContext, u *unstructu
 
 // PostRemoveFinalizer is called after the finalizer is successfully removed.
 // This method does garbage collection and other tasks that can never return an error
-func (r Reconciler) PostRemoveFinalizer(spictx spi.ReconcileContext, u *unstructured.Unstructured) {
+func (r Reconciler) PostRemoveFinalizer(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) {
 }

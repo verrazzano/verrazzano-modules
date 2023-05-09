@@ -6,7 +6,7 @@ package module
 import (
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/basecontroller"
-	spi "github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	spi "github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"

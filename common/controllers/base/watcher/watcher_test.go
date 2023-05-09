@@ -4,29 +4,37 @@
 package watcher
 
 import (
+	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/fake"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	controllerruntime "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"testing"
 )
 
 type watchController struct {
-	fake.FakeController
+	FakeController
 	t            *testing.T
 	numResources int
 	predicate    bool
 }
+
+type FakeController struct{}
+
+var _ controllerruntime.Controller = &FakeController{}
 
 // TestWatch tests that a watch can be created and that predicate return true
 // GIVEN a WatchContext
@@ -121,7 +129,7 @@ func (w watchController) getControllerResources() []types.NamespacedName {
 	return nsList
 }
 
-func (w watchController) shouldReconcile(object client.Object, event spi.WatchEvent) bool {
+func (w watchController) shouldReconcile(object client.Object, event controllerspi.WatchEvent) bool {
 	return w.predicate
 }
 
@@ -136,4 +144,20 @@ func newModuleLifecycleCR(namespace string, name string, className string) *modu
 		},
 	}
 	return m
+}
+
+func (f FakeController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+func (f FakeController) Watch(src source.Source, eventhandler handler.EventHandler, predicates ...predicate.Predicate) error {
+	return nil
+}
+
+func (f FakeController) Start(ctx context.Context) error {
+	return nil
+}
+
+func (f FakeController) GetLogger() logr.Logger {
+	return logr.Logger{}
 }

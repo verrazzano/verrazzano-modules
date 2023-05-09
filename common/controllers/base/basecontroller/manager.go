@@ -5,7 +5,7 @@ package basecontroller
 
 import (
 	"context"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
@@ -23,9 +23,9 @@ import (
 
 // ControllerConfig specifies the config of the controller using this base controller
 type ControllerConfig struct {
-	spi.Finalizer
-	spi.Reconciler
-	spi.Watcher
+	controllerspi.Finalizer
+	controllerspi.Reconciler
+	controllerspi.Watcher
 }
 
 // Reconciler contains data needed to reconcile a DNS object.

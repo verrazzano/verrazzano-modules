@@ -5,7 +5,7 @@ package modulelifecycle
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/statemachine"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
@@ -22,11 +22,15 @@ func (r Reconciler) GetReconcileObject() client.Object {
 	return &moduleapi.ModuleLifecycle{}
 }
 
+var executeStateMachine = defaultExecuteStateMachine
+
 // Reconcile reconciles the ModuleLifecycle ModuleCR
-func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleapi.ModuleLifecycle{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
-		return ctrl.Result{}, err
+		// This is a fatal internal error, don't requeue
+		spictx.Log.ErrorfThrottled("Failed converting Unstructured to ModuleLifecycle %s/%s: %v", err, u.GetNamespace(), u.GetName())
+		return util.NewRequeueWithShortDelay(), nil
 	}
 	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
 
@@ -49,9 +53,8 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 	helmInfo := loadHelmInfo(cr)
 	handler := r.getActionHandler(cr.Spec.Action)
 	if handler == nil {
-		spictx.Log.Errorf("Failed, invalid ModuleLifecycle ModuleCR handler %s", cr.Spec.Action)
-		// Dont requeue, this is a fatal error
-		return ctrl.Result{}, nil
+		spictx.Log.ErrorfThrottled("Failed, internal error invalid ModuleLifecycle ModuleCR handler %s", cr.Spec.Action)
+		return util.NewRequeueWithShortDelay(), nil
 	}
 
 	sm := statemachine.StateMachine{
@@ -61,7 +64,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 		Handler:  handler,
 	}
 
-	res := sm.Execute(ctx)
+	res := executeStateMachine(sm, ctx)
 	return res, nil
 }
 
@@ -82,6 +85,11 @@ func (r *Reconciler) getActionHandler(action moduleapi.ActionType) actionspi.Lif
 		return r.handlers.UpdateActionHandler
 	case moduleapi.UpgradeAction:
 		return r.handlers.UpgradeActionHandler
+	default:
+		return nil
 	}
-	return nil
+}
+
+func defaultExecuteStateMachine(sm statemachine.StateMachine, ctx vzspi.ComponentContext) ctrl.Result {
+	return sm.Execute(ctx)
 }

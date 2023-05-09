@@ -5,7 +5,7 @@ package module
 
 import (
 	compspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/statemachine"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano/tests/e2e/pkg"
@@ -21,7 +21,7 @@ import (
 )
 
 // Reconcile reconciles the Module CR
-func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleplatform.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
@@ -36,7 +36,7 @@ func (r Reconciler) Reconcile(spictx spi.ReconcileContext, u *unstructured.Unstr
 }
 
 // reconcileAction reconciles the Module CR for a particular action
-func (r Reconciler) reconcileAction(spictx spi.ReconcileContext, cr *moduleplatform.Module, handler compspi.LifecycleActionHandler) (ctrl.Result, error) {
+func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleplatform.Module, handler compspi.LifecycleActionHandler) (ctrl.Result, error) {
 	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
 	if err != nil {
 		return util.NewRequeueWithShortDelay(), err

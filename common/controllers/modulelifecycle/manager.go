@@ -6,7 +6,7 @@ package modulelifecycle
 import (
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/basecontroller"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/spi"
+	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -27,7 +27,7 @@ type Reconciler struct {
 }
 
 // Specify the SPI interfaces that this controller implements
-var _ spi.Reconciler = Reconciler{}
+var _ controllerspi.Reconciler = Reconciler{}
 var controller Reconciler
 
 // InitController start the  controller
