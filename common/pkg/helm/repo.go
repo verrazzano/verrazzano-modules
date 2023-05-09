@@ -5,10 +5,10 @@ package helm
 
 import (
 	"fmt"
+	"github.com/verrazzano/verrazzano/pkg/helm"
 	"strings"
 
-	"github.com/verrazzano/verrazzano/pkg/helm"
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
@@ -25,7 +25,7 @@ type HelmReleaseOpts struct {
 	Namespace    string
 	ChartPath    string
 	ChartVersion string
-	Overrides    []helm.HelmOverrides
+	Overrides    []HelmOverrides
 
 	Username string
 	Password string

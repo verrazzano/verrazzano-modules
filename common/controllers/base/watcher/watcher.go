@@ -5,7 +5,7 @@ package watcher
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"

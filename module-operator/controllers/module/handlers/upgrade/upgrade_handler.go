@@ -10,7 +10,7 @@ import (
 
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 )
 import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
@@ -35,7 +35,7 @@ func (h Handler) GetActionName() string {
 
 // Init initializes the handler
 func (h *Handler) Init(ctx spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.Init(ctx, config, moduleplatform.UpgradeAction)
+	return h.BaseHandler.Init(ctx, config, moduleapi.UpgradeAction)
 }
 
 // IsActionNeeded returns true if install is needed
@@ -52,7 +52,7 @@ func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, er
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) PreActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondPreUpgrade, moduleplatform.ModuleStateReconciling)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreUpgrade, moduleapi.ModuleStateReconciling)
 }
 
 // PreAction does installation pre-action
@@ -67,7 +67,7 @@ func (h Handler) IsPreActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, e
 
 // ActionUpdateStatus does the lifecycle Action status update
 func (h Handler) ActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondUpgradeStarted, moduleplatform.ModuleStateReconciling)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUpgradeStarted, moduleapi.ModuleStateReconciling)
 }
 
 // DoAction installs the component using Helm
@@ -85,7 +85,7 @@ func (h Handler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, erro
 	if err != nil {
 		return false, util.NewRequeueWithShortDelay(), nil
 	}
-	if mlc.Status.State == moduleplatform.StateReady || mlc.Status.State == moduleplatform.StateCompleted || mlc.Status.State == moduleplatform.StateNotNeeded {
+	if mlc.Status.State == moduleapi.StateReady || mlc.Status.State == moduleapi.StateCompleted || mlc.Status.State == moduleapi.StateNotNeeded {
 		return true, ctrl.Result{}, nil
 	}
 	ctx.Log().Progressf("Waiting for ModuleLifecycle %s to be completed", h.BaseHandler.MlcName)
@@ -109,5 +109,5 @@ func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, 
 
 // CompletedActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatusWithVersion(ctx, moduleplatform.CondUpgradeComplete, moduleplatform.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
+	return h.BaseHandler.UpdateStatusWithVersion(ctx, moduleapi.CondUpgradeComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }

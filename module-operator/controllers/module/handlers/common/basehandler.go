@@ -7,7 +7,7 @@ import (
 	"context"
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -16,17 +16,17 @@ import (
 
 type BaseHandler struct {
 	Config       actionspi.HandlerConfig
-	ModuleCR     *moduleplatform.Module
-	Action       moduleplatform.ActionType
+	ModuleCR     *moduleapi.Module
+	Action       moduleapi.ActionType
 	MlcName      string
 	MlcNamespace string
 }
 
 // Init initializes the handler with Helm chart information
-func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig, action moduleplatform.ActionType) (ctrl.Result, error) {
+func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig, action moduleapi.ActionType) (ctrl.Result, error) {
 	h.Config = config
-	h.ModuleCR = config.CR.(*moduleplatform.Module)
-	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleplatform.HelmLifecycleClass, action)
+	h.ModuleCR = config.CR.(*moduleapi.Module)
+	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmLifecycleClass, action)
 	h.MlcNamespace = h.ModuleCR.Namespace
 	h.Action = action
 	return ctrl.Result{}, nil
@@ -35,7 +35,7 @@ func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfi
 // DoAction installs the component using Helm
 func (h BaseHandler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	// Create ModuleLifecycle
-	mlc := moduleplatform.ModuleLifecycle{
+	mlc := moduleapi.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      h.MlcName,
 			Namespace: h.ModuleCR.Namespace,
@@ -52,8 +52,8 @@ func (h BaseHandler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
 
-func (h BaseHandler) mutateMLC(mlc *moduleplatform.ModuleLifecycle) error {
-	mlc.Spec.LifecycleClassName = moduleplatform.HelmLifecycleClass
+func (h BaseHandler) mutateMLC(mlc *moduleapi.ModuleLifecycle) error {
+	mlc.Spec.LifecycleClassName = moduleapi.HelmLifecycleClass
 	mlc.Spec.Action = h.Action
 	mlc.Spec.Installer.HelmRelease = h.Config.HelmInfo.HelmRelease
 	mlc.Spec.Installer.HelmRelease.Overrides = h.ModuleCR.Spec.Overrides
@@ -70,7 +70,7 @@ func (h BaseHandler) IsActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, 
 	if err != nil {
 		return false, util.NewRequeueWithShortDelay(), nil
 	}
-	if mlc.Status.State == moduleplatform.StateCompleted || mlc.Status.State == moduleplatform.StateNotNeeded {
+	if mlc.Status.State == moduleapi.StateCompleted || mlc.Status.State == moduleapi.StateNotNeeded {
 		return true, ctrl.Result{}, nil
 	}
 	ctx.Log().Progressf("Waiting for ModuleLifecycle %s to be completed", h.MlcName)
@@ -90,7 +90,7 @@ func (h BaseHandler) PostAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 }
 
 // UpdateStatus does the lifecycle pre-Action status update
-func (h BaseHandler) UpdateStatusWithVersion(ctx spi.ComponentContext, cond moduleplatform.LifecycleCondition, state moduleplatform.ModuleStateType, version string) (ctrl.Result, error) {
+func (h BaseHandler) UpdateStatusWithVersion(ctx spi.ComponentContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType, version string) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
 	h.ModuleCR.Status.State = state
 	if len(version) > 0 {
@@ -103,7 +103,7 @@ func (h BaseHandler) UpdateStatusWithVersion(ctx spi.ComponentContext, cond modu
 }
 
 // UpdateStatus does the lifecycle pre-Action status update
-func (h BaseHandler) UpdateStatus(ctx spi.ComponentContext, cond moduleplatform.LifecycleCondition, state moduleplatform.ModuleStateType) (ctrl.Result, error) {
+func (h BaseHandler) UpdateStatus(ctx spi.ComponentContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
 	h.ModuleCR.Status.State = state
 	if err := ctx.Client().Status().Update(context.TODO(), h.ModuleCR); err != nil {

@@ -15,14 +15,14 @@ import (
 	"strings"
 	"time"
 
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
-	cr := &moduleplatform.Module{}
+	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -36,7 +36,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 }
 
 // reconcileAction reconciles the Module CR for a particular action
-func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleplatform.Module, handler compspi.LifecycleActionHandler) (ctrl.Result, error) {
+func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler compspi.LifecycleActionHandler) (ctrl.Result, error) {
 	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
 	if err != nil {
 		return util.NewRequeueWithShortDelay(), err
@@ -62,9 +62,9 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 	return res, nil
 }
 
-func (r *Reconciler) getActionHandler(cr *moduleplatform.Module) compspi.LifecycleActionHandler {
+func (r *Reconciler) getActionHandler(cr *moduleapi.Module) compspi.LifecycleActionHandler {
 	// Check for install complete
-	if !isConditionPresent(cr, moduleplatform.CondInstallComplete) {
+	if !isConditionPresent(cr, moduleapi.CondInstallComplete) {
 		return r.comp.InstallActionHandler
 	}
 	// return UpgradeAction only when the desired version is different from current
@@ -78,7 +78,7 @@ func (r *Reconciler) getActionHandler(cr *moduleplatform.Module) compspi.Lifecyc
 	return r.comp.InstallActionHandler
 }
 
-func isConditionPresent(cr *moduleplatform.Module, condition moduleplatform.LifecycleCondition) bool {
+func isConditionPresent(cr *moduleapi.Module, condition moduleapi.LifecycleCondition) bool {
 	for _, each := range cr.Status.Conditions {
 		if each.Type == condition {
 			return true

@@ -5,44 +5,32 @@ package helm
 
 import (
 	"fmt"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano/pkg/bom"
-	"github.com/verrazzano/verrazzano/pkg/helm"
-	vzos "github.com/verrazzano/verrazzano/pkg/os"
-	"github.com/verrazzano/verrazzano/platform-operator/apis/verrazzano/v1beta1"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
+	vzos "github.com/verrazzano/verrazzano-modules/common/pkg/os"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // LoadOverrideFiles loads the helm overrides into a set of files for a release.  Return a list of Helm overrides which contain the filenames
-func LoadOverrideFiles(context spi.ComponentContext, releaseName string, mlcNamespace string, moduleOverrides []moduleplatform.Overrides) ([]helm.HelmOverrides, error) {
+func LoadOverrideFiles(log vzlog.VerrazzanoLogger, client ctrlclient.Client, releaseName string, mlcNamespace string, moduleOverrides []moduleapi.Overrides) ([]HelmOverrides, error) {
 	if len(moduleOverrides) == 0 {
 		return nil, nil
 	}
-	var kvs []bom.KeyValue
+	var kvs []KeyValue
 	var err error
-	vzOverrides := []v1beta1.Overrides{}
-
-	for _, modOverride := range moduleOverrides {
-		vzOverride := v1beta1.Overrides{
-			ConfigMapRef: modOverride.ConfigMapRef,
-			SecretRef:    modOverride.SecretRef,
-			Values:       modOverride.Values,
-		}
-		vzOverrides = append(vzOverrides, vzOverride)
-	}
 
 	// Getting user defined Helm overrides as the highest priority
-	overrideStrings, err := getInstallOverridesYAML(context.Log(), context.Client(), vzOverrides, mlcNamespace)
+	overrideStrings, err := getInstallOverridesYAML(log, client, moduleOverrides, mlcNamespace)
 	if err != nil {
 		return nil, err
 	}
 	for _, overrideString := range overrideStrings {
 		file, err := vzos.CreateTempFile(fmt.Sprintf("helm-overrides-release-%s-*.yaml", releaseName), []byte(overrideString))
 		if err != nil {
-			context.Log().Error(err.Error())
+			log.Error(err.Error())
 			return nil, err
 		}
-		kvs = append(kvs, bom.KeyValue{Value: file.Name(), IsFile: true})
+		kvs = append(kvs, KeyValue{Value: file.Name(), IsFile: true})
 	}
 
 	// Convert the key value pairs to Helm overrides
@@ -52,21 +40,21 @@ func LoadOverrideFiles(context spi.ComponentContext, releaseName string, mlcName
 
 // organizeHelmOverrides creates a list of Helm overrides from key value pairs in reverse precedence (0th value has the lowest precedence)
 // Each key value pair gets its own override object to keep strict precedence
-func organizeHelmOverrides(kvs []bom.KeyValue) []helm.HelmOverrides {
-	var overrides []helm.HelmOverrides
+func organizeHelmOverrides(kvs []KeyValue) []HelmOverrides {
+	var overrides []HelmOverrides
 	for _, kv := range kvs {
 		if kv.SetString {
 			// Append in reverse order because helm precedence is right to left
-			overrides = append([]helm.HelmOverrides{{SetStringOverrides: fmt.Sprintf("%s=%s", kv.Key, kv.Value)}}, overrides...)
+			overrides = append([]HelmOverrides{{SetStringOverrides: fmt.Sprintf("%s=%s", kv.Key, kv.Value)}}, overrides...)
 		} else if kv.SetFile {
 			// Append in reverse order because helm precedence is right to left
-			overrides = append([]helm.HelmOverrides{{SetFileOverrides: fmt.Sprintf("%s=%s", kv.Key, kv.Value)}}, overrides...)
+			overrides = append([]HelmOverrides{{SetFileOverrides: fmt.Sprintf("%s=%s", kv.Key, kv.Value)}}, overrides...)
 		} else if kv.IsFile {
 			// Append in reverse order because helm precedence is right to left
-			overrides = append([]helm.HelmOverrides{{FileOverride: kv.Value}}, overrides...)
+			overrides = append([]HelmOverrides{{FileOverride: kv.Value}}, overrides...)
 		} else {
 			// Append in reverse order because helm precedence is right to left
-			overrides = append([]helm.HelmOverrides{{SetOverrides: fmt.Sprintf("%s=%s", kv.Key, kv.Value)}}, overrides...)
+			overrides = append([]HelmOverrides{{SetOverrides: fmt.Sprintf("%s=%s", kv.Key, kv.Value)}}, overrides...)
 		}
 	}
 	return overrides

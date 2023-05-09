@@ -12,7 +12,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 )
 
 type Handler struct {
@@ -34,7 +34,7 @@ func (h Handler) GetActionName() string {
 
 // Init initializes the handler
 func (h *Handler) Init(ctx spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.Init(ctx, config, moduleplatform.InstallAction)
+	return h.BaseHandler.Init(ctx, config, moduleapi.InstallAction)
 }
 
 // IsActionNeeded returns true if install is needed
@@ -51,7 +51,7 @@ func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, er
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) PreActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondPreInstall, moduleplatform.ModuleStateReconciling)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
 }
 
 // PreAction does installation pre-action
@@ -77,7 +77,7 @@ func (h Handler) IsPreActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, e
 
 // ActionUpdateStatus does the lifecycle Action status update
 func (h Handler) ActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleplatform.CondInstallStarted, moduleplatform.ModuleStateReconciling)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallStarted, moduleapi.ModuleStateReconciling)
 }
 
 // DoAction installs the component using Helm
@@ -107,5 +107,5 @@ func (h Handler) IsPostActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, 
 
 // CompletedActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatusWithVersion(ctx, moduleplatform.CondInstallComplete, moduleplatform.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
+	return h.BaseHandler.UpdateStatusWithVersion(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }

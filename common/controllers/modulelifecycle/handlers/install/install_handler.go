@@ -8,18 +8,16 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
-	"github.com/verrazzano/verrazzano/platform-operator/constants"
-	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type Handler struct {
-	BaseHandler common.BaseHandler
+	common.BaseHandler
 }
 
 // upgradeFuncSig is a function needed for unit test override
@@ -36,17 +34,8 @@ func NewComponent() actionspi.LifecycleActionHandler {
 }
 
 // Init initializes the component with Helm chart information
-func (h *Handler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
-	h.BaseHandler.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             config.HelmInfo.HelmRelease.Name,
-		ChartNamespace:          config.HelmInfo.HelmRelease.Namespace,
-		ChartDir:                config.ChartDir,
-		IgnoreNamespaceOverride: true,
-		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
-	}
-	h.BaseHandler.ModuleCR = config.CR.(*moduleapi.ModuleLifecycle)
-	h.BaseHandler.Config = config
-	return ctrl.Result{}, nil
+func (h *Handler) Init(ctx spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+	return h.BaseHandler.Init(ctx, config)
 }
 
 // GetActionName returns the action name
@@ -56,7 +45,7 @@ func (h Handler) GetActionName() string {
 
 // IsActionNeeded returns true if install is needed
 func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, error) {
-	if h.BaseHandler.ModuleCR.Status.State == moduleapi.StateCompleted || h.BaseHandler.ModuleCR.Status.State == moduleapi.StateNotNeeded {
+	if h.ModuleCR.Status.State == moduleapi.StateCompleted || h.BaseHandler.ModuleCR.Status.State == moduleapi.StateNotNeeded {
 		return false, ctrl.Result{}, nil
 	}
 	return true, ctrl.Result{}, nil
@@ -64,7 +53,7 @@ func (h Handler) IsActionNeeded(ctx spi.ComponentContext) (bool, ctrl.Result, er
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) PreActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
+	return h.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
 }
 
 // PreAction does installation pre-action
@@ -79,14 +68,14 @@ func (h Handler) IsPreActionDone(ctx spi.ComponentContext) (bool, ctrl.Result, e
 
 // ActionUpdateStatus does the lifecycle Action status update
 func (h Handler) ActionUpdateStatus(ctx spi.ComponentContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallStarted, moduleapi.ModuleStateReconciling)
+	return h.UpdateStatus(ctx, moduleapi.CondInstallStarted, moduleapi.ModuleStateReconciling)
 }
 
 // DoAction installs the component using Helm
 func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.BaseHandler.ReleaseName, h.BaseHandler.Config.Namespace)
+	installed, err := vzhelm.IsReleaseInstalled(h.BaseHandler.Name, h.BaseHandler.Namespace)
 	if err != nil {
-		ctx.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.BaseHandler.ReleaseName)
+		ctx.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.BaseHandler.Name)
 		return ctrl.Result{}, err
 	}
 	if installed {
@@ -101,8 +90,8 @@ func (h Handler) DoAction(ctx spi.ComponentContext) (ctrl.Result, error) {
 	}
 	var opts = &helm.HelmReleaseOpts{
 		RepoURL:      helmRelease.Repository.URI,
-		ReleaseName:  h.BaseHandler.ReleaseName,
-		Namespace:    h.BaseHandler.ChartNamespace,
+		ReleaseName:  h.BaseHandler.Name,
+		Namespace:    h.BaseHandler.Namespace,
 		ChartPath:    helmRelease.ChartInfo.Path,
 		ChartVersion: helmRelease.ChartInfo.Version,
 		Overrides:    helmOverrides,

@@ -5,7 +5,7 @@ package install
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 )
 
 func (h Handler) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {

@@ -6,14 +6,14 @@ package common
 import (
 	"context"
 	"fmt"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (h BaseHandler) GetModuleLifecycle(ctx spi.ComponentContext) (*moduleplatform.ModuleLifecycle, error) {
-	mlc := moduleplatform.ModuleLifecycle{}
+func (h BaseHandler) GetModuleLifecycle(ctx spi.ComponentContext) (*moduleapi.ModuleLifecycle, error) {
+	mlc := moduleapi.ModuleLifecycle{}
 	nsn := types.NamespacedName{
 		Name:      h.MlcName,
 		Namespace: h.ModuleCR.Namespace,
@@ -28,7 +28,7 @@ func (h BaseHandler) GetModuleLifecycle(ctx spi.ComponentContext) (*moduleplatfo
 
 // DeleteModuleLifecycle deletes a moduleLifecycle
 func (h BaseHandler) DeleteModuleLifecycle(ctx spi.ComponentContext) error {
-	mlc := moduleplatform.ModuleLifecycle{
+	mlc := moduleapi.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      h.MlcName,
 			Namespace: h.ModuleCR.Namespace,
@@ -42,6 +42,6 @@ func (h BaseHandler) DeleteModuleLifecycle(ctx spi.ComponentContext) error {
 	return nil
 }
 
-func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleplatform.LifecycleClassType, action moduleplatform.ActionType) string {
+func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleapi.LifecycleClassType, action moduleapi.ActionType) string {
 	return fmt.Sprintf("%s-%s-%s", moduleCRName, lifecycleClassName, action)
 }

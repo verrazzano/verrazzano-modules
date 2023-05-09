@@ -5,7 +5,7 @@ package statemachine
 
 import (
 	"fmt"
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sync"
 )

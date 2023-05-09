@@ -6,14 +6,14 @@ package module
 import (
 	"fmt"
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"os"
 	"path/filepath"
 )
 
-func loadHelmInfo(cr *moduleplatform.Module) (actionspi.HelmInfo, error) {
+func loadHelmInfo(cr *moduleapi.Module) (actionspi.HelmInfo, error) {
 	chartDir := lookupChartDir(cr)
 	isChartFound, err := isFileExist(chartDir)
 	if err != nil {
@@ -28,10 +28,10 @@ func loadHelmInfo(cr *moduleplatform.Module) (actionspi.HelmInfo, error) {
 	}
 
 	helmInfo := actionspi.HelmInfo{
-		HelmRelease: &moduleplatform.HelmRelease{
+		HelmRelease: &moduleapi.HelmRelease{
 			Name:      cr.Name,
 			Namespace: cr.Spec.TargetNamespace,
-			ChartInfo: moduleplatform.HelmChart{
+			ChartInfo: moduleapi.HelmChart{
 				Name:    chartInfo.Name,
 				Version: chartInfo.Version,
 				Path:    lookupChartDir(cr),
@@ -42,21 +42,21 @@ func loadHelmInfo(cr *moduleplatform.Module) (actionspi.HelmInfo, error) {
 	return helmInfo, nil
 }
 
-func lookupChartDir(mod *moduleplatform.Module) string {
+func lookupChartDir(mod *moduleapi.Module) string {
 	config := config.Get()
 	chartpath := filepath.Join(config.ChartsDir, lookupChartLeafDirName(mod))
 	return chartpath
 }
 
-func lookupChartLeafDirName(mod *moduleplatform.Module) string {
+func lookupChartLeafDirName(mod *moduleapi.Module) string {
 	var dir string
 
 	switch mod.Spec.ModuleName {
-	case string(moduleplatform.CalicoLifecycleClass):
+	case string(moduleapi.CalicoLifecycleClass):
 		dir = "calico"
-	case string(moduleplatform.CCMLifecycleClass):
+	case string(moduleapi.CCMLifecycleClass):
 		dir = "ccm"
-	case string(moduleplatform.HelmLifecycleClass):
+	case string(moduleapi.HelmLifecycleClass):
 		dir = filepath.Join("vz-test", mod.Spec.Version)
 		if mod.Spec.Version == "" {
 			dir = filepath.Join("vz-test", "0.1.0")

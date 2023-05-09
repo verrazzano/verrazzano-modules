@@ -14,19 +14,17 @@ import (
 )
 
 type BaseHandler struct {
-	Config   actionspi.HandlerConfig
-	ModuleCR *moduleapi.ModuleLifecycle
+	// Config is the handler configuration
+	Config actionspi.HandlerConfig
 
+	// HelmInfo has the helm information
 	actionspi.HelmInfo
 
-	// ReleaseName is the helm chart release name
-	ReleaseName string
+	// ModuleCR is the ModuleLifecycle CR being handled
+	ModuleCR *moduleapi.ModuleLifecycle
 
-	// ChartDir is the helm chart directory
+	// ChartDir is the helm chart directory (TODO remove this and use HelmInfo path)
 	ChartDir string
-
-	// ChartNamespace is the namespace passed to the helm command
-	ChartNamespace string
 
 	// ImagePullSecretKeyname is the Helm Value Key for the image pull secret for a chart
 	ImagePullSecretKeyname string
@@ -34,11 +32,10 @@ type BaseHandler struct {
 
 // Init initializes the component with Helm chart information
 func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+	h.Config = config
 	h.HelmInfo = config.HelmInfo
 	h.ImagePullSecretKeyname = constants.GlobalImagePullSecName
-
 	h.ModuleCR = config.CR.(*moduleapi.ModuleLifecycle)
-	h.Config = config
 	return ctrl.Result{}, nil
 }
 
