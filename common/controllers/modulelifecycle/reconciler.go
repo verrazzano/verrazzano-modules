@@ -22,8 +22,6 @@ func (r Reconciler) GetReconcileObject() client.Object {
 	return &moduleapi.ModuleLifecycle{}
 }
 
-type funcExecuteStateMachine func(sm statemachine.StateMachine, ctx vzspi.ComponentContext) ctrl.Result
-
 var executeStateMachine = defaultExecuteStateMachine
 
 // Reconcile reconciles the ModuleLifecycle ModuleCR
@@ -31,7 +29,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 	cr := &moduleapi.ModuleLifecycle{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		// This is a fatal internal error, don't requeue
-		spictx.Log.ErrorfThrottledNewErr("Failed converting Unstructured to ModuleLifecycle %s/%s: %v", err, u.GetNamespace(), u.GetName())
+		spictx.Log.ErrorfThrottled("Failed converting Unstructured to ModuleLifecycle %s/%s: %v", err, u.GetNamespace(), u.GetName())
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
