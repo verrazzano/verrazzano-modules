@@ -10,7 +10,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -72,9 +71,9 @@ func (h Handler) ActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, 
 
 // DoAction installs the component using Helm
 func (h Handler) DoAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.HelmRelease.Name, h.HelmRelease.Namespace)
+	installed, err := helm.IsReleaseInstalled(h.HelmRelease.Name, h.HelmRelease.Namespace)
 	if err != nil {
-		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.HelmRelease.Name)
+		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.HelmRelease.Namespace, h.HelmRelease.Name)
 		return ctrl.Result{}, err
 	}
 	if installed {
@@ -109,7 +108,7 @@ func (h Handler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, 
 		return true, ctrl.Result{}, nil
 	}
 
-	deployed, err := vzhelm.IsReleaseDeployed(h.BaseHandler.Name, h.BaseHandler.Namespace)
+	deployed, err := helm.IsReleaseDeployed(h.BaseHandler.Name, h.BaseHandler.Namespace)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
 		return false, ctrl.Result{}, err

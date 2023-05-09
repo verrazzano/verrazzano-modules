@@ -6,15 +6,14 @@ package uninstall
 import (
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/common"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
-	"github.com/verrazzano/verrazzano/platform-operator/constants"
-	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type Handler struct {
-	BaseHandler common.BaseHandler
+	common.BaseHandler
 }
 
 var (
@@ -26,17 +25,8 @@ func NewComponent() actionspi.LifecycleActionHandler {
 }
 
 // Init initializes the component with Helm chart information
-func (h *Handler) Init(_ actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
-	h.BaseHandler.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             config.HelmInfo.HelmRelease.Name,
-		ChartNamespace:          config.HelmInfo.HelmRelease.Namespace,
-		ChartDir:                config.ChartDir,
-		IgnoreNamespaceOverride: true,
-		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
-	}
-	h.BaseHandler.ModuleCR = config.CR.(*moduleapi.ModuleLifecycle)
-	h.BaseHandler.Config = config
-	return ctrl.Result{}, nil
+func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+	return h.BaseHandler.Init(ctx, config)
 }
 
 // GetActionName returns the action name
@@ -71,29 +61,29 @@ func (h Handler) ActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, 
 
 // DoAction uninstalls the component using Helm
 func (h Handler) DoAction(context actionspi.HandlerContext) (ctrl.Result, error) {
-	installed, err := vzhelm.IsReleaseInstalled(h.BaseHandler.ReleaseName, h.BaseHandler.Config.Namespace)
+	installed, err := helm.IsReleaseInstalled(h.HelmRelease.Name, h.HelmRelease.Namespace)
 	if err != nil {
-		context.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.BaseHandler.ReleaseName)
+		context.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.HelmRelease.Namespace, h.HelmRelease.Name)
 		return ctrl.Result{}, err
 	}
 	if !installed {
 		return ctrl.Result{}, err
 	}
 
-	err = vzhelm.Uninstall(context.Log(), h.BaseHandler.ReleaseName, h.BaseHandler.ChartNamespace, context.IsDryRun())
+	err = vzhelm.Uninstall(context.Log, context.Client, h.HelmRelease.Name, h.HelmRelease.Namespace, context.DryRun)
 	return ctrl.Result{}, err
 }
 
 // IsActionDone Indicates whether a component is uninstalled
 func (h Handler) IsActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
-	if context.IsDryRun() {
-		context.Log().Debugf("IsReady() dry run for %s", h.BaseHandler.ReleaseName)
+	if context.DryRun {
+		context.Log.Debugf("IsReady() dry run for %s", h.HelmRelease.Name)
 		return true, ctrl.Result{}, nil
 	}
 
-	deployed, err := vzhelm.IsReleaseDeployed(h.BaseHandler.ReleaseName, h.BaseHandler.ChartNamespace)
+	deployed, err := vzhelm.IsReleaseDeployed(h.HelmRelease.Name, h.HelmRelease.Namespace)
 	if err != nil {
-		context.Log().ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
+		context.Log.ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
 		return false, ctrl.Result{}, err
 	}
 
