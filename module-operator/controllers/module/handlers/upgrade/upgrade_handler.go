@@ -75,7 +75,7 @@ func (h Handler) DoAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 
 // IsActionDone Indicates whether a component is installed and ready
 func (h Handler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
-	if ctx.IsDryRun() {
+	if ctx.DryRun {
 		return true, ctrl.Result{}, nil
 	}
 
@@ -86,7 +86,7 @@ func (h Handler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, 
 	if mlc.Status.State == moduleapi.StateReady || mlc.Status.State == moduleapi.StateCompleted || mlc.Status.State == moduleapi.StateNotNeeded {
 		return true, ctrl.Result{}, nil
 	}
-	ctx.Log().Progressf("Waiting for ModuleLifecycle %s to be completed", h.BaseHandler.MlcName)
+	ctx.Log.Progressf("Waiting for ModuleLifecycle %s to be completed", h.BaseHandler.MlcName)
 	return false, ctrl.Result{}, nil
 }
 

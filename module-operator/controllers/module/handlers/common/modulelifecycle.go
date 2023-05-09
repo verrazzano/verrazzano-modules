@@ -6,6 +6,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,8 +19,8 @@ func (h BaseHandler) GetModuleLifecycle(ctx actionspi.HandlerContext) (*moduleap
 		Namespace: h.ModuleCR.Namespace,
 	}
 
-	if err := ctx.Client().Get(context.TODO(), nsn, &mlc); err != nil {
-		ctx.Log().Progressf("Retrying get for ModuleLifecycle %v: %v", nsn, err)
+	if err := ctx.Client.Get(context.TODO(), nsn, &mlc); err != nil {
+		ctx.Log.Progressf("Retrying get for ModuleLifecycle %v: %v", nsn, err)
 		return nil, err
 	}
 	return &mlc, nil
@@ -34,8 +35,8 @@ func (h BaseHandler) DeleteModuleLifecycle(ctx actionspi.HandlerContext) error {
 		},
 	}
 
-	if err := ctx.Client().Delete(context.TODO(), &mlc); err != nil {
-		ctx.Log().ErrorfThrottled("Failed trying to delete ModuleLifecycles/%s: %v", mlc.Namespace, mlc.Name, err)
+	if err := ctx.Client.Delete(context.TODO(), &mlc); err != nil {
+		ctx.Log.ErrorfThrottled("Failed trying to delete ModuleLifecycles/%s: %v", mlc.Namespace, mlc.Name, err)
 		return err
 	}
 	return nil

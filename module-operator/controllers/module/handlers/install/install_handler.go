@@ -59,7 +59,7 @@ func (h Handler) PreAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	if len(h.BaseHandler.ModuleCR.Spec.Version) == 0 {
 		// Update spec version to match chart, always requeue to get ModuleCR with version
 		h.BaseHandler.ModuleCR.Spec.Version = h.BaseHandler.Config.ChartInfo.Version
-		if err := ctx.Client().Update(context.TODO(), h.BaseHandler.ModuleCR); err != nil {
+		if err := ctx.Client.Update(context.TODO(), h.BaseHandler.ModuleCR); err != nil {
 			return util.NewRequeueWithShortDelay(), nil
 		}
 		// ALways reconcile so that we get a new tracker with the latest ModuleCR

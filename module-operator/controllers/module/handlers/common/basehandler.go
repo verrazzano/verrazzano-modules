@@ -5,7 +5,7 @@ package common
 
 import (
 	"context"
-	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +40,7 @@ func (h BaseHandler) DoAction(ctx actionspi.HandlerContext) (ctrl.Result, error)
 			Namespace: h.ModuleCR.Namespace,
 		},
 	}
-	_, err := controllerutil.CreateOrUpdate(context.TODO(), ctx.Client(), &mlc, func() error {
+	_, err := controllerutil.CreateOrUpdate(context.TODO(), ctx.Client, &mlc, func() error {
 		err := h.mutateMLC(&mlc)
 		if err != nil {
 			return err
@@ -61,7 +61,7 @@ func (h BaseHandler) mutateMLC(mlc *moduleapi.ModuleLifecycle) error {
 
 // IsActionDone returns true if the module action is done
 func (h BaseHandler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
-	if ctx.IsDryRun() {
+	if ctx.DryRun {
 		return true, ctrl.Result{}, nil
 	}
 
@@ -72,13 +72,13 @@ func (h BaseHandler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Resu
 	if mlc.Status.State == moduleapi.StateCompleted || mlc.Status.State == moduleapi.StateNotNeeded {
 		return true, ctrl.Result{}, nil
 	}
-	ctx.Log().Progressf("Waiting for ModuleLifecycle %s to be completed", h.MlcName)
+	ctx.Log.Progressf("Waiting for ModuleLifecycle %s to be completed", h.MlcName)
 	return false, ctrl.Result{}, nil
 }
 
 // PostAction does post-action
 func (h BaseHandler) PostAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	if ctx.IsDryRun() {
+	if ctx.DryRun {
 		return ctrl.Result{}, nil
 	}
 
@@ -95,7 +95,7 @@ func (h BaseHandler) UpdateStatusWithVersion(ctx actionspi.HandlerContext, cond 
 	if len(version) > 0 {
 		h.ModuleCR.Status.Version = version
 	}
-	if err := ctx.Client().Status().Update(context.TODO(), h.ModuleCR); err != nil {
+	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	return ctrl.Result{}, nil
@@ -105,7 +105,7 @@ func (h BaseHandler) UpdateStatusWithVersion(ctx actionspi.HandlerContext, cond 
 func (h BaseHandler) UpdateStatus(ctx actionspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
 	h.ModuleCR.Status.State = state
-	if err := ctx.Client().Status().Update(context.TODO(), h.ModuleCR); err != nil {
+	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	return ctrl.Result{}, nil

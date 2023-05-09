@@ -4,11 +4,11 @@
 package module
 
 import (
-	compspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/statemachine"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
-	"github.com/verrazzano/verrazzano/tests/e2e/pkg"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -16,8 +16,6 @@ import (
 	"time"
 
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-
-	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 )
 
 // Reconcile reconciles the Module CR
@@ -36,11 +34,9 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 }
 
 // reconcileAction reconciles the Module CR for a particular action
-func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler compspi.LifecycleActionHandler) (ctrl.Result, error) {
-	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
-	if err != nil {
-		return util.NewRequeueWithShortDelay(), err
-	}
+func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler actionspi.LifecycleActionHandler) (ctrl.Result, error) {
+
+	ctx := actionspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 
 	helmInfo, err := loadHelmInfo(cr)
 	if err != nil {
@@ -62,13 +58,13 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 	return res, nil
 }
 
-func (r *Reconciler) getActionHandler(cr *moduleapi.Module) compspi.LifecycleActionHandler {
+func (r *Reconciler) getActionHandler(cr *moduleapi.Module) actionspi.LifecycleActionHandler {
 	// Check for install complete
 	if !isConditionPresent(cr, moduleapi.CondInstallComplete) {
 		return r.comp.InstallActionHandler
 	}
 	// return UpgradeAction only when the desired version is different from current
-	isGreaterVersion, err := pkg.IsMinVersion(cr.Spec.Version, cr.Status.Version)
+	isGreaterVersion, err := IsMinVersion(cr.Spec.Version, cr.Status.Version)
 	if err != nil {
 		return nil
 	}
@@ -85,4 +81,17 @@ func isConditionPresent(cr *moduleapi.Module, condition moduleapi.LifecycleCondi
 		}
 	}
 	return false
+}
+
+// IsMinVersion returns true if the given version >= minVersion
+func IsMinVersion(vzVersion, minVersion string) (bool, error) {
+	vzSemver, err := semver.NewSemVersion(vzVersion)
+	if err != nil {
+		return false, err
+	}
+	minSemver, err := semver.NewSemVersion(minVersion)
+	if err != nil {
+		return false, err
+	}
+	return !vzSemver.IsLessThan(minSemver), nil
 }
