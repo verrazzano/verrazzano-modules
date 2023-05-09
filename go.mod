@@ -5,8 +5,6 @@ module github.com/verrazzano/verrazzano-modules
 
 go 1.19
 
-require github.com/verrazzano/verrazzano v0.17.1-0.20230414130230-43908c21553a
-
 require (
 	github.com/go-logr/logr v1.2.3
 	github.com/stretchr/testify v1.8.0

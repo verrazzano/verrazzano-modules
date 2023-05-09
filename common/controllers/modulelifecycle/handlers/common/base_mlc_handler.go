@@ -6,9 +6,9 @@ package common
 import (
 	"context"
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/constants"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano/platform-operator/constants"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

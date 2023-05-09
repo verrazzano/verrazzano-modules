@@ -1,19 +1,17 @@
 // Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package yaml
+package helm
 
 import (
 	"fmt"
-	"strings"
-
-	"github.com/verrazzano/verrazzano/pkg/bom"
 	"helm.sh/helm/v3/pkg/strvals"
 	"sigs.k8s.io/yaml"
+	"strings"
 )
 
 // HelmValueFileConstructor creates a YAML file from a set of key value pairs
-func HelmValueFileConstructor(kvs []bom.KeyValue) (string, error) {
+func HelmValueFileConstructor(kvs []KeyValue) (string, error) {
 	yamlObject := map[string]interface{}{}
 	for _, kv := range kvs {
 		// replace unwanted characters in the value to avoid splitting

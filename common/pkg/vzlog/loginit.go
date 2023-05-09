@@ -4,10 +4,10 @@
 package vzlog
 
 import (
+	vzctrl "github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"os"
 	"time"
 
-	vzctrl "github.com/verrazzano/verrazzano/pkg/controller"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

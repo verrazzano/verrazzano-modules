@@ -120,16 +120,6 @@ func TestReconcile(t *testing.T) {
 			expectedRequeue:            true,
 			expectedError:              false,
 		},
-		{
-			name:                       "test-same-generation",
-			action:                     "",
-			startingStatusState:        "",
-			statemachineError:          false,
-			expectedStatemachineCalled: false,
-			expectedRequeue:            true,
-			expectedError:              false,
-			statusGeneration:           1,
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

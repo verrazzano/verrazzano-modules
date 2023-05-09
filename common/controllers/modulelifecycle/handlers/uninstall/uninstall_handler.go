@@ -8,7 +8,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	vzhelm "github.com/verrazzano/verrazzano/pkg/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -70,7 +69,7 @@ func (h Handler) DoAction(context actionspi.HandlerContext) (ctrl.Result, error)
 		return ctrl.Result{}, err
 	}
 
-	err = vzhelm.Uninstall(context.Log, context.Client, h.HelmRelease.Name, h.HelmRelease.Namespace, context.DryRun)
+	err = helm.Uninstall(context.Log, h.HelmRelease.Name, h.HelmRelease.Namespace, context.DryRun)
 	return ctrl.Result{}, err
 }
 
@@ -81,7 +80,7 @@ func (h Handler) IsActionDone(context actionspi.HandlerContext) (bool, ctrl.Resu
 		return true, ctrl.Result{}, nil
 	}
 
-	deployed, err := vzhelm.IsReleaseDeployed(h.HelmRelease.Name, h.HelmRelease.Namespace)
+	deployed, err := helm.IsReleaseDeployed(h.HelmRelease.Name, h.HelmRelease.Namespace)
 	if err != nil {
 		context.Log.ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
 		return false, ctrl.Result{}, err

@@ -10,7 +10,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,15 +39,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return ctrl.Result{}, nil
 	}
 
-	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
-	if err != nil {
-		return util.NewRequeueWithShortDelay(), err
-	}
-
-	if cr.Generation == cr.Status.ObservedGeneration {
-		spictx.Log.Debugf("Skipping reconcile for %v, observed generation has not change", nsn)
-		return util.NewRequeueWithShortDelay(), err
-	}
+	ctx := actionspi.HandlerContext{Client: nil, Log: spictx.Log}
 
 	helmInfo := loadHelmInfo(cr)
 	handler := r.getActionHandler(cr.Spec.Action)
