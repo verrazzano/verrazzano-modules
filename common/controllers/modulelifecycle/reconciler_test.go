@@ -9,6 +9,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/statemachine"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
 	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
@@ -31,24 +32,104 @@ type handler struct {
 
 var _ actionspi.LifecycleActionHandler = &handler{}
 
-func Test(t *testing.T) {
+// TestReconcile tests that the Reconcile implementation works correctly
+// GIVEN a Reconciler
+// WHEN the Reconcile method is called for various scenarios
+// THEN ensure that it works correctly
+func TestReconcile(t *testing.T) {
 	asserts := assert.New(t)
 
 	tests := []struct {
 		name                       string
-		startingStatusState        moduleapi.ModuleLifecycleState
+		action                     moduleapi.ActionType
 		expectedStatemachineCalled bool
 		statemachineError          bool
 		expectedRequeue            bool
 		expectedError              bool
+		startingStatusState        moduleapi.ModuleLifecycleState
+		statusGeneration           int64
 	}{
 		{
-			name:                       "test1",
+			name:                       "test-install",
+			action:                     moduleapi.InstallAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: true,
 			expectedRequeue:            false,
 			expectedError:              false,
+		},
+		{
+			name:                       "install-statemachine-error",
+			action:                     moduleapi.InstallAction,
+			startingStatusState:        "",
+			statemachineError:          true,
+			expectedStatemachineCalled: true,
+			expectedRequeue:            true,
+			expectedError:              false,
+		},
+		{
+			name:                       "install-state-completed",
+			action:                     moduleapi.InstallAction,
+			startingStatusState:        moduleapi.StateCompleted,
+			statemachineError:          false,
+			expectedStatemachineCalled: false,
+			expectedRequeue:            false,
+			expectedError:              false,
+		},
+		{
+			name:                       "install-state-not-needed",
+			action:                     moduleapi.InstallAction,
+			startingStatusState:        moduleapi.StateNotNeeded,
+			statemachineError:          false,
+			expectedStatemachineCalled: false,
+			expectedRequeue:            false,
+			expectedError:              false,
+		},
+		{
+			name:                       "test-action-upgrade",
+			action:                     moduleapi.UpgradeAction,
+			startingStatusState:        "",
+			statemachineError:          false,
+			expectedStatemachineCalled: false,
+			expectedRequeue:            true,
+			expectedError:              false,
+		},
+		{
+			name:                       "test-action-update",
+			action:                     moduleapi.UpdateAction,
+			startingStatusState:        "",
+			statemachineError:          false,
+			expectedStatemachineCalled: false,
+			expectedRequeue:            true,
+			expectedError:              false,
+		},
+		{
+			name:                       "test-action-uninstall",
+			action:                     moduleapi.UninstallAction,
+			startingStatusState:        "",
+			statemachineError:          false,
+			expectedStatemachineCalled: false,
+			expectedRequeue:            true,
+			expectedError:              false,
+		},
+		{
+			name:                       "test-missing-action",
+			action:                     "",
+			startingStatusState:        "",
+			statemachineError:          false,
+			expectedStatemachineCalled: false,
+			expectedRequeue:            true,
+			expectedError:              false,
+		},
+		{
+			name:                       "test-same-generation",
+			action:                     "",
+			startingStatusState:        "",
+			statemachineError:          false,
+			expectedStatemachineCalled: false,
+			expectedRequeue:            true,
+			expectedError:              false,
+			statusGeneration:           1,
 		},
 	}
 	for _, test := range tests {
@@ -63,8 +144,22 @@ func Test(t *testing.T) {
 				Log:       vzlog.DefaultLogger(),
 				ClientCtx: context.TODO(),
 			}
+			cr := &moduleapi.ModuleLifecycle{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       name,
+					Namespace:  namespace,
+					Generation: 1,
+				},
+				Spec: moduleapi.ModuleLifecycleSpec{
+					Action:             test.action,
+					LifecycleClassName: moduleapi.LifecycleClassType(moduleapi.CalicoLifecycleClass),
+				},
+				Status: moduleapi.ModuleLifecycleStatus{
+					State:              test.startingStatusState,
+					ObservedGeneration: test.statusGeneration,
+				},
+			}
 
-			cr := newModuleLifecycleCR(namespace, name, "", moduleapi.InstallAction, test.startingStatusState)
 			scheme := initScheme()
 			clientBuilder := fakes.NewClientBuilder().WithScheme(scheme)
 			r := Reconciler{
@@ -85,24 +180,6 @@ func Test(t *testing.T) {
 	}
 }
 
-func newModuleLifecycleCR(namespace string, name string, className string, action moduleapi.ActionType, startingStatusState moduleapi.ModuleLifecycleState) *moduleapi.ModuleLifecycle {
-	m := &moduleapi.ModuleLifecycle{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:       name,
-			Namespace:  namespace,
-			Generation: 1,
-		},
-		Spec: moduleapi.ModuleLifecycleSpec{
-			Action:             action,
-			LifecycleClassName: moduleapi.LifecycleClassType(className),
-		},
-		Status: moduleapi.ModuleLifecycleStatus{
-			State: startingStatusState,
-		},
-	}
-	return m
-}
-
 func initScheme() *runtime.Scheme {
 	// Create a scheme then add each GKV group to the scheme
 	scheme := runtime.NewScheme()
@@ -111,7 +188,11 @@ func initScheme() *runtime.Scheme {
 	return scheme
 }
 
-func (h handler) testExecuteStateMachine(sm statemachine.StateMachine, ctx vzspi.ComponentContext) ctrl.Result {
+func (h *handler) testExecuteStateMachine(sm statemachine.StateMachine, ctx vzspi.ComponentContext) ctrl.Result {
+	h.statemachineCalled = true
+	if h.statemachineError {
+		return util.NewRequeueWithShortDelay()
+	}
 	return ctrl.Result{}
 }
 

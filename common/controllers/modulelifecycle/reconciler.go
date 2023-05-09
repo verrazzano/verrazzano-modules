@@ -29,15 +29,10 @@ var executeStateMachine = defaultExecuteStateMachine
 // Reconcile reconciles the ModuleLifecycle ModuleCR
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleapi.ModuleLifecycle{}
-	if u.Object == nil {
-		// This is a fatal internal error, don't requeue
-		spictx.Log.ErrorfThrottledNewErr("Failed, Internal error - ModuleLifecycle %s/%s unstructured.Object = nil ", u.GetNamespace(), u.GetName())
-		return ctrl.Result{}, nil
-	}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		// This is a fatal internal error, don't requeue
 		spictx.Log.ErrorfThrottledNewErr("Failed converting Unstructured to ModuleLifecycle %s/%s: %v", err, u.GetNamespace(), u.GetName())
-		return ctrl.Result{}, nil
+		return util.NewRequeueWithShortDelay(), nil
 	}
 	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
 
@@ -60,9 +55,8 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 	helmInfo := loadHelmInfo(cr)
 	handler := r.getActionHandler(cr.Spec.Action)
 	if handler == nil {
-		spictx.Log.Errorf("Failed, invalid ModuleLifecycle ModuleCR handler %s", cr.Spec.Action)
-		// Dont requeue, this is a fatal error
-		return ctrl.Result{}, nil
+		spictx.Log.ErrorfThrottled("Failed, internal error invalid ModuleLifecycle ModuleCR handler %s", cr.Spec.Action)
+		return util.NewRequeueWithShortDelay(), nil
 	}
 
 	sm := statemachine.StateMachine{
