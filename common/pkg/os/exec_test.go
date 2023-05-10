@@ -51,13 +51,25 @@ func TestRunError(t *testing.T) {
 }
 
 func goodCmdRunner(cmd *exec.Cmd) error {
-	cmd.Stdout.Write([]byte("success"))
-	cmd.Stderr.Write([]byte(""))
+	_, err := cmd.Stdout.Write([]byte("success"))
+	if err != nil {
+		return err
+	}
+	_, err = cmd.Stderr.Write([]byte(""))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func badCmdRunner(cmd *exec.Cmd) error {
-	cmd.Stdout.Write([]byte(""))
-	cmd.Stderr.Write([]byte("err"))
+	_, err := cmd.Stdout.Write([]byte(""))
+	if err != nil {
+		return err
+	}
+	_, err = cmd.Stderr.Write([]byte("err"))
+	if err != nil {
+		return err
+	}
 	return errors.New("error")
 }
