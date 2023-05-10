@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"go.uber.org/zap"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -320,7 +321,10 @@ func printScanReport() {
 			errors := filesWithErrors[key]
 			buff := new(bytes.Buffer)
 			writer := csv.NewWriter(buff)
-			writer.Write(errors)
+			err := writer.Write(errors)
+			if err != nil {
+				zap.S().Errorf("Failed writing scan report: %v", err)
+			}
 			writer.Flush()
 
 			fmt.Printf("\tFile: %s, Errors: %s\n", key, buff.String())

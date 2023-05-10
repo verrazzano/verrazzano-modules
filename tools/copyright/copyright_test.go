@@ -150,7 +150,8 @@ func TestCheckFileBuriedInfo(t *testing.T) {
 // WHEN with a file on the ignore list
 // THEN No errors are reported and the skip count increments
 func TestCheckFileFileOnIgnoreList(t *testing.T) {
-	loadIgnoreFile()
+	err := loadIgnoreFile()
+	assert.NoError(t, err)
 	defer func() {
 		filesToIgnore = []string{}
 		directoriesToIgnore = []string{}
