@@ -5,5 +5,12 @@ LICENSES-OLCNE.pdf
 coverage.xml
 .idea
 .DS_Store
+
+# The charts and manifests directories contains external (3rd party) Helm charts and manifests
 module-operator/manifests/charts/calico
 module-operator/manifests/charts/ccm
+
+tools/copyright/test
+tools/fix-copyright/copyright.go
+unit-test-coverage-number.txt
+
