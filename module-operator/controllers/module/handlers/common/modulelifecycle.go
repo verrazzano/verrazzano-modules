@@ -6,42 +6,42 @@ package common
 import (
 	"context"
 	"fmt"
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
+	"github.com/verrazzano/verrazzano-modules/common/actionspi"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (h BaseHandler) GetModuleLifecycle(ctx spi.ComponentContext) (*moduleplatform.ModuleLifecycle, error) {
-	mlc := moduleplatform.ModuleLifecycle{}
+func (h BaseHandler) GetModuleLifecycle(ctx actionspi.HandlerContext) (*moduleapi.ModuleLifecycle, error) {
+	mlc := moduleapi.ModuleLifecycle{}
 	nsn := types.NamespacedName{
 		Name:      h.MlcName,
 		Namespace: h.ModuleCR.Namespace,
 	}
 
-	if err := ctx.Client().Get(context.TODO(), nsn, &mlc); err != nil {
-		ctx.Log().Progressf("Retrying get for ModuleLifecycle %v: %v", nsn, err)
+	if err := ctx.Client.Get(context.TODO(), nsn, &mlc); err != nil {
+		ctx.Log.Progressf("Retrying get for ModuleLifecycle %v: %v", nsn, err)
 		return nil, err
 	}
 	return &mlc, nil
 }
 
 // DeleteModuleLifecycle deletes a moduleLifecycle
-func (h BaseHandler) DeleteModuleLifecycle(ctx spi.ComponentContext) error {
-	mlc := moduleplatform.ModuleLifecycle{
+func (h BaseHandler) DeleteModuleLifecycle(ctx actionspi.HandlerContext) error {
+	mlc := moduleapi.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      h.MlcName,
 			Namespace: h.ModuleCR.Namespace,
 		},
 	}
 
-	if err := ctx.Client().Delete(context.TODO(), &mlc); err != nil {
-		ctx.Log().ErrorfThrottled("Failed trying to delete ModuleLifecycles/%s: %v", mlc.Namespace, mlc.Name, err)
+	if err := ctx.Client.Delete(context.TODO(), &mlc); err != nil {
+		ctx.Log.ErrorfThrottled("Failed trying to delete ModuleLifecycles/%s: %v", mlc.Namespace, mlc.Name, err)
 		return err
 	}
 	return nil
 }
 
-func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleplatform.LifecycleClassType, action moduleplatform.ActionType) string {
+func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleapi.LifecycleClassType, action moduleapi.ActionType) string {
 	return fmt.Sprintf("%s-%s-%s", moduleCRName, lifecycleClassName, action)
 }

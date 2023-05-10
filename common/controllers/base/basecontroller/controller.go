@@ -9,9 +9,8 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
-	vzctrl "github.com/verrazzano/verrazzano/pkg/controller"
-	vzlog "github.com/verrazzano/verrazzano/pkg/log/vzlog"
-	vzstring "github.com/verrazzano/verrazzano/pkg/string"
+	vzstring "github.com/verrazzano/verrazzano-modules/common/pkg/string"
+	vzlog "github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -116,7 +115,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
-	if vzctrl.ShouldRequeue(res) {
+	if util.ShouldRequeue(res) {
 		return res, nil
 	}
 

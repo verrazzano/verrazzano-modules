@@ -5,13 +5,11 @@ package helm
 
 import (
 	"fmt"
-	"strings"
-
-	"github.com/verrazzano/verrazzano/pkg/helm"
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
+	"strings"
 )
 
 const (
@@ -25,7 +23,7 @@ type HelmReleaseOpts struct {
 	Namespace    string
 	ChartPath    string
 	ChartVersion string
-	Overrides    []helm.HelmOverrides
+	Overrides    []HelmOverrides
 
 	Username string
 	Password string
@@ -33,10 +31,10 @@ type HelmReleaseOpts struct {
 
 // GetReleaseChartVersion extracts the chart version from a deployed helm release
 func GetReleaseChartVersion(releaseName string, namespace string) (string, error) {
-	releases, err := helm.GetReleases(namespace)
+	releases, err := getReleases(namespace)
 	if err != nil {
-		if err.Error() == helm.ChartNotFound {
-			return helm.ChartNotFound, nil
+		if err.Error() == ChartNotFound {
+			return ChartNotFound, nil
 		}
 		return "", err
 	}

@@ -133,10 +133,15 @@ spec:
                   - type
                   type: object
                 type: array
+              observedGeneration:
+                description: ObservedGeneration is the actual generation that was
+                  reconciled
+                format: int64
+                type: integer
               state:
                 type: string
               version:
-                description: The version of Verrazzano that is installed.
+                description: The version of module that is installed.
                 type: string
             type: object
         type: object

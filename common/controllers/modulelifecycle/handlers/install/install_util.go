@@ -5,11 +5,11 @@ package install
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
-	"github.com/verrazzano/verrazzano/pkg/log/vzlog"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 )
 
 func (h Handler) releaseVersionMatches(log vzlog.VerrazzanoLogger) bool {
-	releaseChartVersion, err := helm.GetReleaseChartVersion(h.BaseHandler.ReleaseName, h.BaseHandler.ChartNamespace)
+	releaseChartVersion, err := helm.GetReleaseChartVersion(h.HelmRelease.Name, h.HelmRelease.Namespace)
 	if err != nil {
 		log.ErrorfThrottled("Error occurred getting release chart version: %v", err.Error())
 		return false

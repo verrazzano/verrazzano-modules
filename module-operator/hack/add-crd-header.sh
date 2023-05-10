@@ -17,8 +17,8 @@ GENERATED_CRDS_DIR=$SCRIPT_DIR/../manifests/charts/verrazzano-module-operator/cr
 # cases correctly with the same set of options.
 
 # First put in the headers from the Git history
-go run github.com/verrazzano/verrazzano/tools/fix-copyright -useExistingUpdateYearFromHeader $GENERATED_CRDS_DIR
+go run github.com/verrazzano/verrazzano-modules/tools/fix-copyright -useExistingUpdateYearFromHeader $GENERATED_CRDS_DIR
 
 # Then fix the updated year for files that were modified this year
-go run github.com/verrazzano/verrazzano/tools/fix-copyright $GENERATED_CRDS_DIR
+go run github.com/verrazzano/verrazzano-modules/tools/fix-copyright $GENERATED_CRDS_DIR
 

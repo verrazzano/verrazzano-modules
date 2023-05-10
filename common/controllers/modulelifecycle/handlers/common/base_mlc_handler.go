@@ -6,39 +6,43 @@ package common
 import (
 	"context"
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/constants"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano/platform-operator/constants"
-	helmcomp "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/helm"
-	"github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type BaseHandler struct {
-	helmcomp.HelmComponent
-	Config   actionspi.HandlerConfig
+	// Config is the handler configuration
+	Config actionspi.HandlerConfig
+
+	// HelmInfo has the helm information
+	actionspi.HelmInfo
+
+	// ModuleCR is the ModuleLifecycle CR being handled
 	ModuleCR *moduleapi.ModuleLifecycle
+
+	// ChartDir is the helm chart directory (TODO remove this and use HelmInfo path)
+	ChartDir string
+
+	// ImagePullSecretKeyname is the Helm Value Key for the image pull secret for a chart
+	ImagePullSecretKeyname string
 }
 
 // Init initializes the component with Helm chart information
-func (h *BaseHandler) Init(_ spi.ComponentContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
-	h.HelmComponent = helmcomp.HelmComponent{
-		ReleaseName:             config.HelmInfo.HelmRelease.Name,
-		ChartNamespace:          config.HelmInfo.HelmRelease.Namespace,
-		ChartDir:                config.ChartDir,
-		IgnoreNamespaceOverride: true,
-		ImagePullSecretKeyname:  constants.GlobalImagePullSecName,
-	}
-	h.ModuleCR = config.CR.(*moduleapi.ModuleLifecycle)
+func (h *BaseHandler) Init(_ actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
 	h.Config = config
+	h.HelmInfo = config.HelmInfo
+	h.ImagePullSecretKeyname = constants.GlobalImagePullSecName
+	h.ModuleCR = config.CR.(*moduleapi.ModuleLifecycle)
 	return ctrl.Result{}, nil
 }
 
 // UpdateStatus does the lifecycle pre-Action status update
-func (h BaseHandler) UpdateStatus(ctx spi.ComponentContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleLifecycleState) (ctrl.Result, error) {
+func (h BaseHandler) UpdateStatus(ctx actionspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleLifecycleState) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
 	h.ModuleCR.Status.State = state
-	if err := ctx.Client().Status().Update(context.TODO(), h.ModuleCR); err != nil {
+	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	return ctrl.Result{}, nil

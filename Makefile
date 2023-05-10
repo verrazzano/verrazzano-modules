@@ -97,23 +97,23 @@ unit-test:  ## run all unit tests in project
 
 .PHONY: fix-copyright
 fix-copyright: ## run fix-copyright from the verrazzano repo
-	go run github.com/verrazzano/verrazzano/tools/copyright .
+	go run github.com/verrazzano/verrazzano-modules/tools/copyright .
 
 .PHONY: copyright-check-year
 copyright-check-year: ## check copyright notices have correct current year
-	go run github.com/verrazzano/verrazzano/tools/copyright . --enforce-current $(shell git log --since=01-01-${CURRENT_YEAR} --name-only --oneline --pretty="format:" | sort -u)
+	go run github.com/verrazzano/verrazzano-modules/tools/copyright . --enforce-current $(shell git log --since=01-01-${CURRENT_YEAR} --name-only --oneline --pretty="format:" | sort -u)
 
 .PHONY: copyright-check
 copyright-check: copyright-check-year  ## check copyright notices are correct
-	go run github.com/verrazzano/verrazzano/tools/copyright .
+	go run github.com/verrazzano/verrazzano-modules/tools/copyright .
 
 .PHONY: copyright-check-local
 copyright-check-local:  ## check copyright notices are correct in local working copy
-	go run github.com/verrazzano/verrazzano/tools/copyright --verbose --enforce-current  $(shell git status --short | cut -c 4-)
+	go run github.com/verrazzano/verrazzano-modules/tools/copyright --verbose --enforce-current  $(shell git status --short | cut -c 4-)
 
 .PHONY: copyright-check-branch
 copyright-check-branch: copyright-check ## check copyright notices are correct in parent branch
-	go run github.com/verrazzano/verrazzano/tools/copyright --verbose --enforce-current $(shell git diff --name-only ${PARENT_BRANCH})
+	go run github.com/verrazzano/verrazzano-modules/tools/copyright --verbose --enforce-current $(shell git diff --name-only ${PARENT_BRANCH})
 
 #
 # Quality checks on acceptance tests
@@ -126,5 +126,5 @@ check-tests: check-eventually ## check test code for known quality issues
 
 .PHONY: check-eventually
 check-eventually: ## check for correct use of Gomega Eventually func
-	#go run github.com/verrazzano/verrazzano/tools/eventually-checker tests/e2e
+	#go run github.com/verrazzano/verrazzano-modules/tools/eventually-checker tests/e2e
 

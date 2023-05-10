@@ -4,43 +4,47 @@
 package module
 
 import (
-	compspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllers/base/statemachine"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
-	"github.com/verrazzano/verrazzano/tests/e2e/pkg"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 	"time"
 
-	moduleplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-
-	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 )
 
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
-	cr := &moduleplatform.Module{}
+	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
-	handler := r.getActionHandler(cr)
+
+	// TODO - there needs to be a check if a watch caused this to reconcile, the generation will be the same
+	if cr.Status.ObservedGeneration == cr.Generation {
+		return ctrl.Result{}, nil
+	}
+
+	handler, err := r.getActionHandler(cr)
+	if err != nil {
+		spictx.Log.ErrorfThrottled("Failed getting Lifecycle handler for Module %s/%s: %v", cr.Namespace, cr.Name, err)
+		return util.NewRequeueWithShortDelay(), nil
+	}
 	if handler == nil {
-		spictx.Log.Errorf("Not a valid Action")
-		// Dont requeue, this is a fatal error
+		// Don't requeue, nothing to do
 		return ctrl.Result{}, nil
 	}
 	return r.reconcileAction(spictx, cr, handler)
 }
 
 // reconcileAction reconciles the Module CR for a particular action
-func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleplatform.Module, handler compspi.LifecycleActionHandler) (ctrl.Result, error) {
-	ctx, err := vzspi.NewMinimalContext(r.Client, spictx.Log)
-	if err != nil {
-		return util.NewRequeueWithShortDelay(), err
-	}
+func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler actionspi.LifecycleActionHandler) (ctrl.Result, error) {
+	ctx := actionspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 
 	helmInfo, err := loadHelmInfo(cr)
 	if err != nil {
@@ -62,27 +66,41 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 	return res, nil
 }
 
-func (r *Reconciler) getActionHandler(cr *moduleplatform.Module) compspi.LifecycleActionHandler {
+func (r *Reconciler) getActionHandler(cr *moduleapi.Module) (actionspi.LifecycleActionHandler, error) {
 	// Check for install complete
-	if !isConditionPresent(cr, moduleplatform.CondInstallComplete) {
-		return r.comp.InstallActionHandler
+	if !isConditionPresent(cr, moduleapi.CondInstallComplete) {
+		return r.comp.InstallActionHandler, nil
 	}
 	// return UpgradeAction only when the desired version is different from current
-	isGreaterVersion, err := pkg.IsMinVersion(cr.Spec.Version, cr.Status.Version)
+	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	if isGreaterVersion {
-		return r.comp.UpgradeActionHandler
+	if upgradeNeeded {
+		return r.comp.UpgradeActionHandler, nil
 	}
-	return r.comp.InstallActionHandler
+	// The module is already installed.  Check if update needed
+	return r.comp.UpdateActionHandler, nil
 }
 
-func isConditionPresent(cr *moduleplatform.Module, condition moduleplatform.LifecycleCondition) bool {
+func isConditionPresent(cr *moduleapi.Module, condition moduleapi.LifecycleCondition) bool {
 	for _, each := range cr.Status.Conditions {
 		if each.Type == condition {
 			return true
 		}
 	}
 	return false
+}
+
+// IsUpgradeNeeded returns true if upgrade is needed
+func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
+	desiredSemver, err := semver.NewSemVersion(desiredVersion)
+	if err != nil {
+		return false, err
+	}
+	installedSemver, err := semver.NewSemVersion(installedVersion)
+	if err != nil {
+		return false, err
+	}
+	return installedSemver.IsLessThan(desiredSemver), nil
 }

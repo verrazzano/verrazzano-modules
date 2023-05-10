@@ -4,10 +4,11 @@
 package actionspi
 
 import (
+	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	vzspi "github.com/verrazzano/verrazzano/platform-operator/controllers/verrazzano/component/spi"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // HelmInfo contains all the information need to manage the lifecycle of Helm releases
@@ -17,6 +18,13 @@ type HelmInfo struct {
 
 	// CharDir is the local file system chart directory
 	ChartDir string
+}
+
+// HandlerContext contains the handler contexts for the API handler methods
+type HandlerContext struct {
+	ctrlclient.Client
+	Log    vzlog.VerrazzanoLogger
+	DryRun bool
 }
 
 // ActionHandlers
@@ -38,38 +46,38 @@ type LifecycleActionHandler interface {
 	GetActionName() string
 
 	// Init initializes the component Hekn information
-	Init(context vzspi.ComponentContext, config HandlerConfig) (ctrl.Result, error)
+	Init(context HandlerContext, config HandlerConfig) (ctrl.Result, error)
 
 	// IsActionNeeded returns true if action is needed
-	IsActionNeeded(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+	IsActionNeeded(context HandlerContext) (bool, ctrl.Result, error)
 
 	// PreAction does lifecycle pre-Action
-	PreAction(context vzspi.ComponentContext) (ctrl.Result, error)
+	PreAction(context HandlerContext) (ctrl.Result, error)
 
 	// PreActionUpdateStatus does the lifecycle pre-Action status update
-	PreActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error)
+	PreActionUpdateStatus(context HandlerContext) (ctrl.Result, error)
 
 	// IsPreActionDone returns true if pre-Action done
-	IsPreActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+	IsPreActionDone(context HandlerContext) (bool, ctrl.Result, error)
 
 	// ActionUpdateStatus does the lifecycle action status update
-	ActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error)
+	ActionUpdateStatus(context HandlerContext) (ctrl.Result, error)
 
 	// DoAction does the lifecycle Action
-	DoAction(context vzspi.ComponentContext) (ctrl.Result, error)
+	DoAction(context HandlerContext) (ctrl.Result, error)
 
 	// IsActionDone returns true if action is done
-	IsActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+	IsActionDone(context HandlerContext) (bool, ctrl.Result, error)
 
 	// PostActionUpdateStatus does the lifecycle post-Action status update
-	PostActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error)
+	PostActionUpdateStatus(context HandlerContext) (ctrl.Result, error)
 
 	// PostAction does lifecycle post-Action
-	PostAction(context vzspi.ComponentContext) (ctrl.Result, error)
+	PostAction(context HandlerContext) (ctrl.Result, error)
 
 	// IsPostActionDone returns true if action is done
-	IsPostActionDone(context vzspi.ComponentContext) (bool, ctrl.Result, error)
+	IsPostActionDone(context HandlerContext) (bool, ctrl.Result, error)
 
 	// CompletedActionUpdateStatus does the lifecycle completed Action status update
-	CompletedActionUpdateStatus(context vzspi.ComponentContext) (ctrl.Result, error)
+	CompletedActionUpdateStatus(context HandlerContext) (ctrl.Result, error)
 }
