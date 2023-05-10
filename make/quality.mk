@@ -50,7 +50,7 @@ word-linter: ## check for use of 'bad' words
 
 .PHONY: url-linter
 url-linter: ## check for invalid URLs
-	go run github.com/verrazzano/verrazzano/tools/url_linter
+	go run github.com/verrazzano/verrazzano-modules/tools/url_linter
 
 .PHONY: coverage
 coverage:  ## test code coverage
