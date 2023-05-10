@@ -31,7 +31,10 @@ func TestCreateTempFile(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			assert := assert.New(t)
 			temp, err := CreateTempFile(test.createPattern, nil)
-			defer RemoveTempFiles(zap.S(), temp.Name())
+			defer func() {
+				err := RemoveTempFiles(zap.S(), temp.Name())
+				assert.NoError(err)
+			}()
 			assert.FileExists(temp.Name())
 			fmt.Println(temp.Name())
 			assert.NoErrorf(err, "Unable to create temp file %s: %s", temp.Name(), err)

@@ -76,7 +76,11 @@ func ConflictWithLog(message string, err error, log *zap.SugaredLogger) error {
 // with debug level messages.
 func ResultErrorsWithLog(message string, errors []error, log *zap.SugaredLogger) {
 	for _, err := range errors {
-		ConflictWithLog(message, err, log)
+		err := ConflictWithLog(message, err, log)
+		if err != nil {
+			log.Errorf("Failed calling internal function ConflictWithLog: %v", err)
+		}
+
 	}
 }
 

@@ -51,7 +51,10 @@ func MergeMaps(mBase map[string]interface{}, mOverlay map[string]interface{}) er
 			case map[string]interface{}:
 				switch tOverlay := vOverlay.(type) {
 				case map[string]interface{}:
-					MergeMaps(tBase, tOverlay)
+					err := MergeMaps(tBase, tOverlay)
+					if err != nil {
+						return err
+					}
 					recursed = true
 				}
 			}

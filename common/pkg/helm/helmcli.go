@@ -137,8 +137,8 @@ func Upgrade(log vzlog.VerrazzanoLogger, releaseName string, namespace string, c
 
 		rel, err = client.Run(releaseName, chart, vals)
 		if err != nil {
-			log.Errorf("Failed running Helm command for release %s",
-				releaseName)
+			log.Errorf("Failed running Helm command for release %s: %v",
+				releaseName, err)
 			return nil, err
 		}
 	} else {
@@ -153,7 +153,7 @@ func Upgrade(log vzlog.VerrazzanoLogger, releaseName string, namespace string, c
 		rel, err = client.Run(chart, vals)
 		if err != nil {
 			log.Errorf("Failed running Helm command for release %s: %v",
-				releaseName, err.Error())
+				releaseName, err)
 			return nil, err
 		}
 	}
@@ -231,8 +231,7 @@ func IsReleaseDeployed(releaseName string, namespace string) (found bool, err er
 func GetReleaseStatus(log vzlog.VerrazzanoLogger, releaseName string, namespace string) (status string, err error) {
 	releaseStatus, err := getChartStatus(releaseName, namespace)
 	if err != nil {
-		log.ErrorfNewErr("Failed getting status for chart %s/%s with stderr: %v\n", namespace, releaseName, err)
-		return "", err
+		return "", log.ErrorfNewErr("Failed getting status for chart %s/%s with stderr: %v\n", namespace, releaseName, err)
 	}
 	if releaseStatus == ChartNotFound {
 		log.Debugf("Chart %s/%s not found", namespace, releaseName)
@@ -435,7 +434,10 @@ func mergeValues(overrides []HelmOverrides, p getter.Providers) (map[string]inte
 				return nil, err
 			}
 			// Merge with the previous map
-			yaml2.MergeMaps(base, currentMap)
+			err = yaml2.MergeMaps(base, currentMap)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		// User specified a value via --set
