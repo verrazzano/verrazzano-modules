@@ -55,7 +55,7 @@ func (h Handler) PreActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Resul
 
 // PreAction does installation pre-action
 func (h Handler) PreAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	// Update the spev version if it is not set
+	// Update the spec version if it is not set
 	if len(h.BaseHandler.ModuleCR.Spec.Version) == 0 {
 		// Update spec version to match chart, always requeue to get ModuleCR with version
 		h.BaseHandler.ModuleCR.Spec.Version = h.BaseHandler.Config.ChartInfo.Version
@@ -106,5 +106,5 @@ func (h Handler) IsPostActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Resu
 
 // CompletedActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatusWithVersion(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
+	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }

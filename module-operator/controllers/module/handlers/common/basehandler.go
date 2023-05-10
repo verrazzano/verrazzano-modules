@@ -88,10 +88,11 @@ func (h BaseHandler) PostAction(ctx actionspi.HandlerContext) (ctrl.Result, erro
 	return ctrl.Result{}, nil
 }
 
-// UpdateStatus does the lifecycle pre-Action status update
-func (h BaseHandler) UpdateStatusWithVersion(ctx actionspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType, version string) (ctrl.Result, error) {
+// UpdateDoneStatus does the lifecycle status update with the action is done
+func (h BaseHandler) UpdateDoneStatus(ctx actionspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType, version string) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
 	h.ModuleCR.Status.State = state
+	h.ModuleCR.Status.ObservedGeneration = h.ModuleCR.Generation
 	if len(version) > 0 {
 		h.ModuleCR.Status.Version = version
 	}

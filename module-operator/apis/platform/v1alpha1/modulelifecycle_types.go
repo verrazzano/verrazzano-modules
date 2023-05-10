@@ -93,7 +93,7 @@ const (
 
 	// CalicoLifecycleClass defines the class name used by the Calico operator
 	CalicoLifecycleClass LifecycleClassType = "calico"
-	CCMLifecycleClass LifecycleClassType = "ccm"
+	CCMLifecycleClass    LifecycleClassType = "ccm"
 )
 
 // ActionType defines the type of action to be performed in a ModuleLifecycle instance

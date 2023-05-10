@@ -24,10 +24,19 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
-	handler := r.getActionHandler(cr)
+
+	// TODO - there needs to be a check if a watch caused this to reconcile, the generation will be the same
+	if cr.Status.ObservedGeneration == cr.Generation {
+		return ctrl.Result{}, nil
+	}
+
+	handler, err := r.getActionHandler(cr)
+	if err != nil {
+		spictx.Log.ErrorfThrottled("Failed getting Lifecycle handler for Module %s/%s: %v", cr.Namespace, cr.Name, err)
+		return util.NewRequeueWithShortDelay(), nil
+	}
 	if handler == nil {
-		spictx.Log.Errorf("Not a valid Action")
-		// Dont requeue, this is a fatal error
+		// Don't requeue, nothing to do
 		return ctrl.Result{}, nil
 	}
 	return r.reconcileAction(spictx, cr, handler)
@@ -57,20 +66,21 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 	return res, nil
 }
 
-func (r *Reconciler) getActionHandler(cr *moduleapi.Module) actionspi.LifecycleActionHandler {
+func (r *Reconciler) getActionHandler(cr *moduleapi.Module) (actionspi.LifecycleActionHandler, error) {
 	// Check for install complete
 	if !isConditionPresent(cr, moduleapi.CondInstallComplete) {
-		return r.comp.InstallActionHandler
+		return r.comp.InstallActionHandler, nil
 	}
 	// return UpgradeAction only when the desired version is different from current
-	isGreaterVersion, err := IsMinVersion(cr.Spec.Version, cr.Status.Version)
+	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	if isGreaterVersion {
-		return r.comp.UpgradeActionHandler
+	if upgradeNeeded {
+		return r.comp.UpgradeActionHandler, nil
 	}
-	return r.comp.InstallActionHandler
+	// The module is already installed.  Check if update needed
+	return r.comp.UpdateActionHandler, nil
 }
 
 func isConditionPresent(cr *moduleapi.Module, condition moduleapi.LifecycleCondition) bool {
@@ -82,15 +92,15 @@ func isConditionPresent(cr *moduleapi.Module, condition moduleapi.LifecycleCondi
 	return false
 }
 
-// IsMinVersion returns true if the given version >= minVersion
-func IsMinVersion(vzVersion, minVersion string) (bool, error) {
-	vzSemver, err := semver.NewSemVersion(vzVersion)
+// IsUpgradeNeeded returns true if upgrade is needed
+func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
+	desiredSemver, err := semver.NewSemVersion(desiredVersion)
 	if err != nil {
 		return false, err
 	}
-	minSemver, err := semver.NewSemVersion(minVersion)
+	installedSemver, err := semver.NewSemVersion(installedVersion)
 	if err != nil {
 		return false, err
 	}
-	return !vzSemver.IsLessThan(minSemver), nil
+	return installedSemver.IsLessThan(desiredSemver), nil
 }

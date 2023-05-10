@@ -107,5 +107,5 @@ func (h Handler) IsPostActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Resu
 
 // CompletedActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatusWithVersion(ctx, moduleapi.CondUpgradeComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
+	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondUpgradeComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }
