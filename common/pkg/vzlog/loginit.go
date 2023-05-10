@@ -130,7 +130,12 @@ func GetDebugEnabledLogger() *zap.SugaredLogger {
 		zapcore.Lock(os.Stdout),
 		atom,
 	))
-	defer logger.Sync()
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			zap.S().Errorf("Failed calling logger.Sync: %v", err)
+		}
+	}()
 	atom.SetLevel(zap.DebugLevel)
 	return logger.Sugar()
 }
