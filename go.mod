@@ -158,4 +158,5 @@ replace (
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 => helm.sh/helm/v3 v3.10.3
 	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.13.1
+	sigs.k8s.io/controller-tools => sigs.k8s.io/controller-tools v0.9.2
 )
