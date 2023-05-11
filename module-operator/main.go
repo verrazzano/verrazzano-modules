@@ -14,7 +14,6 @@ import (
 	calicofactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/calico/factory"
 	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/helm/factory"
 	ccmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/ociccm/factory"
-
 	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"

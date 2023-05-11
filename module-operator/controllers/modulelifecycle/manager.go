@@ -31,7 +31,7 @@ var _ controllerspi.Reconciler = Reconciler{}
 var controller Reconciler
 
 // InitController start the  controller
-func InitController(mgr ctrlruntime.Manager, comp actionspi.ActionHandlers, class moduleapi.LifecycleClassType) error {
+func InitController(mgr ctrlruntime.Manager, handlers actionspi.ActionHandlers, class moduleapi.LifecycleClassType) error {
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
 		Reconciler: &controller,
@@ -45,6 +45,6 @@ func InitController(mgr ctrlruntime.Manager, comp actionspi.ActionHandlers, clas
 	// init other controller fields
 	controller.Client = baseController.Client
 	controller.Scheme = baseController.Scheme
-	controller.handlers = comp
+	controller.handlers = handlers
 	return nil
 }

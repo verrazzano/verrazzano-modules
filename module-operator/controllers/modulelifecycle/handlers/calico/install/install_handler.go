@@ -22,6 +22,7 @@ func NewHandler() actionspi.LifecycleActionHandler {
 func (h CalicoHandler) PreAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 
 	// TODO - Do Calico specific work here
+	ctx.Log.Progress("Doing custom Calico pre-install logic")
 
 	return h.HelmHandler.PreAction(ctx)
 }

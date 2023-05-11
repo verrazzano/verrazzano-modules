@@ -71,6 +71,7 @@ func (r *Reconciler) getActionHandler(cr *moduleapi.Module) (actionspi.Lifecycle
 	if !isConditionPresent(cr, moduleapi.CondInstallComplete) {
 		return r.comp.InstallActionHandler, nil
 	}
+
 	// return UpgradeAction only when the desired version is different from current
 	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
 	if err != nil {
@@ -79,6 +80,7 @@ func (r *Reconciler) getActionHandler(cr *moduleapi.Module) (actionspi.Lifecycle
 	if upgradeNeeded {
 		return r.comp.UpgradeActionHandler, nil
 	}
+
 	// The module is already installed.  Check if update needed
 	return r.comp.UpdateActionHandler, nil
 }
