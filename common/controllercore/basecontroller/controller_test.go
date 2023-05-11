@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

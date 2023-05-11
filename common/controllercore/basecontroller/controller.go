@@ -6,8 +6,7 @@ package basecontroller
 import (
 	"context"
 	"errors"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
+	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	vzstring "github.com/verrazzano/verrazzano-modules/common/pkg/string"
 	vzlog "github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
@@ -134,7 +133,7 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, nsn types.Namespace
 	// For each object, create a watchContext and call the watcher to watch it
 	wds := r.Watcher.GetWatchDescriptors()
 	for i := range wds {
-		w := &watcher.WatchContext{
+		w := &WatchContext{
 			Controller:                 r.Controller,
 			Log:                        log,
 			ResourceKind:               wds[i].WatchKind,

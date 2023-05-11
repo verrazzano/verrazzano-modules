@@ -5,8 +5,7 @@ package basecontroller
 
 import (
 	"context"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/watcher"
+	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,7 +35,7 @@ type Reconciler struct {
 	ControllerConfig
 	LifecycleClass      moduleapi.LifecycleClassType
 	watchersInitialized bool
-	watchContexts       []*watcher.WatchContext
+	watchContexts       []*WatchContext
 
 	// controllerResources contains a set of CRs for this controller that exist.
 	// It is important that resources get added to this set during the base controller reconcile loop, as
