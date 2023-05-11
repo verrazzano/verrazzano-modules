@@ -5,9 +5,9 @@ package uninstall
 
 import (
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/common"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
