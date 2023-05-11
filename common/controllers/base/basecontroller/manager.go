@@ -45,8 +45,8 @@ type Reconciler struct {
 	mutex               sync.RWMutex
 }
 
-// InitBaseController inits the base controller
-func InitBaseController(mgr controllerruntime.Manager, controllerConfig ControllerConfig, class moduleapi.LifecycleClassType) (*Reconciler, error) {
+// CreateControllerAndAddItToManager creates the base controller and adds it to the manager.
+func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controllerConfig ControllerConfig, class moduleapi.LifecycleClassType) (*Reconciler, error) {
 	r := Reconciler{
 		Client:              mgr.GetClient(),
 		Scheme:              mgr.GetScheme(),
@@ -56,6 +56,7 @@ func InitBaseController(mgr controllerruntime.Manager, controllerConfig Controll
 		mutex:               sync.RWMutex{},
 	}
 
+	// Create the controller and add it to the manager (Build does an implicit add)
 	var err error
 	if class == "" {
 		r.Controller, err = ctrl.NewControllerManagedBy(mgr).

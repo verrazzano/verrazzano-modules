@@ -46,7 +46,7 @@ func ensureTracker(CR client.Object, initialState state) *stateTracker {
 	}
 	trackerMap[key] = tracker
 
-	vzlog.DefaultLogger().Infof("Creating a tracker for key: %s ", key)
+	vzlog.DefaultLogger().Debugf("Creating a tracker for key: %s ", key)
 	// Delete the previous entry if it exists
 	if CR.GetGeneration() == 1 {
 		return tracker
@@ -55,7 +55,7 @@ func ensureTracker(CR client.Object, initialState state) *stateTracker {
 	_, ok = trackerMap[keyPrev]
 	if ok {
 		delete(trackerMap, keyPrev)
-		vzlog.DefaultLogger().Infof("Deleting a tracker for key: %s ", keyPrev)
+		vzlog.DefaultLogger().Debugf("Deleting a tracker for key: %s ", keyPrev)
 
 	}
 	return tracker

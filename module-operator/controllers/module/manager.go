@@ -33,7 +33,7 @@ func InitController(mgr ctrlruntime.Manager, comp actionspi.ActionHandlers, clas
 		Reconciler: &controller,
 		Finalizer:  &controller,
 	}
-	baseController, err := basecontroller.InitBaseController(mgr, config, class)
+	baseController, err := basecontroller.CreateControllerAndAddItToManager(mgr, config, class)
 	if err != nil {
 		return err
 	}

@@ -29,7 +29,7 @@ type BaseHandler struct {
 	ImagePullSecretKeyname string
 }
 
-// Init initializes the component with Helm chart information
+// Init initializes the handler with Helm chart information
 func (h *BaseHandler) Init(_ actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
 	h.Config = config
 	h.HelmInfo = config.HelmInfo
