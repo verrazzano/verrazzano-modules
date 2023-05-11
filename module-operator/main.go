@@ -5,13 +5,13 @@ package main
 
 import (
 	"flag"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle"
-	helmfactory "github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/factory"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8sutil"
 	vzlog "github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
 	modulefactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/factory"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle"
+	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/factory"
 	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"

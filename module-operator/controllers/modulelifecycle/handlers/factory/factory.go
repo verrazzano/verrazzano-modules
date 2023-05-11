@@ -5,10 +5,10 @@ package factory
 
 import (
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/install"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/uninstall"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/update"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/modulelifecycle/handlers/upgrade"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/install"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/uninstall"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/update"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/upgrade"
 )
 
 func NewLifecycleActionHandler() actionspi.ActionHandlers {
