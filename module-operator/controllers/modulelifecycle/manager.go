@@ -24,25 +24,30 @@ type Reconciler struct {
 
 	// handlers contains the action handlers
 	handlers actionspi.ActionHandlers
+
+	// LifecycleClassName is the class name of the controller
+	ClassName moduleapi.LifecycleClassType
 }
 
 // Specify the SPI interfaces that this controller implements
 var _ controllerspi.Reconciler = Reconciler{}
-var controller Reconciler
 
 // InitController start the  controller
-func InitController(mgr ctrlruntime.Manager, handlers actionspi.ActionHandlers, class moduleapi.LifecycleClassType) error {
+func InitController(mgr ctrlruntime.Manager, handlers actionspi.ActionHandlers, className moduleapi.LifecycleClassType) error {
+	var controller Reconciler
+
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
 		Reconciler: &controller,
 		Finalizer:  &controller,
 	}
-	baseController, err := basecontroller.InitBaseController(mgr, config, class)
+	baseController, err := basecontroller.InitBaseController(mgr, config, className)
 	if err != nil {
 		return err
 	}
 
 	// init other controller fields
+	controller.ClassName = className
 	controller.Client = baseController.Client
 	controller.Scheme = baseController.Scheme
 	controller.handlers = handlers
