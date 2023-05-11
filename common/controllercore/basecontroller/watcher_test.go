@@ -1,17 +1,16 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package watcher
+package basecontroller
 
 import (
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -131,19 +130,6 @@ func (w watchController) getControllerResources() []types.NamespacedName {
 
 func (w watchController) shouldReconcile(object client.Object, event controllerspi.WatchEvent) bool {
 	return w.predicate
-}
-
-func newModuleLifecycleCR(namespace string, name string, className string) *moduleapi.ModuleLifecycle {
-	m := &moduleapi.ModuleLifecycle{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: moduleapi.ModuleLifecycleSpec{
-			LifecycleClassName: moduleapi.LifecycleClassType(className),
-		},
-	}
-	return m
 }
 
 func (f FakeController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

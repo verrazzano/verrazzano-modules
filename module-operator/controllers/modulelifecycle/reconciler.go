@@ -5,8 +5,8 @@ package modulelifecycle
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/statemachine"
+	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/common/controllercore/statemachine"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"

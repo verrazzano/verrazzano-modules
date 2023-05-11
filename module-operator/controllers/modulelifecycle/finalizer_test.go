@@ -6,7 +6,7 @@ package modulelifecycle
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	"testing"
 )

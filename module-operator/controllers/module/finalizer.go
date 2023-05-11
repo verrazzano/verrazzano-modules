@@ -4,7 +4,7 @@
 package module
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/controllers/base/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
