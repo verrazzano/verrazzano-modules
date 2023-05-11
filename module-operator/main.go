@@ -11,7 +11,10 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
 	modulefactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/factory"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle"
-	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/factory"
+	calicofactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/calico/factory"
+	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/helm/factory"
+	ccmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/ociccm/factory"
+
 	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
@@ -48,13 +51,13 @@ func main() {
 	}
 
 	// init Calico lifecycle controller
-	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleapi.CalicoLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, calicofactory.NewLifecycleActionHandler(), moduleapi.CalicoLifecycleClass); err != nil {
 		log.Errorf("Failed to start the Calico controller", err)
 		return
 	}
 
 	// init CCM lifecycle controller
-	if err := modulelifecycle.InitController(mgr, helmfactory.NewLifecycleActionHandler(), moduleapi.CCMLifecycleClass); err != nil {
+	if err := modulelifecycle.InitController(mgr, ccmfactory.NewLifecycleActionHandler(), moduleapi.CCMLifecycleClass); err != nil {
 		log.Errorf("Failed to start OCI-CCM controller", err)
 		return
 	}
