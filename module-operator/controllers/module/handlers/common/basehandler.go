@@ -5,6 +5,7 @@ package common
 
 import (
 	"context"
+
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -16,16 +17,16 @@ import (
 type BaseHandler struct {
 	Config       actionspi.HandlerConfig
 	ModuleCR     *moduleapi.Module
-	Action       moduleapi.ActionType
+	Action       string
 	MlcName      string
 	MlcNamespace string
 }
 
 // Init initializes the handler with Helm chart information
-func (h *BaseHandler) Init(_ actionspi.HandlerContext, config actionspi.HandlerConfig, action moduleapi.ActionType) (ctrl.Result, error) {
+func (h *BaseHandler) Init(_ actionspi.HandlerContext, config actionspi.HandlerConfig, action string) (ctrl.Result, error) {
 	h.Config = config
 	h.ModuleCR = config.CR.(*moduleapi.Module)
-	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmLifecycleClass, action)
+	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmLifecycleClass, moduleapi.ModuleActionType(action))
 	h.MlcNamespace = h.ModuleCR.Namespace
 	h.Action = action
 	return ctrl.Result{}, nil
@@ -53,7 +54,7 @@ func (h BaseHandler) DoAction(ctx actionspi.HandlerContext) (ctrl.Result, error)
 
 func (h BaseHandler) mutateMLC(mlc *moduleapi.ModuleLifecycle) error {
 	mlc.Spec.LifecycleClassName = moduleapi.LifecycleClassType(h.ModuleCR.Spec.ModuleName)
-	mlc.Spec.Action = h.Action
+	mlc.Spec.Action = moduleapi.ModuleLifecycleActionType(h.Action)
 	mlc.Spec.Installer.HelmRelease = h.Config.HelmInfo.HelmRelease
 	mlc.Spec.Installer.HelmRelease.Overrides = h.ModuleCR.Spec.Overrides
 	return nil

@@ -1,7 +1,7 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package uninstall
+package delete
 
 import (
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
@@ -24,15 +24,15 @@ func NewHandler() actionspi.LifecycleActionHandler {
 
 // GetActionName returns the action name
 func (h Handler) GetActionName() string {
-	return "uninstall"
+	return "delete"
 }
 
 // Init initializes the handler
 func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.Init(ctx, config, moduleapi.UninstallAction)
+	return h.BaseHandler.Init(ctx, config, string(moduleapi.ModuleDeleteAction))
 }
 
-// IsActionNeeded returns true if install is needed
+// IsActionNeeded returns true if delete is needed
 func (h Handler) IsActionNeeded(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
@@ -42,7 +42,7 @@ func (h Handler) PreActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Resul
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreUninstall, moduleapi.ModuleStateReconciling)
 }
 
-// PreAction does installation pre-action
+// PreAction does delete pre-action
 func (h Handler) PreAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
@@ -57,22 +57,22 @@ func (h Handler) ActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, 
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUninstallStarted, moduleapi.ModuleStateReconciling)
 }
 
-// DoAction installs the component using Helm
+// DoAction uninstalls the component using Helm
 func (h Handler) DoAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.DoAction(ctx)
 }
 
-// IsActionDone Indicates whether a component is installed and ready
+// IsActionDone Indicates whether a component is removed
 func (h Handler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return h.BaseHandler.IsActionDone(ctx)
 }
 
-// PostActionUpdateStatus does installation post-action
+// PostActionUpdateStatus does delete post-action
 func (h Handler) PostActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// PostAction does installation post-action
+// PostAction does delete post-action
 func (h Handler) PostAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.PostAction(ctx)
 }
@@ -84,5 +84,5 @@ func (h Handler) IsPostActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Resu
 
 // CompletedActionUpdateStatus does the lifecycle completed Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondUninstallComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
+	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondUninstallComplete, moduleapi.ModuleStateNone, h.BaseHandler.ModuleCR.Spec.Version)
 }

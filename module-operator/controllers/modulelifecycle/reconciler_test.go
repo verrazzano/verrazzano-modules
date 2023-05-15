@@ -5,6 +5,8 @@ package modulelifecycle
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
@@ -18,7 +20,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	fakes "sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 const namespace = "testns"
@@ -40,7 +41,7 @@ func TestReconcile(t *testing.T) {
 
 	tests := []struct {
 		name                       string
-		action                     moduleapi.ActionType
+		action                     moduleapi.ModuleLifecycleActionType
 		expectedStatemachineCalled bool
 		statemachineError          bool
 		expectedRequeue            bool
@@ -50,7 +51,7 @@ func TestReconcile(t *testing.T) {
 	}{
 		{
 			name:                       "test-install",
-			action:                     moduleapi.InstallAction,
+			action:                     moduleapi.ModuleLifecycleInstallAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: true,
@@ -59,7 +60,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-statemachine-error",
-			action:                     moduleapi.InstallAction,
+			action:                     moduleapi.ModuleLifecycleInstallAction,
 			startingStatusState:        "",
 			statemachineError:          true,
 			expectedStatemachineCalled: true,
@@ -68,7 +69,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-state-completed",
-			action:                     moduleapi.InstallAction,
+			action:                     moduleapi.ModuleLifecycleInstallAction,
 			startingStatusState:        moduleapi.StateCompleted,
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -77,7 +78,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-state-not-needed",
-			action:                     moduleapi.InstallAction,
+			action:                     moduleapi.ModuleLifecycleInstallAction,
 			startingStatusState:        moduleapi.StateNotNeeded,
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -86,7 +87,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "test-action-upgrade",
-			action:                     moduleapi.UpgradeAction,
+			action:                     moduleapi.ModuleLifecycleUpgradeAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -95,7 +96,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "test-action-update",
-			action:                     moduleapi.UpdateAction,
+			action:                     moduleapi.ModuleLifecycleUpdateAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -104,7 +105,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "test-action-uninstall",
-			action:                     moduleapi.UninstallAction,
+			action:                     moduleapi.ModuleLifecycleUninstallAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: false,

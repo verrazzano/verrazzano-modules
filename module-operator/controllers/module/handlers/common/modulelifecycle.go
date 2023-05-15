@@ -6,6 +6,7 @@ package common
 import (
 	"context"
 	"fmt"
+
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,6 +43,6 @@ func (h BaseHandler) DeleteModuleLifecycle(ctx actionspi.HandlerContext) error {
 	return nil
 }
 
-func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleapi.LifecycleClassType, action moduleapi.ActionType) string {
+func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleapi.LifecycleClassType, action moduleapi.ModuleActionType) string {
 	return fmt.Sprintf("%s-%s-%s", moduleCRName, lifecycleClassName, action)
 }

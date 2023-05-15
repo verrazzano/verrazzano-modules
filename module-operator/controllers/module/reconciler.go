@@ -4,6 +4,9 @@
 package module
 
 import (
+	"strings"
+	"time"
+
 	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/statemachine"
@@ -12,8 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"strings"
-	"time"
 
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 )
@@ -67,22 +68,24 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 }
 
 func (r *Reconciler) getActionHandler(cr *moduleapi.Module) (actionspi.LifecycleActionHandler, error) {
-	// Check for install complete
-	if !isConditionPresent(cr, moduleapi.CondInstallComplete) {
-		return r.comp.InstallActionHandler, nil
-	}
+	/*
+		// Check for install complete
+		if !isConditionPresent(cr, moduleapi.CondInstallComplete) {
+			return r.comp.InstallActionHandler, nil
+		}
 
-	// return UpgradeAction only when the desired version is different from current
-	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
-	if err != nil {
-		return nil, err
-	}
-	if upgradeNeeded {
-		return r.comp.UpgradeActionHandler, nil
-	}
+		// return UpgradeAction only when the desired version is different from current
+		upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
+		if err != nil {
+			return nil, err
+		}
+		if upgradeNeeded {
+			return r.comp.UpgradeActionHandler, nil
+		}
 
-	// The module is already installed.  Check if update needed
-	return r.comp.UpdateActionHandler, nil
+		// The module is already installed.  Check if update needed
+	*/
+	return r.comp.ReconcileActionHandler, nil
 }
 
 func isConditionPresent(cr *moduleapi.Module, condition moduleapi.LifecycleCondition) bool {

@@ -60,6 +60,18 @@ type ModuleStateType string
 const (
 	ModuleStateReady       = "Ready"
 	ModuleStateReconciling = "Reconciling"
+	ModuleStateNone        = "None"
+)
+
+// ModuleActionType defines the type of action to be performed in a Module instance
+type ModuleActionType string
+
+const (
+	// ModuleDeleteAction indicates the Module CR is for an delete action
+	ModuleDeleteAction ModuleActionType = "delete"
+
+	// ModuleReconcileAction indicates the Module CR is for an reconcile action
+	ModuleReconcileAction ModuleActionType = "reconcile"
 )
 
 // ModuleStatus defines the observed state of a Verrazzano Module resource.
