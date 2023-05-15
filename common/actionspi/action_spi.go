@@ -33,6 +33,7 @@ type ActionHandlers struct {
 	UninstallActionHandler LifecycleActionHandler
 	UpdateActionHandler    LifecycleActionHandler
 	UpgradeActionHandler   LifecycleActionHandler
+	ReconcileActionHandler LifecycleActionHandler
 }
 
 type HandlerConfig struct {

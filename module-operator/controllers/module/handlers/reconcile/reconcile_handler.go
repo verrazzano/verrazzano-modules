@@ -1,15 +1,16 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package install
+package reconcile
 
 import (
 	"context"
+	"time"
+
 	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"time"
 
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 )
@@ -28,15 +29,15 @@ func NewHandler() actionspi.LifecycleActionHandler {
 
 // GetActionName returns the action name
 func (h Handler) GetActionName() string {
-	return "install"
+	return "reconcile"
 }
 
 // Init initializes the handler
 func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.Init(ctx, config, moduleapi.InstallAction)
+	return h.BaseHandler.Init(ctx, config, string(moduleapi.ModuleReconcileAction))
 }
 
-// IsActionNeeded returns true if install is needed
+// IsActionNeeded returns true if reconcile is needed
 func (h Handler) IsActionNeeded(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 
@@ -50,10 +51,10 @@ func (h Handler) IsActionNeeded(ctx actionspi.HandlerContext) (bool, ctrl.Result
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) PreActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondReconciling, moduleapi.ModuleStateReconciling)
 }
 
-// PreAction does installation pre-action
+// PreAction does reconcile pre-action
 func (h Handler) PreAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	// Update the spec version if it is not set
 	if len(h.BaseHandler.ModuleCR.Spec.Version) == 0 {
@@ -76,25 +77,25 @@ func (h Handler) IsPreActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Resul
 
 // ActionUpdateStatus does the lifecycle Action status update
 func (h Handler) ActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallStarted, moduleapi.ModuleStateReconciling)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondReconciling, moduleapi.ModuleStateReconciling)
 }
 
-// DoAction installs the component using Helm
+// DoAction reconciles the component using Helm
 func (h Handler) DoAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.DoAction(ctx)
 }
 
-// IsActionDone Indicates whether a component is installed and ready
+// IsActionDone Indicates whether a component has been reconciled and ready
 func (h Handler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return h.BaseHandler.IsActionDone(ctx)
 }
 
-// PostActionUpdateStatue does installation post-action status update
+// PostActionUpdateStatue does post-reconciliation status update
 func (h Handler) PostActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// PostAction does installation post-action
+// PostAction does reconcile post-action
 func (h Handler) PostAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.PostAction(ctx)
 }
@@ -106,5 +107,5 @@ func (h Handler) IsPostActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Resu
 
 // CompletedActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
+	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondReady, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }
