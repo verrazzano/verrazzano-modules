@@ -4,7 +4,6 @@
 package helm
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	"helm.sh/helm/v3/pkg/action"
@@ -12,6 +11,7 @@ import (
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/time"
+	"testing"
 )
 
 const ns = "my-namespace"
@@ -250,7 +250,7 @@ func TestIsReleaseNotDeployed(t *testing.T) {
 // TestIsReleaseFailedChartNotFound tests checking if a Helm helmRelease is in a failed state
 // GIVEN a helmRelease name and namespace
 //
-//	WHEN I call IsReleaseFailed and the status is ChartNotFound
+//	WHEN I call IsReleaseFailed and the status is ReleaseNotFound
 //	THEN the function returns false and no error
 func TestIsReleaseFailedChartNotFound(t *testing.T) {
 	assertion := assert.New(t)
@@ -281,7 +281,7 @@ func TestIsReleaseFailedChartDeployed(t *testing.T) {
 // GIVEN a call to getReleaseState
 //
 //	WHEN the chart state is deployed
-//	THEN the function returns ChartStatusDeployed and no error
+//	THEN the function returns ReleaseStatusDeployed and no error
 func Test_getReleaseStateDeployed(t *testing.T) {
 	assertion := assert.New(t)
 	SetActionConfigFunction(testActionConfigWithRelease)
@@ -289,14 +289,14 @@ func Test_getReleaseStateDeployed(t *testing.T) {
 
 	state, err := getReleaseState(helmRelease, ns)
 	assertion.NoError(err)
-	assertion.Equalf(ChartStatusDeployed, state, "unpexected state: %s", state)
+	assertion.Equalf(ReleaseStatusDeployed, state, "unpexected state: %s", state)
 }
 
 // Test_getReleaseStateDeployed tests the getReleaseState fn
 // GIVEN a call to getReleaseState
 //
 //	WHEN the chart state is pending-install
-//	THEN the function returns ChartStatusPendingInstall and no error
+//	THEN the function returns ReleaseStatusPendingInstall and no error
 func Test_getReleaseStatePendingInstall(t *testing.T) {
 	assertion := assert.New(t)
 	SetActionConfigFunction(testActionConfigWithPendingRelease)
@@ -304,7 +304,7 @@ func Test_getReleaseStatePendingInstall(t *testing.T) {
 
 	state, err := getReleaseState(helmRelease, ns)
 	assertion.NoError(err)
-	assertion.Equalf(ChartStatusPendingInstall, state, "unpexected state: %s", state)
+	assertion.Equalf(ReleaseStatusPendingInstall, state, "unpexected state: %s", state)
 }
 
 // Test_getReleaseStateChartNotFound tests the getReleaseState fn
@@ -322,8 +322,8 @@ func Test_getReleaseStateChartNotFound(t *testing.T) {
 	assertion.Equalf("", state, "unpexected state: %s", state)
 }
 
-// Test_getChartStatusDeployed tests the getChartStatus fn
-// GIVEN a call to getChartStatus
+// Test_getChartStatusDeployed tests the getReleaseStatus fn
+// GIVEN a call to getReleaseStatus
 //
 //	WHEN Helm returns a deployed state
 //	THEN the function returns "deployed" and no error
@@ -332,13 +332,13 @@ func Test_getChartStatusDeployed(t *testing.T) {
 	SetActionConfigFunction(testActionConfigWithRelease)
 	defer SetDefaultActionConfigFunction()
 
-	state, err := getChartStatus(helmRelease, ns)
+	state, err := getReleaseStatus(helmRelease, ns)
 	assertion.NoError(err)
-	assertion.Equalf(ChartStatusDeployed, state, "unpexected state: %s", state)
+	assertion.Equalf(ReleaseStatusDeployed, state, "unpexected state: %s", state)
 }
 
-// Test_getChartStatusChartNotFound tests the getChartStatus fn
-// GIVEN a call to getChartStatus
+// Test_getChartStatusChartNotFound tests the getReleaseStatus fn
+// GIVEN a call to getReleaseStatus
 //
 //	WHEN the Chart is not found
 //	THEN the function returns chart not found and no error
@@ -347,9 +347,9 @@ func Test_getChartStatusChartNotFound(t *testing.T) {
 	SetActionConfigFunction(testActionConfigWithRelease)
 	defer SetDefaultActionConfigFunction()
 
-	state, err := getChartStatus("weblogic-operator", "verrazzano-system")
+	state, err := getReleaseStatus("weblogic-operator", "verrazzano-system")
 	assertion.NoError(err)
-	assertion.Equalf(ChartNotFound, state, "unpexected state: %s", state)
+	assertion.Equalf(ReleaseNotFound, state, "unpexected state: %s", state)
 }
 
 // TestGetReleaseValue tests the GetReleaseValues fn

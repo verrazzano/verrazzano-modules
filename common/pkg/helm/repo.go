@@ -33,8 +33,8 @@ type HelmReleaseOpts struct {
 func GetReleaseChartVersion(releaseName string, namespace string) (string, error) {
 	releases, err := getReleases(namespace)
 	if err != nil {
-		if err.Error() == ChartNotFound {
-			return ChartNotFound, nil
+		if err.Error() == ReleaseNotFound {
+			return ReleaseNotFound, nil
 		}
 		return "", err
 	}

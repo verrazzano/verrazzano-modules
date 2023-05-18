@@ -13,11 +13,11 @@ import (
 
 // NewLModuleLifecycleHandlerInfo creates a new ModuleLifecycleHandlerInfo
 func NewLModuleLifecycleHandlerInfo() handlerspi.ModuleLifecycleHandlerInfo {
-	return handlerspi.ModuleLifecycleHandlerInfo {
-		ModuleActualState:      nil,
-		InstallActionHandler:   install.NewHandler(),
-		UninstallActionHandler: uninstall.NewHandler(),
-		UpdateActionHandler:    update.NewHandler(),
-		UpgradeActionHandler:   upgrade.NewHandler(),
+	return handlerspi.ModuleLifecycleHandlerInfo{
+		ModuleActualStateInCluster: nil,
+		InstallActionHandler:       install.NewHandler(),
+		UninstallActionHandler:     uninstall.NewHandler(),
+		UpdateActionHandler:        update.NewHandler(),
+		UpgradeActionHandler:       upgrade.NewHandler(),
 	}
 }
