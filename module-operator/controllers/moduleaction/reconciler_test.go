@@ -159,7 +159,7 @@ func TestReconcile(t *testing.T) {
 				Spec: moduleapi.ModuleActionSpec{
 					Action:          test.action,
 					Version:         test.desiredVersion,
-					ModuleClassName: moduleapi.ModuleClassType(moduleapi.CalicoLifecycleClass),
+					ModuleClassName: moduleapi.ModuleClassType(moduleapi.CalicoModuleClass),
 				},
 				Status: moduleapi.ModuleActionStatus{
 					State:              test.startingStatusState,
