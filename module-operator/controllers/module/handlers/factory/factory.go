@@ -4,9 +4,9 @@
 package factory
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/delete"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/reconcile"
+	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 )
 
 // NewModuleHandlerInfo creates a new NewModuleHandlerInfo

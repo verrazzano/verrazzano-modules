@@ -5,16 +5,16 @@ package main
 
 import (
 	"flag"
-	"github.com/verrazzano/verrazzano-modules/common/pkg/k8sutil"
-	vzlog "github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
 	modulefactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/factory"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle"
-	calicofactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/calico/factory"
-	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/helm/factory"
-	ccmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/ociccm/factory"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/moduleaction"
+	calicofactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/moduleaction/handlers/calico/factory"
+	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/moduleaction/handlers/helm/factory"
+	ccmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/moduleaction/handlers/ociccm/factory"
 	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
+	"github.com/verrazzano/verrazzano-modules/pkg/k8sutil"
+	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -44,19 +44,19 @@ func main() {
 	}
 
 	// init Helm lifecycle controller
-	if err := modulelifecycle.InitController(mgr, helmfactory.NewLModuleLifecycleHandlerInfo(), moduleapi.HelmLifecycleClass); err != nil {
+	if err := moduleaction.InitController(mgr, helmfactory.NewLModuleLifecycleHandlerInfo(), moduleapi.HelmModuleClass); err != nil {
 		log.Errorf("Failed to start Helm controller", err)
 		return
 	}
 
 	// init Calico lifecycle controller
-	if err := modulelifecycle.InitController(mgr, calicofactory.NewLModuleLifecycleHandlerInfo(), moduleapi.CalicoLifecycleClass); err != nil {
+	if err := moduleaction.InitController(mgr, calicofactory.NewLModuleLifecycleHandlerInfo(), moduleapi.CalicoModuleClass); err != nil {
 		log.Errorf("Failed to start the Calico controller", err)
 		return
 	}
 
 	// init CCM lifecycle controller
-	if err := modulelifecycle.InitController(mgr, ccmfactory.NewLModuleLifecycleHandlerInfo(), moduleapi.CCMLifecycleClass); err != nil {
+	if err := moduleaction.InitController(mgr, ccmfactory.NewLModuleLifecycleHandlerInfo(), moduleapi.CCMModuleClass); err != nil {
 		log.Errorf("Failed to start OCI-CCM controller", err)
 		return
 	}

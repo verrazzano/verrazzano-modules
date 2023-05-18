@@ -16,7 +16,7 @@ import (
 type PlatformV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	ModulesGetter
-	ModuleLifecyclesGetter
+	ModuleActionsGetter
 }
 
 // PlatformV1alpha1Client is used to interact with features provided by the platform group.
@@ -28,8 +28,8 @@ func (c *PlatformV1alpha1Client) Modules(namespace string) ModuleInterface {
 	return newModules(c, namespace)
 }
 
-func (c *PlatformV1alpha1Client) ModuleLifecycles(namespace string) ModuleLifecycleInterface {
-	return newModuleLifecycles(c, namespace)
+func (c *PlatformV1alpha1Client) ModuleActions(namespace string) ModuleActionInterface {
+	return newModuleActions(c, namespace)
 }
 
 // NewForConfig creates a new PlatformV1alpha1Client for the given config.

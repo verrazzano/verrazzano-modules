@@ -19,8 +19,8 @@ func (c *FakePlatformV1alpha1) Modules(namespace string) v1alpha1.ModuleInterfac
 	return &FakeModules{c, namespace}
 }
 
-func (c *FakePlatformV1alpha1) ModuleLifecycles(namespace string) v1alpha1.ModuleLifecycleInterface {
-	return &FakeModuleLifecycles{c, namespace}
+func (c *FakePlatformV1alpha1) ModuleActions(namespace string) v1alpha1.ModuleActionInterface {
+	return &FakeModuleActions{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

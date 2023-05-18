@@ -5,10 +5,10 @@ package module
 
 import (
 	"fmt"
-	handlerspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
-	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
+	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"os"
 	"path/filepath"
 )
@@ -52,11 +52,11 @@ func lookupChartLeafDirName(mod *moduleapi.Module) string {
 	var dir string
 
 	switch mod.Spec.ModuleName {
-	case string(moduleapi.CalicoLifecycleClass):
+	case string(moduleapi.CalicoModuleClass):
 		dir = "calico"
-	case string(moduleapi.CCMLifecycleClass):
+	case string(moduleapi.CCMModuleClass):
 		dir = "ccm"
-	case string(moduleapi.HelmLifecycleClass):
+	case string(moduleapi.HelmModuleClass):
 		dir = filepath.Join("vz-test", mod.Spec.Version)
 		if mod.Spec.Version == "" {
 			dir = filepath.Join("vz-test", "0.1.0")
