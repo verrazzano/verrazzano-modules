@@ -42,6 +42,6 @@ func (h BaseHandler) DeleteModuleLifecycle(ctx handlerspi.HandlerContext) error 
 	return nil
 }
 
-func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleapi.LifecycleClassType, action moduleapi.ActionType) string {
+func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleapi.LifecycleClassType, action moduleapi.ModuleLifecycleActionType) string {
 	return fmt.Sprintf("%s-%s-%s", moduleCRName, lifecycleClassName, action)
 }

@@ -139,6 +139,7 @@ spec:
                 format: int64
                 type: integer
               state:
+                description: State is the Module state
                 type: string
               version:
                 description: The version of module that is installed.

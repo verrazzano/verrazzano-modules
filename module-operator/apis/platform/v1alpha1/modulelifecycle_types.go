@@ -37,7 +37,7 @@ type ModuleLifecycleSpec struct {
 	// LifecycleClassName defines the lifecycle class name required to process the ModuleLifecycle instance
 	LifecycleClassName LifecycleClassType `json:"lifecycleClassName,omitempty"`
 	// Action Defines lifecycle action to perform
-	Action ActionType `json:"action"`
+	Action ModuleLifecycleActionType `json:"action"`
 	// Installer Defines the installer information required to perform the lifecycle operation
 	Installer ModuleInstaller `json:"installer"`
 	// The Module version
@@ -100,21 +100,15 @@ const (
 	CCMLifecycleClass    LifecycleClassType = "ccm"
 )
 
-// ActionType defines the type of action to be performed in a ModuleLifecycle instance
-type ActionType string
+// ModuleLifecycleActionType defines the type of action to be performed in a ModuleLifecycle instance
+type ModuleLifecycleActionType string
 
 const (
-	// InstallAction indicates the ModuleLifecycle CR is for an install action
-	InstallAction ActionType = "install"
+	// ReconcileAction indicates the ModuleLifecycle CR should reconcile the module
+	ReconcileAction ModuleLifecycleActionType = "reconcile"
 
-	// UninstallAction indicates the ModuleLifecycle CR is for an uninstall action
-	UninstallAction ActionType = "uninstall"
-
-	// UpdateAction indicates the ModuleLifecycle CR is for an update action
-	UpdateAction ActionType = "update"
-
-	// UpgradeAction indicates the ModuleLifecycle CR is for an upgrade action
-	UpgradeAction ActionType = "upgrade"
+	// DeleteAction indicates the ModuleLifecycle CR should delete the module
+	DeleteAction ModuleLifecycleActionType = "delete"
 )
 
 func init() {

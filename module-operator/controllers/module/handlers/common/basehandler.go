@@ -16,13 +16,13 @@ import (
 type BaseHandler struct {
 	Config       handlerspi.StateMachineHandlerConfig
 	ModuleCR     *moduleapi.Module
-	Action       moduleapi.ActionType
+	Action       moduleapi.ModuleLifecycleActionType
 	MlcName      string
 	MlcNamespace string
 }
 
 // Init initializes the handler with Helm chart information
-func (h *BaseHandler) Init(_ handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig, action moduleapi.ActionType) (ctrl.Result, error) {
+func (h *BaseHandler) Init(_ handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig, action moduleapi.ModuleLifecycleActionType) (ctrl.Result, error) {
 	h.Config = config
 	h.ModuleCR = config.CR.(*moduleapi.Module)
 	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmLifecycleClass, action)

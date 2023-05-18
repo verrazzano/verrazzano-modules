@@ -138,6 +138,9 @@ spec:
                 description: LifecycleClassName defines the lifecycle class name required
                   to process the ModuleLifecycle instance
                 type: string
+              version:
+                description: The Module version
+                type: string
             required:
             - action
             - installer
@@ -176,6 +179,9 @@ spec:
                 type: string
               state:
                 description: Information about the current state of a component
+                type: string
+              version:
+                description: The Module version
                 type: string
             type: object
         type: object

@@ -40,7 +40,7 @@ func TestReconcile(t *testing.T) {
 
 	tests := []struct {
 		name                       string
-		action                     moduleapi.ActionType
+		action                     moduleapi.ModuleLifecycleActionType
 		expectedStatemachineCalled bool
 		statemachineError          bool
 		expectedRequeue            bool
@@ -104,7 +104,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "test-action-uninstall",
-			action:                     moduleapi.UninstallAction,
+			action:                     moduleapi.DeleteAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: false,

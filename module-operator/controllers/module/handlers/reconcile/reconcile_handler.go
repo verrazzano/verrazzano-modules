@@ -33,7 +33,7 @@ func (h Handler) GetActionName() string {
 
 // Init initializes the handler
 func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.Init(ctx, config, moduleapi.InstallAction)
+	return h.BaseHandler.Init(ctx, config, moduleapi.ReconcileAction)
 }
 
 // IsActionNeeded returns true if install is needed
