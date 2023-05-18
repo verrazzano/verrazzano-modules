@@ -25,23 +25,23 @@ type FakeModuleLifecycles struct {
 
 var modulelifecyclesResource = schema.GroupVersionResource{Group: "platform", Version: "v1alpha1", Resource: "modulelifecycles"}
 
-var modulelifecyclesKind = schema.GroupVersionKind{Group: "platform", Version: "v1alpha1", Kind: "ModuleLifecycle"}
+var modulelifecyclesKind = schema.GroupVersionKind{Group: "platform", Version: "v1alpha1", Kind: "ModuleAction"}
 
 // Get takes name of the moduleLifecycle, and returns the corresponding moduleLifecycle object, and an error if there is any.
-func (c *FakeModuleLifecycles) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ModuleLifecycle, err error) {
+func (c *FakeModuleLifecycles) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ModuleAction, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(modulelifecyclesResource, c.ns, name), &v1alpha1.ModuleLifecycle{})
+		Invokes(testing.NewGetAction(modulelifecyclesResource, c.ns, name), &v1alpha1.ModuleAction{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1alpha1.ModuleLifecycle), err
+	return obj.(*v1alpha1.ModuleAction), err
 }
 
 // List takes label and field selectors, and returns the list of ModuleLifecycles that match those selectors.
-func (c *FakeModuleLifecycles) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ModuleLifecycleList, err error) {
+func (c *FakeModuleLifecycles) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ModuleActionList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(modulelifecyclesResource, modulelifecyclesKind, c.ns, opts), &v1alpha1.ModuleLifecycleList{})
+		Invokes(testing.NewListAction(modulelifecyclesResource, modulelifecyclesKind, c.ns, opts), &v1alpha1.ModuleActionList{})
 
 	if obj == nil {
 		return nil, err
@@ -51,8 +51,8 @@ func (c *FakeModuleLifecycles) List(ctx context.Context, opts v1.ListOptions) (r
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1alpha1.ModuleLifecycleList{ListMeta: obj.(*v1alpha1.ModuleLifecycleList).ListMeta}
-	for _, item := range obj.(*v1alpha1.ModuleLifecycleList).Items {
+	list := &v1alpha1.ModuleActionList{ListMeta: obj.(*v1alpha1.ModuleActionList).ListMeta}
+	for _, item := range obj.(*v1alpha1.ModuleActionList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -68,43 +68,43 @@ func (c *FakeModuleLifecycles) Watch(ctx context.Context, opts v1.ListOptions) (
 }
 
 // Create takes the representation of a moduleLifecycle and creates it.  Returns the server's representation of the moduleLifecycle, and an error, if there is any.
-func (c *FakeModuleLifecycles) Create(ctx context.Context, moduleLifecycle *v1alpha1.ModuleLifecycle, opts v1.CreateOptions) (result *v1alpha1.ModuleLifecycle, err error) {
+func (c *FakeModuleLifecycles) Create(ctx context.Context, moduleLifecycle *v1alpha1.ModuleAction, opts v1.CreateOptions) (result *v1alpha1.ModuleAction, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(modulelifecyclesResource, c.ns, moduleLifecycle), &v1alpha1.ModuleLifecycle{})
+		Invokes(testing.NewCreateAction(modulelifecyclesResource, c.ns, moduleLifecycle), &v1alpha1.ModuleAction{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1alpha1.ModuleLifecycle), err
+	return obj.(*v1alpha1.ModuleAction), err
 }
 
 // Update takes the representation of a moduleLifecycle and updates it. Returns the server's representation of the moduleLifecycle, and an error, if there is any.
-func (c *FakeModuleLifecycles) Update(ctx context.Context, moduleLifecycle *v1alpha1.ModuleLifecycle, opts v1.UpdateOptions) (result *v1alpha1.ModuleLifecycle, err error) {
+func (c *FakeModuleLifecycles) Update(ctx context.Context, moduleLifecycle *v1alpha1.ModuleAction, opts v1.UpdateOptions) (result *v1alpha1.ModuleAction, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(modulelifecyclesResource, c.ns, moduleLifecycle), &v1alpha1.ModuleLifecycle{})
+		Invokes(testing.NewUpdateAction(modulelifecyclesResource, c.ns, moduleLifecycle), &v1alpha1.ModuleAction{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1alpha1.ModuleLifecycle), err
+	return obj.(*v1alpha1.ModuleAction), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeModuleLifecycles) UpdateStatus(ctx context.Context, moduleLifecycle *v1alpha1.ModuleLifecycle, opts v1.UpdateOptions) (*v1alpha1.ModuleLifecycle, error) {
+func (c *FakeModuleLifecycles) UpdateStatus(ctx context.Context, moduleLifecycle *v1alpha1.ModuleAction, opts v1.UpdateOptions) (*v1alpha1.ModuleAction, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(modulelifecyclesResource, "status", c.ns, moduleLifecycle), &v1alpha1.ModuleLifecycle{})
+		Invokes(testing.NewUpdateSubresourceAction(modulelifecyclesResource, "status", c.ns, moduleLifecycle), &v1alpha1.ModuleAction{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1alpha1.ModuleLifecycle), err
+	return obj.(*v1alpha1.ModuleAction), err
 }
 
 // Delete takes name of the moduleLifecycle and deletes it. Returns an error if one occurs.
 func (c *FakeModuleLifecycles) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(modulelifecyclesResource, c.ns, name, opts), &v1alpha1.ModuleLifecycle{})
+		Invokes(testing.NewDeleteActionWithOptions(modulelifecyclesResource, c.ns, name, opts), &v1alpha1.ModuleAction{})
 
 	return err
 }
@@ -113,17 +113,17 @@ func (c *FakeModuleLifecycles) Delete(ctx context.Context, name string, opts v1.
 func (c *FakeModuleLifecycles) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(modulelifecyclesResource, c.ns, listOpts)
 
-	_, err := c.Fake.Invokes(action, &v1alpha1.ModuleLifecycleList{})
+	_, err := c.Fake.Invokes(action, &v1alpha1.ModuleActionList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched moduleLifecycle.
-func (c *FakeModuleLifecycles) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ModuleLifecycle, err error) {
+func (c *FakeModuleLifecycles) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ModuleAction, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(modulelifecyclesResource, c.ns, name, pt, data, subresources...), &v1alpha1.ModuleLifecycle{})
+		Invokes(testing.NewPatchSubresourceAction(modulelifecyclesResource, c.ns, name, pt, data, subresources...), &v1alpha1.ModuleAction{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1alpha1.ModuleLifecycle), err
+	return obj.(*v1alpha1.ModuleAction), err
 }

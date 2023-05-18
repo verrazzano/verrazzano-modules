@@ -4,10 +4,10 @@
 package module
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/common/controllercore/statemachine"
-	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
-	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"

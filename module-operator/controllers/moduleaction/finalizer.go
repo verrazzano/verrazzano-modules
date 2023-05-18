@@ -1,13 +1,11 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package module
+package moduleaction
 
 import (
-	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -21,11 +19,7 @@ func (r Reconciler) GetName() string {
 // PreRemoveFinalizer is called when the resource is being deleted, before the finalizer
 // is removed.  Use this method to delete Kubernetes resources, etc.
 func (r Reconciler) PreRemoveFinalizer(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
-	cr := &moduleapi.Module{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
-		return ctrl.Result{}, err
-	}
-	return r.reconcileAction(spictx, cr, r.HandlerInfo.DeleteActionHandler)
+	return ctrl.Result{}, nil
 }
 
 // PostRemoveFinalizer is called after the finalizer is successfully removed.

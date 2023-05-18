@@ -5,10 +5,10 @@ package module
 
 import (
 	"fmt"
-	handlerspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
-	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
+	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"os"
 	"path/filepath"
 )

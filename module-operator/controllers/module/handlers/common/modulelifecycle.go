@@ -6,21 +6,21 @@ package common
 import (
 	"context"
 	"fmt"
-	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (h BaseHandler) GetModuleLifecycle(ctx handlerspi.HandlerContext) (*moduleapi.ModuleLifecycle, error) {
-	mlc := moduleapi.ModuleLifecycle{}
+func (h BaseHandler) GetModuleLifecycle(ctx handlerspi.HandlerContext) (*moduleapi.ModuleAction, error) {
+	mlc := moduleapi.ModuleAction{}
 	nsn := types.NamespacedName{
 		Name:      h.MlcName,
 		Namespace: h.ModuleCR.Namespace,
 	}
 
 	if err := ctx.Client.Get(context.TODO(), nsn, &mlc); err != nil {
-		ctx.Log.Progressf("Retrying get for ModuleLifecycle %v: %v", nsn, err)
+		ctx.Log.Progressf("Retrying get for ModuleAction %v: %v", nsn, err)
 		return nil, err
 	}
 	return &mlc, nil
@@ -28,7 +28,7 @@ func (h BaseHandler) GetModuleLifecycle(ctx handlerspi.HandlerContext) (*modulea
 
 // DeleteModuleLifecycle deletes a moduleLifecycle
 func (h BaseHandler) DeleteModuleLifecycle(ctx handlerspi.HandlerContext) error {
-	mlc := moduleapi.ModuleLifecycle{
+	mlc := moduleapi.ModuleAction{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      h.MlcName,
 			Namespace: h.ModuleCR.Namespace,
@@ -42,6 +42,6 @@ func (h BaseHandler) DeleteModuleLifecycle(ctx handlerspi.HandlerContext) error 
 	return nil
 }
 
-func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleapi.LifecycleClassType, action moduleapi.ModuleLifecycleActionType) string {
+func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleapi.ModuleClassType, action moduleapi.ModuleActionType) string {
 	return fmt.Sprintf("%s-%s-%s", moduleCRName, lifecycleClassName, action)
 }

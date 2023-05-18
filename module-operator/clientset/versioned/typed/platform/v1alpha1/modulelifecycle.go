@@ -23,17 +23,17 @@ type ModuleLifecyclesGetter interface {
 	ModuleLifecycles(namespace string) ModuleLifecycleInterface
 }
 
-// ModuleLifecycleInterface has methods to work with ModuleLifecycle resources.
+// ModuleLifecycleInterface has methods to work with ModuleAction resources.
 type ModuleLifecycleInterface interface {
-	Create(ctx context.Context, moduleLifecycle *v1alpha1.ModuleLifecycle, opts v1.CreateOptions) (*v1alpha1.ModuleLifecycle, error)
-	Update(ctx context.Context, moduleLifecycle *v1alpha1.ModuleLifecycle, opts v1.UpdateOptions) (*v1alpha1.ModuleLifecycle, error)
-	UpdateStatus(ctx context.Context, moduleLifecycle *v1alpha1.ModuleLifecycle, opts v1.UpdateOptions) (*v1alpha1.ModuleLifecycle, error)
+	Create(ctx context.Context, moduleLifecycle *v1alpha1.ModuleAction, opts v1.CreateOptions) (*v1alpha1.ModuleAction, error)
+	Update(ctx context.Context, moduleLifecycle *v1alpha1.ModuleAction, opts v1.UpdateOptions) (*v1alpha1.ModuleAction, error)
+	UpdateStatus(ctx context.Context, moduleLifecycle *v1alpha1.ModuleAction, opts v1.UpdateOptions) (*v1alpha1.ModuleAction, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ModuleLifecycle, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ModuleLifecycleList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ModuleAction, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ModuleActionList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ModuleLifecycle, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ModuleAction, err error)
 	ModuleLifecycleExpansion
 }
 
@@ -52,8 +52,8 @@ func newModuleLifecycles(c *PlatformV1alpha1Client, namespace string) *moduleLif
 }
 
 // Get takes name of the moduleLifecycle, and returns the corresponding moduleLifecycle object, and an error if there is any.
-func (c *moduleLifecycles) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ModuleLifecycle, err error) {
-	result = &v1alpha1.ModuleLifecycle{}
+func (c *moduleLifecycles) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ModuleAction, err error) {
+	result = &v1alpha1.ModuleAction{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("modulelifecycles").
@@ -65,12 +65,12 @@ func (c *moduleLifecycles) Get(ctx context.Context, name string, options v1.GetO
 }
 
 // List takes label and field selectors, and returns the list of ModuleLifecycles that match those selectors.
-func (c *moduleLifecycles) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ModuleLifecycleList, err error) {
+func (c *moduleLifecycles) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ModuleActionList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
 	}
-	result = &v1alpha1.ModuleLifecycleList{}
+	result = &v1alpha1.ModuleActionList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("modulelifecycles").
@@ -97,8 +97,8 @@ func (c *moduleLifecycles) Watch(ctx context.Context, opts v1.ListOptions) (watc
 }
 
 // Create takes the representation of a moduleLifecycle and creates it.  Returns the server's representation of the moduleLifecycle, and an error, if there is any.
-func (c *moduleLifecycles) Create(ctx context.Context, moduleLifecycle *v1alpha1.ModuleLifecycle, opts v1.CreateOptions) (result *v1alpha1.ModuleLifecycle, err error) {
-	result = &v1alpha1.ModuleLifecycle{}
+func (c *moduleLifecycles) Create(ctx context.Context, moduleLifecycle *v1alpha1.ModuleAction, opts v1.CreateOptions) (result *v1alpha1.ModuleAction, err error) {
+	result = &v1alpha1.ModuleAction{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("modulelifecycles").
@@ -110,8 +110,8 @@ func (c *moduleLifecycles) Create(ctx context.Context, moduleLifecycle *v1alpha1
 }
 
 // Update takes the representation of a moduleLifecycle and updates it. Returns the server's representation of the moduleLifecycle, and an error, if there is any.
-func (c *moduleLifecycles) Update(ctx context.Context, moduleLifecycle *v1alpha1.ModuleLifecycle, opts v1.UpdateOptions) (result *v1alpha1.ModuleLifecycle, err error) {
-	result = &v1alpha1.ModuleLifecycle{}
+func (c *moduleLifecycles) Update(ctx context.Context, moduleLifecycle *v1alpha1.ModuleAction, opts v1.UpdateOptions) (result *v1alpha1.ModuleAction, err error) {
+	result = &v1alpha1.ModuleAction{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("modulelifecycles").
@@ -125,8 +125,8 @@ func (c *moduleLifecycles) Update(ctx context.Context, moduleLifecycle *v1alpha1
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *moduleLifecycles) UpdateStatus(ctx context.Context, moduleLifecycle *v1alpha1.ModuleLifecycle, opts v1.UpdateOptions) (result *v1alpha1.ModuleLifecycle, err error) {
-	result = &v1alpha1.ModuleLifecycle{}
+func (c *moduleLifecycles) UpdateStatus(ctx context.Context, moduleLifecycle *v1alpha1.ModuleAction, opts v1.UpdateOptions) (result *v1alpha1.ModuleAction, err error) {
+	result = &v1alpha1.ModuleAction{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("modulelifecycles").
@@ -167,8 +167,8 @@ func (c *moduleLifecycles) DeleteCollection(ctx context.Context, opts v1.DeleteO
 }
 
 // Patch applies the patch and returns the patched moduleLifecycle.
-func (c *moduleLifecycles) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ModuleLifecycle, err error) {
-	result = &v1alpha1.ModuleLifecycle{}
+func (c *moduleLifecycles) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ModuleAction, err error) {
+	result = &v1alpha1.ModuleAction{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("modulelifecycles").

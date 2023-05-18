@@ -5,9 +5,9 @@ package reconcile
 
 import (
 	"context"
-	handlerspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
-	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
+	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
@@ -27,7 +27,7 @@ func NewHandler() handlerspi.StateMachineHandler {
 }
 
 // GetActionName returns the action name
-func (h Handler) GetActionName() string {
+func (h Handler) GetWorkName() string {
 	return string(moduleapi.ReconcileAction)
 }
 
@@ -37,12 +37,12 @@ func (h *Handler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMac
 }
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
-func (h Handler) PreActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h Handler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondReconciling, moduleapi.ModuleStateReconciling)
 }
 
 // PreAction does installation pre-action
-func (h Handler) PreAction(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h Handler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	// Update the spec version if it is not set
 	if len(h.BaseHandler.ModuleCR.Spec.Version) == 0 {
 		// Update spec version to match chart, always requeue to get ModuleCR with version
@@ -58,6 +58,6 @@ func (h Handler) PreAction(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 }
 
 // CompletedActionUpdateStatus does the lifecycle pre-Action status update
-func (h Handler) CompletedActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h Handler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondReconcilingComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }

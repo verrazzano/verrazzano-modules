@@ -4,9 +4,9 @@
 package delete
 
 import (
-	handlerspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
+	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -23,7 +23,7 @@ func NewHandler() handlerspi.StateMachineHandler {
 }
 
 // GetActionName returns the action name
-func (h Handler) GetActionName() string {
+func (h Handler) GetWorkName() string {
 	return string(moduleapi.DeleteAction)
 }
 
@@ -33,16 +33,16 @@ func (h *Handler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMac
 }
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
-func (h Handler) PreActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h Handler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreUninstall, moduleapi.ModuleStateReconciling)
 }
 
 // ActionUpdateStatus does the lifecycle Action status update
-func (h Handler) ActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h Handler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUninstallStarted, moduleapi.ModuleStateReconciling)
 }
 
 // CompletedActionUpdateStatus does the lifecycle completed Action status update
-func (h Handler) CompletedActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h Handler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondUninstallComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }
