@@ -18,7 +18,7 @@ var _ handlerspi.ModuleActualStateInCluster = &moduleState{}
 type moduleState struct{}
 
 // GetActualModuleState gets the state of the module
-func (m moduleState) GetActualModuleState(context handlerspi.HandlerContext, cr moduleapi.ModuleLifecycle) (handlerspi.ModuleActualState, ctrl.Result, error) {
+func (m moduleState) GetActualModuleState(context handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (handlerspi.ModuleActualState, ctrl.Result, error) {
 	releaseName := cr.Spec.Installer.HelmRelease.Name
 	releaseNamespace := cr.Spec.Installer.HelmRelease.Namespace
 	releaseStatus, err := helm.GetReleaseStatus(context.Log, releaseName, releaseNamespace)
@@ -39,7 +39,7 @@ func (m moduleState) GetActualModuleState(context handlerspi.HandlerContext, cr 
 }
 
 // IsUpgradeNeeded checks if upgrade is needed
-func (m moduleState) IsUpgradeNeeded(context handlerspi.HandlerContext, cr moduleapi.ModuleLifecycle) (bool, ctrl.Result, error) {
+func (m moduleState) IsUpgradeNeeded(context handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (bool, ctrl.Result, error) {
 	releaseName := cr.Spec.Installer.HelmRelease.Name
 	releaseNamespace := cr.Spec.Installer.HelmRelease.Namespace
 	installedVersion, err := helm.GetReleaseChartVersion(releaseName, releaseNamespace)

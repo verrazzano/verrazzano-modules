@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 	}{
 		{
 			name:                       "test-install",
-			action:                     moduleapi.InstallAction,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: true,
@@ -59,7 +59,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-statemachine-error",
-			action:                     moduleapi.InstallAction,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          true,
 			expectedStatemachineCalled: true,
@@ -68,7 +68,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-state-completed",
-			action:                     moduleapi.InstallAction,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        moduleapi.StateCompleted,
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -77,7 +77,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-state-not-needed",
-			action:                     moduleapi.InstallAction,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        moduleapi.StateNotNeeded,
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -86,7 +86,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "test-action-upgrade",
-			action:                     moduleapi.UpgradeAction,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -95,7 +95,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "test-action-update",
-			action:                     moduleapi.UpdateAction,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -177,7 +177,7 @@ func initScheme() *runtime.Scheme {
 	return scheme
 }
 
-func (h *handler) testExecuteStateMachine(sm statemachine.StateMachine, ctx handlerspi.HandlerContext) ctrl.Result {
+func (h *handler) testExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
 	h.statemachineCalled = true
 	if h.statemachineError {
 		return util.NewRequeueWithShortDelay()

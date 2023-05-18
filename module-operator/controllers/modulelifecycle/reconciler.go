@@ -40,10 +40,14 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return ctrl.Result{}, nil
 	}
 
+	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
+
 	helmInfo := loadHelmInfo(cr)
-	handler, err := r.getActionHandler(cr)
-	if err != nil {
-		spictx.Log.ErrorfThrottled("Failed checking ModuleLifecycle CR %/%s version: %v", err, u.GetNamespace(), u.GetName(), err)
+	handler, res := r.getActionHandler(ctx, cr)
+	if res.Requeue {
+		return res, nil
+	}
+	if handler == nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
 
@@ -53,9 +57,8 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		HelmInfo: &helmInfo,
 		Handler:  handler,
 	}
-	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 
-	res := executeStateMachine(sm, ctx)
+	res = executeStateMachine(ctx, sm)
 	return res, nil
 }
 
@@ -66,27 +69,31 @@ func loadHelmInfo(cr *moduleapi.ModuleLifecycle) handlerspi.HelmInfo {
 	return helmInfo
 }
 
-func (r *Reconciler) getActionHandler(cr *moduleapi.ModuleLifecycle) (handlerspi.StateMachineHandler, error) {
-	// Check for install complete
-	if !isConditionPresent(cr, moduleapi.CondInstallComplete) {
-		return r.handlerInfo.InstallActionHandler, nil
+func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (handlerspi.StateMachineHandler, ctrl.Result) {
+	state, res, err := r.handlerInfo.ModuleActualStateInCluster.GetActualModuleState(ctx, cr)
+	if res2 := util.DeriveResult(res, err); res2.Requeue {
+		return nil, res2
 	}
 
-	// return UpgradeAction only when the desired version is different from current
-	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
-	if err != nil {
-		return nil, err
+	switch state {
+	case handlerspi.ModuleStateNotInstalled:
+		return r.handlerInfo.InstallActionHandler, ctrl.Result{}
+	case handlerspi.ModuleStateReady:
+		upgrade, res, err := r.handlerInfo.ModuleActualStateInCluster.IsUpgradeNeeded(ctx, cr)
+		if res2 := util.DeriveResult(res, err); res2.Requeue {
+			return nil, res2
+		}
+		if upgrade {
+			return r.handlerInfo.UpgradeActionHandler, ctrl.Result{}
+		}
+	default:
+		ctx.Log.Progressf("Module is not is a state where any action can be taken %s/%s state: %s", state)
+		return nil, ctrl.Result{}
 	}
-
-	if upgradeNeeded {
-		return r.handlerInfo.UpgradeActionHandler, nil
-	}
-
-	// The module is already installed.  Check if update needed
-	return r.handlerInfo.UpdateActionHandler, nil
+	return nil, ctrl.Result{}
 }
 
-func defaultExecuteStateMachine(sm statemachine.StateMachine, ctx handlerspi.HandlerContext) ctrl.Result {
+func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
 	return sm.Execute(ctx)
 }
 

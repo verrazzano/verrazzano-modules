@@ -40,8 +40,8 @@ const (
 // ModuleActualStateInCluster interface describes the actual state of the module in the cluster
 type ModuleActualStateInCluster interface {
 	// GetActualModuleState gets the state of the module
-	GetActualModuleState(context HandlerContext, cr moduleapi.ModuleLifecycle) (ModuleActualState, ctrl.Result, error)
+	GetActualModuleState(context HandlerContext, cr *moduleapi.ModuleLifecycle) (ModuleActualState, ctrl.Result, error)
 
 	// IsUpgradeNeeded checks if upgrade is needed
-	IsUpgradeNeeded(context HandlerContext, cr moduleapi.ModuleLifecycle) (bool, ctrl.Result, error)
+	IsUpgradeNeeded(context HandlerContext, cr *moduleapi.ModuleLifecycle) (bool, ctrl.Result, error)
 }
