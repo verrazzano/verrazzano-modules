@@ -4,18 +4,15 @@
 package factory
 
 import (
-	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/install"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/uninstall"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/update"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/upgrade"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/delete"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/reconcile"
 )
 
-func NewLifecycleActionHandler() actionspi.ActionHandlers {
-	return actionspi.ActionHandlers{
-		InstallActionHandler:   install.NewHandler(),
-		UninstallActionHandler: uninstall.NewHandler(),
-		UpdateActionHandler:    update.NewHandler(),
-		UpgradeActionHandler:   upgrade.NewHandler(),
+// NewModuleHandlerInfo creates a new NewModuleHandlerInfo
+func NewModuleHandlerInfo() handlerspi.ModuleHandlerInfo {
+	return handlerspi.ModuleHandlerInfo{
+		ReconcileActionHandler: reconcile.NewHandler(),
+		DeleteActionHandler:    delete.NewHandler(),
 	}
 }

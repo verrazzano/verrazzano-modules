@@ -1,14 +1,12 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package actionspi
+package handlerspi
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // HelmInfo contains all the information need to manage the lifecycle of Helm releases
@@ -20,33 +18,18 @@ type HelmInfo struct {
 	ChartDir string
 }
 
-// HandlerContext contains the handler contexts for the API handler methods
-type HandlerContext struct {
-	ctrlclient.Client
-	Log    vzlog.VerrazzanoLogger
-	DryRun bool
-}
-
-// ActionHandlers
-type ActionHandlers struct {
-	InstallActionHandler   LifecycleActionHandler
-	UninstallActionHandler LifecycleActionHandler
-	UpdateActionHandler    LifecycleActionHandler
-	UpgradeActionHandler   LifecycleActionHandler
-}
-
-type HandlerConfig struct {
+type StateMachineHandlerConfig struct {
 	HelmInfo
 	CR     interface{}
 	Scheme *runtime.Scheme
 }
 
-type LifecycleActionHandler interface {
+type StateMachineHandler interface {
 	// GetActionName returns the action name
 	GetActionName() string
 
 	// Init initializes the component Hekn information
-	Init(context HandlerContext, config HandlerConfig) (ctrl.Result, error)
+	Init(context HandlerContext, config StateMachineHandlerConfig) (ctrl.Result, error)
 
 	// IsActionNeeded returns true if action is needed
 	IsActionNeeded(context HandlerContext) (bool, ctrl.Result, error)

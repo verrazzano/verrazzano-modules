@@ -4,9 +4,9 @@
 package modulelifecycle
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/basecontroller"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -22,8 +22,8 @@ type Reconciler struct {
 	// through the client.
 	Scheme *runtime.Scheme
 
-	// handlers contains the action handlers
-	handlers actionspi.ActionHandlers
+	// handlerInfo contains the ModuleLifecycle handler information
+	handlerInfo handlerspi.ModuleLifecycleHandlerInfo
 
 	// LifecycleClassName is the class name of the controller
 	ClassName moduleapi.LifecycleClassType
@@ -33,7 +33,7 @@ type Reconciler struct {
 var _ controllerspi.Reconciler = Reconciler{}
 
 // InitController start the  controller
-func InitController(mgr ctrlruntime.Manager, handlers actionspi.ActionHandlers, className moduleapi.LifecycleClassType) error {
+func InitController(mgr ctrlruntime.Manager, handlers handlerspi.ModuleLifecycleHandlerInfo, className moduleapi.LifecycleClassType) error {
 	var controller Reconciler
 
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
@@ -50,6 +50,6 @@ func InitController(mgr ctrlruntime.Manager, handlers actionspi.ActionHandlers, 
 	controller.ClassName = className
 	controller.Client = baseController.Client
 	controller.Scheme = baseController.Scheme
-	controller.handlers = handlers
+	controller.handlerInfo = handlers
 	return nil
 }

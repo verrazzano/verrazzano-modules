@@ -4,9 +4,9 @@
 package modulelifecycle
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/statemachine"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -28,7 +28,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 	cr := &moduleapi.ModuleLifecycle{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		// This is a fatal internal error, don't requeue
-		spictx.Log.ErrorfThrottled("Failed converting Unstructured to ModuleLifecycle %s/%s: %v", err, u.GetNamespace(), u.GetName())
+		spictx.Log.ErrorfThrottled("Failed converting Unstructured to ModuleLifecycle %s/%s: %v", err, u.GetNamespace(), u.GetName(), err)
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
@@ -39,10 +39,14 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return ctrl.Result{}, nil
 	}
 
+	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
+
 	helmInfo := loadHelmInfo(cr)
-	handler := r.getActionHandler(cr.Spec.Action)
+	handler, res := r.getActionHandler(ctx, cr)
+	if res.Requeue {
+		return res, nil
+	}
 	if handler == nil {
-		spictx.Log.ErrorfThrottled("Failed, internal error invalid ModuleLifecycle ModuleCR handler %s", cr.Spec.Action)
 		return util.NewRequeueWithShortDelay(), nil
 	}
 
@@ -52,34 +56,51 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		HelmInfo: &helmInfo,
 		Handler:  handler,
 	}
-	ctx := actionspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 
-	res := executeStateMachine(sm, ctx)
+	res = executeStateMachine(ctx, sm)
 	return res, nil
 }
 
-func loadHelmInfo(cr *moduleapi.ModuleLifecycle) actionspi.HelmInfo {
-	helmInfo := actionspi.HelmInfo{
+func loadHelmInfo(cr *moduleapi.ModuleLifecycle) handlerspi.HelmInfo {
+	helmInfo := handlerspi.HelmInfo{
 		HelmRelease: cr.Spec.Installer.HelmRelease,
 	}
 	return helmInfo
 }
 
-func (r *Reconciler) getActionHandler(action moduleapi.ActionType) actionspi.LifecycleActionHandler {
-	switch action {
-	case moduleapi.InstallAction:
-		return r.handlers.InstallActionHandler
-	case moduleapi.UninstallAction:
-		return r.handlers.UninstallActionHandler
-	case moduleapi.UpdateAction:
-		return r.handlers.UpdateActionHandler
-	case moduleapi.UpgradeAction:
-		return r.handlers.UpgradeActionHandler
+// getActionHandler must return one of the MLC action handlers.
+func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (handlerspi.StateMachineHandler, ctrl.Result) {
+	if cr.Spec.Action == moduleapi.DeleteAction {
+		return r.handlerInfo.DeleteActionHandler, ctrl.Result{}
+	}
+	// Get the actual state of the module from the Kubernetes cluster
+	state, res, err := r.handlerInfo.ModuleActualStateInCluster.GetActualModuleState(ctx, cr)
+	if res2 := util.DeriveResult(res, err); res2.Requeue {
+		return nil, res2
+	}
+
+	switch state {
+	case handlerspi.ModuleStateNotInstalled:
+		// install
+		return r.handlerInfo.InstallActionHandler, ctrl.Result{}
+	case handlerspi.ModuleStateReady:
+		// the module is installed, if the version is changing this is an upgrade, else update
+		upgrade, res, err := r.handlerInfo.ModuleActualStateInCluster.IsUpgradeNeeded(ctx, cr)
+		if res2 := util.DeriveResult(res, err); res2.Requeue {
+			return nil, res2
+		}
+		if upgrade {
+			// upgrade
+			return r.handlerInfo.UpgradeActionHandler, ctrl.Result{}
+		}
+		// update
+		return r.handlerInfo.UpdateActionHandler, ctrl.Result{}
 	default:
-		return nil
+		ctx.Log.Progressf("Module is not is a state where any action can be taken %s/%s state: %s", state)
+		return nil, ctrl.Result{}
 	}
 }
 
-func defaultExecuteStateMachine(sm statemachine.StateMachine, ctx actionspi.HandlerContext) ctrl.Result {
+func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
 	return sm.Execute(ctx)
 }

@@ -28,10 +28,11 @@ import (
 var Debug bool
 
 // Helm chart status values: unknown, deployed, uninstalled, superseded, failed, uninstalling, pending-install, pending-upgrade or pending-rollback
-const ChartNotFound = "NotFound"
-const ChartStatusDeployed = "deployed"
-const ChartStatusPendingInstall = "pending-install"
-const ChartStatusFailed = "failed"
+const ReleaseNotFound = "NotFound"
+const ReleaseStatusDeployed = "deployed"
+const ReleaseStatusPendingInstall = "pending-install"
+const ReleaseStatusFailed = "failed"
+const ReleaseStatusUnknown = "unknown"
 
 // ChartStatusFnType - Package-level var and functions to allow overriding GetChartStatus for unit test purposes
 type ChartStatusFnType func(releaseName string, namespace string) (string, error)
@@ -207,21 +208,21 @@ func IsReleaseFailed(releaseName string, namespace string) (bool, error) {
 		log.Errorf("Getting status for chart %s/%s failed", namespace, releaseName)
 		return false, err
 	}
-	return releaseStatus == ChartStatusFailed, nil
+	return releaseStatus == ReleaseStatusFailed, nil
 }
 
 // IsReleaseDeployed returns true if the helmRelease is deployed
 func IsReleaseDeployed(releaseName string, namespace string) (found bool, err error) {
 	log := zap.S()
-	releaseStatus, err := getChartStatus(releaseName, namespace)
+	releaseStatus, err := GetHelmReleaseStatus(releaseName, namespace)
 	if err != nil {
 		log.Errorf("Getting status for chart %s/%s failed with error: %v\n", namespace, releaseName, err)
 		return false, err
 	}
 	switch releaseStatus {
-	case ChartNotFound:
+	case ReleaseNotFound:
 		log.Debugf("releasename=%s/%s; status= %s", namespace, releaseName, releaseStatus)
-	case ChartStatusDeployed:
+	case ReleaseStatusDeployed:
 		return true, nil
 	}
 	return false, nil
@@ -229,11 +230,11 @@ func IsReleaseDeployed(releaseName string, namespace string) (found bool, err er
 
 // GetReleaseStatus returns the helmRelease status
 func GetReleaseStatus(log vzlog.VerrazzanoLogger, releaseName string, namespace string) (status string, err error) {
-	releaseStatus, err := getChartStatus(releaseName, namespace)
+	releaseStatus, err := GetHelmReleaseStatus(releaseName, namespace)
 	if err != nil {
 		return "", log.ErrorfNewErr("Failed getting status for chart %s/%s with stderr: %v\n", namespace, releaseName, err)
 	}
-	if releaseStatus == ChartNotFound {
+	if releaseStatus == ReleaseNotFound {
 		log.Debugf("Chart %s/%s not found", namespace, releaseName)
 	}
 	return releaseStatus, nil
@@ -259,8 +260,8 @@ func IsReleaseInstalled(releaseName string, namespace string) (found bool, err e
 	return release.StatusDeployed == helmRelease.Info.Status, nil
 }
 
-// getChartStatus extracts the Helm deployment status of the specified chart from the JSON output as a string
-func getChartStatus(releaseName string, namespace string) (string, error) {
+// GetHelmReleaseStatus extracts the Helm deployment status of the specified chart from the JSON output as a string
+func GetHelmReleaseStatus(releaseName string, namespace string) (string, error) {
 	settings := cli.New()
 	settings.SetNamespace(namespace)
 	actionConfig, err := actionConfigFn(vzlog.DefaultLogger(), settings, namespace)
@@ -272,7 +273,7 @@ func getChartStatus(releaseName string, namespace string) (string, error) {
 	helmRelease, err := client.Run(releaseName)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			return ChartNotFound, nil
+			return ReleaseNotFound, nil
 		}
 		return "", err
 	}
@@ -285,7 +286,7 @@ func getReleaseState(releaseName string, namespace string) (string, error) {
 	releases, err := getReleases(namespace)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			return ChartNotFound, nil
+			return ReleaseNotFound, nil
 		}
 		return "", err
 	}
@@ -345,8 +346,8 @@ func GetReleaseValues(log vzlog.VerrazzanoLogger, valueKeys []string, releaseNam
 func getReleaseAppVersion(releaseName string, namespace string) (string, error) {
 	releases, err := getReleases(namespace)
 	if err != nil {
-		if err.Error() == ChartNotFound {
-			return ChartNotFound, nil
+		if err.Error() == ReleaseNotFound {
+			return ReleaseNotFound, nil
 		}
 		return "", err
 	}

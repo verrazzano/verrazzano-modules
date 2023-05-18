@@ -6,9 +6,9 @@ package modulelifecycle
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/statemachine"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -29,7 +29,13 @@ type handler struct {
 	statemachineCalled bool
 }
 
-var _ actionspi.LifecycleActionHandler = &handler{}
+type moduleHandler struct {
+	actualVersion string
+	handlerspi.ModuleActualState
+}
+
+var _ handlerspi.StateMachineHandler = &handler{}
+var _ handlerspi.ModuleActualStateInCluster = &moduleHandler{}
 
 // TestReconcile tests that the Reconcile implementation works correctly
 // GIVEN a Reconciler
@@ -40,17 +46,21 @@ func TestReconcile(t *testing.T) {
 
 	tests := []struct {
 		name                       string
-		action                     moduleapi.ActionType
+		action                     moduleapi.ModuleLifecycleActionType
 		expectedStatemachineCalled bool
 		statemachineError          bool
 		expectedRequeue            bool
 		expectedError              bool
 		startingStatusState        moduleapi.ModuleLifecycleState
 		statusGeneration           int64
+		desiredVersion             string
+		actualVersion              string
+		handlerspi.ModuleActualState
 	}{
 		{
 			name:                       "test-install",
-			action:                     moduleapi.InstallAction,
+			ModuleActualState:          handlerspi.ModuleStateNotInstalled,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: true,
@@ -59,7 +69,8 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-statemachine-error",
-			action:                     moduleapi.InstallAction,
+			ModuleActualState:          handlerspi.ModuleStateNotInstalled,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          true,
 			expectedStatemachineCalled: true,
@@ -68,7 +79,8 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-state-completed",
-			action:                     moduleapi.InstallAction,
+			ModuleActualState:          handlerspi.ModuleStateNotInstalled,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        moduleapi.StateCompleted,
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -77,7 +89,8 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-state-not-needed",
-			action:                     moduleapi.InstallAction,
+			ModuleActualState:          handlerspi.ModuleStateNotInstalled,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        moduleapi.StateNotNeeded,
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -86,16 +99,20 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "test-action-upgrade",
-			action:                     moduleapi.UpgradeAction,
+			ModuleActualState:          handlerspi.ModuleStateReady,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
 			expectedRequeue:            true,
 			expectedError:              false,
+			actualVersion:              "v1",
+			desiredVersion:             "v2",
 		},
 		{
 			name:                       "test-action-update",
-			action:                     moduleapi.UpdateAction,
+			ModuleActualState:          handlerspi.ModuleStateReady,
+			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -104,7 +121,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "test-action-uninstall",
-			action:                     moduleapi.UninstallAction,
+			action:                     moduleapi.DeleteAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
@@ -141,6 +158,7 @@ func TestReconcile(t *testing.T) {
 				},
 				Spec: moduleapi.ModuleLifecycleSpec{
 					Action:             test.action,
+					Version:            test.desiredVersion,
 					LifecycleClassName: moduleapi.LifecycleClassType(moduleapi.CalicoLifecycleClass),
 				},
 				Status: moduleapi.ModuleLifecycleStatus{
@@ -154,7 +172,11 @@ func TestReconcile(t *testing.T) {
 			r := Reconciler{
 				Client: clientBuilder.Build(),
 				Scheme: initScheme(),
-				handlers: actionspi.ActionHandlers{
+				handlerInfo: handlerspi.ModuleLifecycleHandlerInfo{
+					ModuleActualStateInCluster: moduleHandler{
+						ModuleActualState: test.ModuleActualState,
+						actualVersion:     test.actualVersion,
+					},
 					InstallActionHandler: &handler{},
 				},
 			}
@@ -177,7 +199,7 @@ func initScheme() *runtime.Scheme {
 	return scheme
 }
 
-func (h *handler) testExecuteStateMachine(sm statemachine.StateMachine, ctx actionspi.HandlerContext) ctrl.Result {
+func (h *handler) testExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
 	h.statemachineCalled = true
 	if h.statemachineError {
 		return util.NewRequeueWithShortDelay()
@@ -189,50 +211,58 @@ func (h handler) GetActionName() string {
 	return "install"
 }
 
-func (h handler) Init(context actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h handler) Init(context handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsActionNeeded(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsActionNeeded(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) PreAction(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PreAction(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) PreActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PreActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsPreActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsPreActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) ActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) ActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) DoAction(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) DoAction(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) PostActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PostActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) PostAction(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PostAction(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsPostActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsPostActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) CompletedActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) CompletedActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
+}
+
+func (m moduleHandler) GetActualModuleState(context handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (handlerspi.ModuleActualState, ctrl.Result, error) {
+	return m.ModuleActualState, ctrl.Result{}, nil
+}
+
+func (m moduleHandler) IsUpgradeNeeded(context handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (bool, ctrl.Result, error) {
+	return m.actualVersion != cr.Spec.Version, ctrl.Result{}, nil
 }
