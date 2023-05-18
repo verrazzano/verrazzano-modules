@@ -21,6 +21,11 @@ type BaseHandler struct {
 	MlcNamespace string
 }
 
+func (h *BaseHandler) GetActionName() string {
+	//TODO implement me
+	return "unknown"
+}
+
 // Init initializes the handler with Helm chart information
 func (h *BaseHandler) Init(_ handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig, action moduleapi.ModuleLifecycleActionType) (ctrl.Result, error) {
 	h.Config = config
@@ -28,6 +33,31 @@ func (h *BaseHandler) Init(_ handlerspi.HandlerContext, config handlerspi.StateM
 	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmLifecycleClass, action)
 	h.MlcNamespace = h.ModuleCR.Namespace
 	h.Action = action
+	return ctrl.Result{}, nil
+}
+
+// IsActionNeeded returns true if install is needed
+func (h BaseHandler) IsActionNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
+	return true, ctrl.Result{}, nil
+}
+
+// PreActionUpdateStatus does the lifecycle pre-Action status update
+func (h *BaseHandler) PreActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// PreAction does the pre-action
+func (h BaseHandler) PreAction(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// IsPreActionDone returns true if pre-action done
+func (h BaseHandler) IsPreActionDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
+	return true, ctrl.Result{}, nil
+}
+
+// ActionUpdateStatus does the lifecycle Action status update
+func (h *BaseHandler) ActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
@@ -109,5 +139,20 @@ func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.
 	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
+	return ctrl.Result{}, nil
+}
+
+// PostActionUpdateStatue does installation post-action status update
+func (h BaseHandler) PostActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// IsPostActionDone returns true if post-action done
+func (h BaseHandler) IsPostActionDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
+	return true, ctrl.Result{}, nil
+}
+
+// CompletedActionUpdateStatus does the lifecycle completed Action status update
+func (h *BaseHandler) CompletedActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }

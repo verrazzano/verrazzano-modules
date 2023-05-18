@@ -5,7 +5,7 @@ package reconcile
 
 import (
 	"context"
-	actionspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
+	handlerspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -15,14 +15,14 @@ import (
 )
 
 type Handler struct {
-	BaseHandler common.BaseHandler
+	common.BaseHandler
 }
 
 var (
-	_ actionspi.StateMachineHandler = &Handler{}
+	_ handlerspi.StateMachineHandler = &Handler{}
 )
 
-func NewHandler() actionspi.StateMachineHandler {
+func NewHandler() handlerspi.StateMachineHandler {
 	return &Handler{}
 }
 
@@ -32,22 +32,17 @@ func (h Handler) GetActionName() string {
 }
 
 // Init initializes the handler
-func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.StateMachineHandlerConfig) (ctrl.Result, error) {
+func (h *Handler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
 	return h.BaseHandler.Init(ctx, config, moduleapi.ReconcileAction)
 }
 
-// IsActionNeeded returns true if install is needed
-func (h Handler) IsActionNeeded(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
-}
-
 // PreActionUpdateStatus does the lifecycle pre-Action status update
-func (h Handler) PreActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
+func (h Handler) PreActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
 }
 
 // PreAction does installation pre-action
-func (h Handler) PreAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
+func (h Handler) PreAction(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	// Update the spec version if it is not set
 	if len(h.BaseHandler.ModuleCR.Spec.Version) == 0 {
 		// Update spec version to match chart, always requeue to get ModuleCR with version
@@ -62,42 +57,14 @@ func (h Handler) PreAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// IsPreActionDone returns true if pre-action done
-func (h Handler) IsPreActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
-}
 
 // ActionUpdateStatus does the lifecycle Action status update
-func (h Handler) ActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
+func (h Handler) ActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallStarted, moduleapi.ModuleStateReconciling)
 }
 
-// DoAction installs the component using Helm
-func (h Handler) DoAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.DoAction(ctx)
-}
-
-// IsActionDone Indicates whether a component is installed and ready
-func (h Handler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
-	return h.BaseHandler.IsActionDone(ctx)
-}
-
-// PostActionUpdateStatue does installation post-action status update
-func (h Handler) PostActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
-}
-
-// PostAction does installation post-action
-func (h Handler) PostAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.PostAction(ctx)
-}
-
-// IsPostActionDone returns true if post-action done
-func (h Handler) IsPostActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
-}
 
 // CompletedActionUpdateStatus does the lifecycle pre-Action status update
-func (h Handler) CompletedActionUpdateStatus(ctx actionspi.HandlerContext) (ctrl.Result, error) {
+func (h Handler) CompletedActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }

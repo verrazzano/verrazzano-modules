@@ -41,27 +41,9 @@ func (h HelmHandler) GetActionName() string {
 	return "install"
 }
 
-// IsActionNeeded returns true if install is needed
-func (h HelmHandler) IsActionNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	if h.ModuleCR.Status.State == moduleapi.StateCompleted || h.ModuleCR.Status.State == moduleapi.StateNotNeeded {
-		return false, ctrl.Result{}, nil
-	}
-	return true, ctrl.Result{}, nil
-}
-
 // PreActionUpdateStatus does the lifecycle pre-Action status update
 func (h HelmHandler) PreActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
-}
-
-// PreAction does installation pre-action
-func (h HelmHandler) PreAction(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
-}
-
-// IsPreActionDone returns true if pre-action done
-func (h HelmHandler) IsPreActionDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
 }
 
 // ActionUpdateStatus does the lifecycle Action status update
@@ -125,20 +107,6 @@ func (h HelmHandler) IsActionDone(ctx handlerspi.HandlerContext) (bool, ctrl.Res
 	return true, ctrl.Result{}, err
 }
 
-// PostActionUpdateStatus does installation post-action
-func (h HelmHandler) PostActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
-}
-
-// PostAction does installation pre-action
-func (h HelmHandler) PostAction(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
-}
-
-// IsPostActionDone returns true if post-action done
-func (h HelmHandler) IsPostActionDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
-}
 
 // CompletedActionUpdateStatus does the lifecycle completed Action status update
 func (h HelmHandler) CompletedActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
