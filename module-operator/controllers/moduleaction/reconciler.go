@@ -68,7 +68,7 @@ func loadHelmInfo(cr *moduleapi.ModuleAction) handlerspi.HelmInfo {
 	return helmInfo
 }
 
-// getActionHandler must return one of the MLC action handlers.
+// getActionHandler must return one of the ModuleAction action handlers.
 func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.ModuleAction) (handlerspi.StateMachineHandler, ctrl.Result) {
 	if cr.Spec.Action == moduleapi.DeleteAction {
 		return r.handlerInfo.DeleteActionHandler, ctrl.Result{}

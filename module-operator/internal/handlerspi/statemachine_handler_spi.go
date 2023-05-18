@@ -18,12 +18,14 @@ type HelmInfo struct {
 	ChartDir string
 }
 
+// StateMachineHandlerConfig contains configuration data needed by the handlers
 type StateMachineHandlerConfig struct {
 	HelmInfo
 	CR     interface{}
 	Scheme *runtime.Scheme
 }
 
+// StateMachineHandler is the interface called by the state machine to do module related work
 type StateMachineHandler interface {
 	// GetWorkName returns the work name
 	GetWorkName() string

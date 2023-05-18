@@ -35,13 +35,11 @@ const (
 	isActionNeeded              = "isActionNeeded"
 	preActionUpdateStatus       = "preActionUpdateStatus"
 	preAction                   = "preAction"
-	isPreActionDone             = "isPreActionDone"
 	actionUpdateStatus          = "DoWorkUpdateStatus"
 	doAction                    = "doAction"
 	isActionDone                = "isActionDone"
 	postAction                  = "postAction"
 	postActionUpdateStatus      = "postActionUpdateStatus"
-	isPostActionDone            = "isPostActionDone"
 	completedActionUpdateStatus = "WorkCompletedUpdateStatus"
 )
 
@@ -53,13 +51,11 @@ func getStatesInOrder() []string {
 		isActionNeeded,
 		preActionUpdateStatus,
 		preAction,
-		isPreActionDone,
 		actionUpdateStatus,
 		doAction,
 		isActionDone,
 		postActionUpdateStatus,
 		postAction,
-		isPostActionDone,
 		completedActionUpdateStatus,
 	}
 }
@@ -176,18 +172,8 @@ func TestNotDone(t *testing.T) {
 			expectRequeue: false,
 		},
 		{
-			name:          "isPreActionDone",
-			stateNotDone:  isPreActionDone,
-			expectRequeue: true,
-		},
-		{
 			name:          "isActionDone",
 			stateNotDone:  isActionDone,
-			expectRequeue: true,
-		},
-		{
-			name:          "isPostActionDone",
-			stateNotDone:  isPostActionDone,
 			expectRequeue: true,
 		},
 	}
@@ -264,10 +250,6 @@ func (h handler) PreWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Re
 	return h.procHandlerCall(preActionUpdateStatus)
 }
 
-func (h handler) IsPreActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return h.procHandlerBool(isPreActionDone)
-}
-
 func (h handler) DoWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(actionUpdateStatus)
 }
@@ -286,10 +268,6 @@ func (h handler) PostWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.R
 
 func (h handler) PostWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(postAction)
-}
-
-func (h handler) IsPostActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return h.procHandlerBool(isPostActionDone)
 }
 
 func (h handler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {

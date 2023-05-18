@@ -13,30 +13,30 @@ import (
 )
 
 func (h BaseHandler) GetModuleLifecycle(ctx handlerspi.HandlerContext) (*moduleapi.ModuleAction, error) {
-	mlc := moduleapi.ModuleAction{}
+	moduleAction := moduleapi.ModuleAction{}
 	nsn := types.NamespacedName{
-		Name:      h.MlcName,
+		Name:      h.ModuleActionName,
 		Namespace: h.ModuleCR.Namespace,
 	}
 
-	if err := ctx.Client.Get(context.TODO(), nsn, &mlc); err != nil {
+	if err := ctx.Client.Get(context.TODO(), nsn, &moduleAction); err != nil {
 		ctx.Log.Progressf("Retrying get for ModuleAction %v: %v", nsn, err)
 		return nil, err
 	}
-	return &mlc, nil
+	return &moduleAction, nil
 }
 
 // DeleteModuleLifecycle deletes a moduleLifecycle
 func (h BaseHandler) DeleteModuleLifecycle(ctx handlerspi.HandlerContext) error {
-	mlc := moduleapi.ModuleAction{
+	moduleAction := moduleapi.ModuleAction{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      h.MlcName,
+			Name:      h.ModuleActionName,
 			Namespace: h.ModuleCR.Namespace,
 		},
 	}
 
-	if err := ctx.Client.Delete(context.TODO(), &mlc); err != nil {
-		ctx.Log.ErrorfThrottled("Failed trying to delete ModuleLifecycles/%s: %v", mlc.Namespace, mlc.Name, err)
+	if err := ctx.Client.Delete(context.TODO(), &moduleAction); err != nil {
+		ctx.Log.ErrorfThrottled("Failed trying to delete ModuleLifecycles/%s: %v", moduleAction.Namespace, moduleAction.Name, err)
 		return err
 	}
 	return nil

@@ -22,7 +22,7 @@ func NewHandler() handlerspi.StateMachineHandler {
 	return &Handler{}
 }
 
-// GetActionName returns the action name
+// GetWorkName returns the work name
 func (h Handler) GetWorkName() string {
 	return string(moduleapi.DeleteAction)
 }
@@ -32,17 +32,17 @@ func (h *Handler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMac
 	return h.BaseHandler.Init(ctx, config, moduleapi.DeleteAction)
 }
 
-// PreActionUpdateStatus does the lifecycle pre-Action status update
+// PreWorkUpdateStatus does the lifecycle pre-work status update
 func (h Handler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreUninstall, moduleapi.ModuleStateReconciling)
 }
 
-// ActionUpdateStatus does the lifecycle Action status update
+// DoWorkUpdateStatus does the lifecycle work status update
 func (h Handler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUninstallStarted, moduleapi.ModuleStateReconciling)
 }
 
-// CompletedActionUpdateStatus does the lifecycle completed Action status update
+// WorkCompletedUpdateStatus does the lifecycle completed Action status update
 func (h Handler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondUninstallComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }

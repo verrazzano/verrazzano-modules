@@ -26,7 +26,7 @@ func NewHandler() handlerspi.StateMachineHandler {
 	return &Handler{}
 }
 
-// GetActionName returns the action name
+// GetWorkName returns the work name
 func (h Handler) GetWorkName() string {
 	return string(moduleapi.ReconcileAction)
 }
@@ -36,12 +36,12 @@ func (h *Handler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMac
 	return h.BaseHandler.Init(ctx, config, moduleapi.ReconcileAction)
 }
 
-// PreActionUpdateStatus does the lifecycle pre-Action status update
+// PreWorkUpdateStatus does the lifecycle pre-work status update
 func (h Handler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondReconciling, moduleapi.ModuleStateReconciling)
 }
 
-// PreAction does installation pre-action
+// PreWork does installation pre-work
 func (h Handler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	// Update the spec version if it is not set
 	if len(h.BaseHandler.ModuleCR.Spec.Version) == 0 {
@@ -57,7 +57,7 @@ func (h Handler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// CompletedActionUpdateStatus does the lifecycle pre-Action status update
+// WorkCompletedUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondReconcilingComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }

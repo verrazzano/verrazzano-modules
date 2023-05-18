@@ -36,12 +36,12 @@ func (h *HelmHandler) Init(ctx handlerspi.HandlerContext, config handlerspi.Stat
 	return h.BaseHandler.Init(ctx, config)
 }
 
-// GetActionName returns the action name
+// GetWorkName returns the work name
 func (h HelmHandler) GetWorkName() string {
 	return "upgrade"
 }
 
-// IsActionNeeded returns true if install is needed
+// IsWorkNeeded returns true if upgrade is needed
 func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	installed, err := helm2.IsReleaseInstalled(h.HelmRelease.Name, h.BaseHandler.Config.Namespace)
 	if err != nil {
@@ -51,17 +51,17 @@ func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Res
 	return installed, ctrl.Result{}, err
 }
 
-// PreActionUpdateStatus does the lifecycle pre-Action status update
+// PreWorkUpdateStatus updates the status for the pre-work state
 func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreUpgrade, moduleapi.ModuleStateReconciling)
 }
 
-// ActionUpdateStatus does the lifecycle Action status update
+// DoWorkUpdateStatus updates the status for the work state
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUpgradeStarted, moduleapi.ModuleStateReconciling)
 }
 
-// DoAction installs the module using Helm
+// DoWork upgrades the module using Helm
 func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.BaseHandler.Config.HelmInfo.HelmRelease
@@ -84,7 +84,7 @@ func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) 
 	return ctrl.Result{}, err
 }
 
-// IsActionDone Indicates whether a module is installed and ready
+// IsWorkDone indicates whether a module is upgraded and ready
 func (h HelmHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	if ctx.DryRun {
 		ctx.Log.Debugf("IsReady() dry run for %s", h.HelmRelease.Name)
@@ -104,7 +104,7 @@ func (h HelmHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, ctrl.Resul
 	return true, ctrl.Result{}, err
 }
 
-// CompletedActionUpdateStatus does the lifecycle completed Action status update
+// WorkCompletedUpdateStatus updates the status to completed
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUpgradeComplete, moduleapi.StateCompleted)
 }

@@ -45,62 +45,52 @@ func (h *BaseHandler) Init(_ handlerspi.HandlerContext, config handlerspi.StateM
 	return ctrl.Result{}, nil
 }
 
-// IsActionNeeded returns true if install is needed
+// IsWorkNeeded returns true if install is needed
 func (h BaseHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-// PreActionUpdateStatus does the lifecycle pre-Action status update
+// PreWorkUpdateStatus does the lifecycle pre-Work status update
 func (h *BaseHandler) PreWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// PreAction does the pre-action
+// PreWork does the pre-action
 func (h BaseHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// IsPreActionDone returns true if pre-action done
-func (h BaseHandler) IsPreActionDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
-}
-
-// ActionUpdateStatus does the lifecycle Action status update
+// WorkUpdateStatus does the lifecycle Work status update
 func (h *BaseHandler) DoWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// DoAction installs the module using Helm
+// DoWork installs the module using Helm
 func (h *BaseHandler) DoWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// IsActionDone Indicates whether a module is installed and ready
+// IsWorkDone Indicates whether a module is installed and ready
 func (h *BaseHandler) IsWorkDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return false, ctrl.Result{}, nil
 }
 
-// PostActionUpdateStatus does installation post-action
+// PostWorkUpdateStatus does installation post-action
 func (h BaseHandler) PostWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// PostAction does installation pre-action
+// PostWork does installation pre-action
 func (h BaseHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// IsPostActionDone returns true if post-action done
-func (h BaseHandler) IsPostActionDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
-}
-
-// CompletedActionUpdateStatus does the lifecycle completed Action status update
+// WorkCompletedUpdateStatus does the lifecycle completed Work status update
 func (h *BaseHandler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// UpdateStatus does the lifecycle pre-Action status update
+// UpdateStatus does the lifecycle pre-Work status update
 func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleLifecycleState) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
 	h.ModuleCR.Status.State = state

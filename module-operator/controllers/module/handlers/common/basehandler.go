@@ -14,11 +14,11 @@ import (
 )
 
 type BaseHandler struct {
-	Config       handlerspi.StateMachineHandlerConfig
-	ModuleCR     *moduleapi.Module
-	Action       moduleapi.ModuleActionType
-	MlcName      string
-	MlcNamespace string
+	Config                handlerspi.StateMachineHandlerConfig
+	ModuleCR              *moduleapi.Module
+	Action                moduleapi.ModuleActionType
+	ModuleActionName      string
+	ModuleActionNamespace string
 }
 
 func (h *BaseHandler) GetActionName() string {
@@ -30,79 +30,79 @@ func (h *BaseHandler) GetActionName() string {
 func (h *BaseHandler) Init(_ handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig, action moduleapi.ModuleActionType) (ctrl.Result, error) {
 	h.Config = config
 	h.ModuleCR = config.CR.(*moduleapi.Module)
-	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmLifecycleClass, action)
-	h.MlcNamespace = h.ModuleCR.Namespace
+	h.ModuleActionName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmLifecycleClass, action)
+	h.ModuleActionNamespace = h.ModuleCR.Namespace
 	h.Action = action
 	return ctrl.Result{}, nil
 }
 
-// IsActionNeeded returns true if install is needed
+// IsWorkNeeded returns true if install is needed
 func (h BaseHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-// PreActionUpdateStatus does the lifecycle pre-Action status update
-func (h *BaseHandler) PreActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
+// PreWorkUpdateStatus does the lifecycle pre-Action status update
+func (h *BaseHandler) PreWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// PreAction does the pre-action
+// PreWork does the pre-work
 func (h BaseHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// ActionUpdateStatus does the lifecycle Action status update
+// DoWorkUpdateStatus does the status update
 func (h *BaseHandler) DoWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// DoAction installs the component using Helm
+// DoWork does the main work for the Module lifecycle operator
 func (h BaseHandler) DoWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	// Create ModuleAction
-	mlc := moduleapi.ModuleAction{
+	moduleAction := moduleapi.ModuleAction{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      h.MlcName,
+			Name:      h.ModuleActionName,
 			Namespace: h.ModuleCR.Namespace,
 		},
 	}
-	_, err := controllerutil.CreateOrUpdate(context.TODO(), ctx.Client, &mlc, func() error {
-		err := h.mutateMLC(&mlc)
+	_, err := controllerutil.CreateOrUpdate(context.TODO(), ctx.Client, &moduleAction, func() error {
+		err := h.mutateModuleAction(&moduleAction)
 		if err != nil {
 			return err
 		}
-		return controllerutil.SetControllerReference(h.ModuleCR, &mlc, h.Config.Scheme)
+		return controllerutil.SetControllerReference(h.ModuleCR, &moduleAction, h.Config.Scheme)
 	})
 
 	return ctrl.Result{}, err
 }
 
-func (h BaseHandler) mutateMLC(mlc *moduleapi.ModuleAction) error {
-	mlc.Spec.ModuleClassName = moduleapi.ModuleClassType(h.ModuleCR.Spec.ModuleName)
-	mlc.Spec.Action = h.Action
-	mlc.Spec.Version = h.ModuleCR.Spec.Version
-	mlc.Spec.Installer.HelmRelease = h.Config.HelmInfo.HelmRelease
-	mlc.Spec.Installer.HelmRelease.Overrides = h.ModuleCR.Spec.Overrides
+func (h BaseHandler) mutateModuleAction(moduleAction *moduleapi.ModuleAction) error {
+	moduleAction.Spec.ModuleClassName = moduleapi.ModuleClassType(h.ModuleCR.Spec.ModuleName)
+	moduleAction.Spec.Action = h.Action
+	moduleAction.Spec.Version = h.ModuleCR.Spec.Version
+	moduleAction.Spec.Installer.HelmRelease = h.Config.HelmInfo.HelmRelease
+	moduleAction.Spec.Installer.HelmRelease.Overrides = h.ModuleCR.Spec.Overrides
 	return nil
 }
 
-// IsActionDone returns true if the module action is done
+// IsWorkDone returns true if the module work is done
 func (h BaseHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	if ctx.DryRun {
 		return true, ctrl.Result{}, nil
 	}
 
-	mlc, err := h.GetModuleLifecycle(ctx)
+	moduleAction, err := h.GetModuleLifecycle(ctx)
 	if err != nil {
 		return false, util.NewRequeueWithShortDelay(), nil
 	}
-	if mlc.Status.State == moduleapi.StateCompleted || mlc.Status.State == moduleapi.StateNotNeeded {
+	if moduleAction.Status.State == moduleapi.StateCompleted || moduleAction.Status.State == moduleapi.StateNotNeeded {
 		return true, ctrl.Result{}, nil
 	}
-	ctx.Log.Progressf("Waiting for ModuleAction %s to be completed", h.MlcName)
+	ctx.Log.Progressf("Waiting for ModuleAction %s to be completed", h.ModuleActionName)
 	return false, ctrl.Result{}, nil
 }
 
-// PostAction does post-action
+// PostWork does post-action
 func (h BaseHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	if ctx.DryRun {
 		return ctrl.Result{}, nil
@@ -111,6 +111,16 @@ func (h BaseHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 	if err := h.DeleteModuleLifecycle(ctx); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
+	return ctrl.Result{}, nil
+}
+
+// PostWorkUpdateStatus does installation post-action status update
+func (h BaseHandler) PostWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// WorkCompletedUpdateStatus does the lifecycle completed Action status update
+func (h *BaseHandler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
@@ -135,15 +145,5 @@ func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.
 	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
-	return ctrl.Result{}, nil
-}
-
-// PostActionUpdateStatue does installation post-action status update
-func (h BaseHandler) PostWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
-}
-
-// CompletedActionUpdateStatus does the lifecycle completed Action status update
-func (h *BaseHandler) CompletedActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
