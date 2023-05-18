@@ -393,8 +393,8 @@ func getActionConfig(log vzlog.VerrazzanoLogger, settings *cli.EnvSettings, name
 }
 
 func loadChart(chartDir string) (*chart.Chart, error) {
-	if !os2.FileExists(chartDir) {
-		return nil, fmt.Errorf("No such file: %s", chartDir)
+	if _, err := os2.FileExists(chartDir); err != nil {
+		return nil, err
 	}
 	return loader.Load(chartDir)
 }
