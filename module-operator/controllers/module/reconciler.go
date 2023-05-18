@@ -4,11 +4,10 @@
 package module
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/statemachine"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
-	"github.com/verrazzano/verrazzano-modules/common/pkg/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,21 +29,12 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return ctrl.Result{}, nil
 	}
 
-	handler, err := r.getActionHandler(cr)
-	if err != nil {
-		spictx.Log.ErrorfThrottled("Failed getting Lifecycle handler for Module %s/%s: %v", cr.Namespace, cr.Name, err)
-		return util.NewRequeueWithShortDelay(), nil
-	}
-	if handler == nil {
-		// Don't requeue, nothing to do
-		return ctrl.Result{}, nil
-	}
-	return r.reconcileAction(spictx, cr, handler)
+	return r.reconcileAction(spictx, cr, r.HandlerInfo.ReconcileActionHandler)
 }
 
 // reconcileAction reconciles the Module CR for a particular action
-func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler actionspi.LifecycleActionHandler) (ctrl.Result, error) {
-	ctx := actionspi.HandlerContext{Client: r.Client, Log: spictx.Log}
+func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler handlerspi.StateMachineHandler) (ctrl.Result, error) {
+	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 
 	helmInfo, err := loadHelmInfo(cr)
 	if err != nil {
@@ -64,45 +54,4 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 
 	res := sm.Execute(ctx)
 	return res, nil
-}
-
-func (r *Reconciler) getActionHandler(cr *moduleapi.Module) (actionspi.LifecycleActionHandler, error) {
-	// Check for install complete
-	if !isConditionPresent(cr, moduleapi.CondInstallComplete) {
-		return r.comp.InstallActionHandler, nil
-	}
-
-	// return UpgradeAction only when the desired version is different from current
-	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
-	if err != nil {
-		return nil, err
-	}
-	if upgradeNeeded {
-		return r.comp.UpgradeActionHandler, nil
-	}
-
-	// The module is already installed.  Check if update needed
-	return r.comp.UpdateActionHandler, nil
-}
-
-func isConditionPresent(cr *moduleapi.Module, condition moduleapi.LifecycleCondition) bool {
-	for _, each := range cr.Status.Conditions {
-		if each.Type == condition {
-			return true
-		}
-	}
-	return false
-}
-
-// IsUpgradeNeeded returns true if upgrade is needed
-func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
-	desiredSemver, err := semver.NewSemVersion(desiredVersion)
-	if err != nil {
-		return false, err
-	}
-	installedSemver, err := semver.NewSemVersion(installedVersion)
-	if err != nil {
-		return false, err
-	}
-	return installedSemver.IsLessThan(desiredSemver), nil
 }

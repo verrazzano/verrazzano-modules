@@ -4,18 +4,17 @@
 package factory
 
 import (
-	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/calico/install"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/helm/uninstall"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/helm/update"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/helm/upgrade"
 )
 
-func NewLifecycleActionHandler() actionspi.ActionHandlers {
-
-	// Notice that only the install action is overridden with Calico specific handler
-	// Only implement the methods that require Calico logic, then call the base Helm handler
-	return actionspi.ActionHandlers{
+// NewLModuleLifecycleHandlerInfo creates a new ModuleLifecycleHandlerInfo
+func NewLModuleLifecycleHandlerInfo() handlerspi.ModuleLifecycleHandlerInfo {
+	return handlerspi.ModuleLifecycleHandlerInfo {
+		ModuleActualState:      nil,
 		InstallActionHandler:   install.NewHandler(),
 		UninstallActionHandler: uninstall.NewHandler(),
 		UpdateActionHandler:    update.NewHandler(),

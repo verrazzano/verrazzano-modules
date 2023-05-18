@@ -4,11 +4,12 @@
 package modulelifecycle
 
 import (
-	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/statemachine"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
+	"github.com/verrazzano/verrazzano-modules/common/pkg/semver"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,7 +29,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 	cr := &moduleapi.ModuleLifecycle{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		// This is a fatal internal error, don't requeue
-		spictx.Log.ErrorfThrottled("Failed converting Unstructured to ModuleLifecycle %s/%s: %v", err, u.GetNamespace(), u.GetName())
+		spictx.Log.ErrorfThrottled("Failed converting Unstructured to ModuleLifecycle %s/%s: %v", err, u.GetNamespace(), u.GetName(), err)
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	nsn := k8s.GetNamespacedName(cr.ObjectMeta)
@@ -40,9 +41,9 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 	}
 
 	helmInfo := loadHelmInfo(cr)
-	handler := r.getActionHandler(cr.Spec.Action)
-	if handler == nil {
-		spictx.Log.ErrorfThrottled("Failed, internal error invalid ModuleLifecycle ModuleCR handler %s", cr.Spec.Action)
+	handler, err := r.getActionHandler(cr)
+	if err != nil {
+		spictx.Log.ErrorfThrottled("Failed checking ModuleLifecycle CR %/%s version: %v", err, u.GetNamespace(), u.GetName(), err)
 		return util.NewRequeueWithShortDelay(), nil
 	}
 
@@ -52,34 +53,61 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		HelmInfo: &helmInfo,
 		Handler:  handler,
 	}
-	ctx := actionspi.HandlerContext{Client: r.Client, Log: spictx.Log}
+	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 
 	res := executeStateMachine(sm, ctx)
 	return res, nil
 }
 
-func loadHelmInfo(cr *moduleapi.ModuleLifecycle) actionspi.HelmInfo {
-	helmInfo := actionspi.HelmInfo{
+func loadHelmInfo(cr *moduleapi.ModuleLifecycle) handlerspi.HelmInfo {
+	helmInfo := handlerspi.HelmInfo{
 		HelmRelease: cr.Spec.Installer.HelmRelease,
 	}
 	return helmInfo
 }
 
-func (r *Reconciler) getActionHandler(action moduleapi.ActionType) actionspi.LifecycleActionHandler {
-	switch action {
-	case moduleapi.InstallAction:
-		return r.handlers.InstallActionHandler
-	case moduleapi.UninstallAction:
-		return r.handlers.UninstallActionHandler
-	case moduleapi.UpdateAction:
-		return r.handlers.UpdateActionHandler
-	case moduleapi.UpgradeAction:
-		return r.handlers.UpgradeActionHandler
-	default:
-		return nil
+func (r *Reconciler) getActionHandler(cr *moduleapi.ModuleLifecycle) (handlerspi.StateMachineHandler, error) {
+	// Check for install complete
+	if !isConditionPresent(cr, moduleapi.CondInstallComplete) {
+		return r.handlerInfo.InstallActionHandler, nil
 	}
+
+	// return UpgradeAction only when the desired version is different from current
+	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	if upgradeNeeded {
+		return r.handlerInfo.UpgradeActionHandler, nil
+	}
+
+	// The module is already installed.  Check if update needed
+	return r.handlerInfo.UpdateActionHandler, nil
 }
 
-func defaultExecuteStateMachine(sm statemachine.StateMachine, ctx actionspi.HandlerContext) ctrl.Result {
+func defaultExecuteStateMachine(sm statemachine.StateMachine, ctx handlerspi.HandlerContext) ctrl.Result {
 	return sm.Execute(ctx)
+}
+
+func isConditionPresent(cr *moduleapi.ModuleLifecycle, condition moduleapi.LifecycleCondition) bool {
+	for _, each := range cr.Status.Conditions {
+		if each.Type == condition {
+			return true
+		}
+	}
+	return false
+}
+
+// IsUpgradeNeeded returns true if upgrade is needed
+func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
+	desiredSemver, err := semver.NewSemVersion(desiredVersion)
+	if err != nil {
+		return false, err
+	}
+	installedSemver, err := semver.NewSemVersion(installedVersion)
+	if err != nil {
+		return false, err
+	}
+	return installedSemver.IsLessThan(desiredSemver), nil
 }

@@ -5,7 +5,7 @@ package common
 
 import (
 	"context"
-	"github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +14,7 @@ import (
 )
 
 type BaseHandler struct {
-	Config       actionspi.HandlerConfig
+	Config       handlerspi.StateMachineHandlerConfig
 	ModuleCR     *moduleapi.Module
 	Action       moduleapi.ActionType
 	MlcName      string
@@ -22,7 +22,7 @@ type BaseHandler struct {
 }
 
 // Init initializes the handler with Helm chart information
-func (h *BaseHandler) Init(_ actionspi.HandlerContext, config actionspi.HandlerConfig, action moduleapi.ActionType) (ctrl.Result, error) {
+func (h *BaseHandler) Init(_ handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig, action moduleapi.ActionType) (ctrl.Result, error) {
 	h.Config = config
 	h.ModuleCR = config.CR.(*moduleapi.Module)
 	h.MlcName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmLifecycleClass, action)
@@ -32,7 +32,7 @@ func (h *BaseHandler) Init(_ actionspi.HandlerContext, config actionspi.HandlerC
 }
 
 // DoAction installs the component using Helm
-func (h BaseHandler) DoAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
+func (h BaseHandler) DoAction(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	// Create ModuleLifecycle
 	mlc := moduleapi.ModuleLifecycle{
 		ObjectMeta: metav1.ObjectMeta{
@@ -60,7 +60,7 @@ func (h BaseHandler) mutateMLC(mlc *moduleapi.ModuleLifecycle) error {
 }
 
 // IsActionDone returns true if the module action is done
-func (h BaseHandler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h BaseHandler) IsActionDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	if ctx.DryRun {
 		return true, ctrl.Result{}, nil
 	}
@@ -77,7 +77,7 @@ func (h BaseHandler) IsActionDone(ctx actionspi.HandlerContext) (bool, ctrl.Resu
 }
 
 // PostAction does post-action
-func (h BaseHandler) PostAction(ctx actionspi.HandlerContext) (ctrl.Result, error) {
+func (h BaseHandler) PostAction(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	if ctx.DryRun {
 		return ctrl.Result{}, nil
 	}
@@ -89,7 +89,7 @@ func (h BaseHandler) PostAction(ctx actionspi.HandlerContext) (ctrl.Result, erro
 }
 
 // UpdateDoneStatus does the lifecycle status update with the action is done
-func (h BaseHandler) UpdateDoneStatus(ctx actionspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType, version string) (ctrl.Result, error) {
+func (h BaseHandler) UpdateDoneStatus(ctx handlerspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType, version string) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
 	h.ModuleCR.Status.State = state
 	h.ModuleCR.Status.ObservedGeneration = h.ModuleCR.Generation
@@ -103,7 +103,7 @@ func (h BaseHandler) UpdateDoneStatus(ctx actionspi.HandlerContext, cond modulea
 }
 
 // UpdateStatus does the lifecycle pre-Action status update
-func (h BaseHandler) UpdateStatus(ctx actionspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType) (ctrl.Result, error) {
+func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
 	h.ModuleCR.Status.State = state
 	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {

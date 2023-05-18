@@ -4,7 +4,7 @@
 package uninstall
 
 import (
-	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -15,10 +15,10 @@ type Handler struct {
 }
 
 var (
-	_ actionspi.LifecycleActionHandler = &Handler{}
+	_ actionspi.StateMachineHandler = &Handler{}
 )
 
-func NewHandler() actionspi.LifecycleActionHandler {
+func NewHandler() actionspi.StateMachineHandler {
 	return &Handler{}
 }
 
@@ -28,7 +28,7 @@ func (h Handler) GetActionName() string {
 }
 
 // Init initializes the handler
-func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.StateMachineHandlerConfig) (ctrl.Result, error) {
 	return h.BaseHandler.Init(ctx, config, moduleapi.UninstallAction)
 }
 

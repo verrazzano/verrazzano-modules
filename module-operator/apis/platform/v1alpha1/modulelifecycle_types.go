@@ -40,6 +40,8 @@ type ModuleLifecycleSpec struct {
 	Action ActionType `json:"action"`
 	// Installer Defines the installer information required to perform the lifecycle operation
 	Installer ModuleInstaller `json:"installer"`
+	// The Module version
+	Version string `json:"version,omitempty"`
 }
 
 // ModuleInstaller Defines the installer information for a module; only one of the fields can be set
@@ -68,6 +70,8 @@ type ModuleLifecycleStatus struct {
 	Conditions         []ModuleLifecycleCondition `json:"conditions,omitempty"`
 	ObservedGeneration int64                      `json:"observedGeneration,omitempty"`
 	ReconciledAt       string                     `json:"reconciledAt,omitempty"`
+	// The Module version
+	Version string `json:"version,omitempty"`
 }
 
 // ModuleLifecycleCondition describes current state of an installation.

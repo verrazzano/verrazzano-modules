@@ -6,9 +6,9 @@ package modulelifecycle
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano-modules/common/actionspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/common/controllercore/statemachine"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -29,7 +29,7 @@ type handler struct {
 	statemachineCalled bool
 }
 
-var _ actionspi.LifecycleActionHandler = &handler{}
+var _ handlerspi.StateMachineHandler = &handler{}
 
 // TestReconcile tests that the Reconcile implementation works correctly
 // GIVEN a Reconciler
@@ -154,7 +154,7 @@ func TestReconcile(t *testing.T) {
 			r := Reconciler{
 				Client: clientBuilder.Build(),
 				Scheme: initScheme(),
-				handlers: actionspi.ActionHandlers{
+				handlerInfo: handlerspi.ModuleLifecycleHandlerInfo{
 					InstallActionHandler: &handler{},
 				},
 			}
@@ -177,7 +177,7 @@ func initScheme() *runtime.Scheme {
 	return scheme
 }
 
-func (h *handler) testExecuteStateMachine(sm statemachine.StateMachine, ctx actionspi.HandlerContext) ctrl.Result {
+func (h *handler) testExecuteStateMachine(sm statemachine.StateMachine, ctx handlerspi.HandlerContext) ctrl.Result {
 	h.statemachineCalled = true
 	if h.statemachineError {
 		return util.NewRequeueWithShortDelay()
@@ -189,50 +189,50 @@ func (h handler) GetActionName() string {
 	return "install"
 }
 
-func (h handler) Init(context actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h handler) Init(context handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsActionNeeded(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsActionNeeded(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) PreAction(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PreAction(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) PreActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PreActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsPreActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsPreActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) ActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) ActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) DoAction(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) DoAction(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) PostActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PostActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) PostAction(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PostAction(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (h handler) IsPostActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsPostActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
 
-func (h handler) CompletedActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) CompletedActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }

@@ -64,13 +64,14 @@ const (
 
 // ModuleStatus defines the observed state of a Verrazzano Module resource.
 type ModuleStatus struct {
-	// The version of module that is installed.
-	Version string          `json:"version,omitempty"`
+	// State is the Module state
 	State   ModuleStateType `json:"state,omitempty"`
 	// The latest available observations of an object's current state.
 	Conditions []ModuleCondition `json:"conditions,omitempty"`
 	// ObservedGeneration is the actual generation that was reconciled
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// The version of module that is installed.
+	Version string          `json:"version,omitempty"`
 }
 
 // ModuleCondition describes the current state of an installation.

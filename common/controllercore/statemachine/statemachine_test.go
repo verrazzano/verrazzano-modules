@@ -6,7 +6,7 @@ package statemachine
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -86,10 +86,10 @@ func TestAllStatesSucceed(t *testing.T) {
 	sm := StateMachine{
 		Scheme:   nil,
 		CR:       cr,
-		HelmInfo: &actionspi.HelmInfo{},
+		HelmInfo: &handlerspi.HelmInfo{},
 		Handler:  h,
 	}
-	ctx := actionspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
+	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
 
 	res := sm.Execute(ctx)
 	asserts.False(res.Requeue)
@@ -108,7 +108,7 @@ func TestAllStatesSucceed(t *testing.T) {
 // AND each subsequent state is not executed
 func TestEachStateRequeue(t *testing.T) {
 	asserts := assert.New(t)
-	ctx := actionspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
+	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
 
 	// Check for a Requeue result for every state
 	for i, s := range getStatesInOrder() {
@@ -131,7 +131,7 @@ func TestEachStateRequeue(t *testing.T) {
 		sm := StateMachine{
 			Scheme:   nil,
 			CR:       cr,
-			HelmInfo: &actionspi.HelmInfo{},
+			HelmInfo: &handlerspi.HelmInfo{},
 			Handler:  h,
 		}
 		b := h.behaviorMap[s]
@@ -163,7 +163,7 @@ func TestEachStateRequeue(t *testing.T) {
 // AND each subsequent state is not executed
 func TestNotDone(t *testing.T) {
 	asserts := assert.New(t)
-	ctx := actionspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
+	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
 
 	tests := []struct {
 		name          string
@@ -208,7 +208,7 @@ func TestNotDone(t *testing.T) {
 			sm := StateMachine{
 				Scheme:   nil,
 				CR:       cr,
-				HelmInfo: &actionspi.HelmInfo{},
+				HelmInfo: &handlerspi.HelmInfo{},
 				Handler:  h,
 			}
 			b := h.behaviorMap[test.stateNotDone]
@@ -248,51 +248,51 @@ func (h handler) GetActionName() string {
 	return "install"
 }
 
-func (h handler) Init(context actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h handler) Init(context handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
 	return h.procHandlerCall(initFunc)
 }
 
-func (h handler) IsActionNeeded(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsActionNeeded(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return h.procHandlerBool(isActionNeeded)
 }
 
-func (h handler) PreAction(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PreAction(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(preAction)
 }
 
-func (h handler) PreActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PreActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(preActionUpdateStatus)
 }
 
-func (h handler) IsPreActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsPreActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return h.procHandlerBool(isPreActionDone)
 }
 
-func (h handler) ActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) ActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(actionUpdateStatus)
 }
 
-func (h handler) DoAction(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) DoAction(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(doAction)
 }
 
-func (h handler) IsActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return h.procHandlerBool(isActionDone)
 }
 
-func (h handler) PostActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PostActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(postActionUpdateStatus)
 }
 
-func (h handler) PostAction(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PostAction(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(postAction)
 }
 
-func (h handler) IsPostActionDone(context actionspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsPostActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return h.procHandlerBool(isPostActionDone)
 }
 
-func (h handler) CompletedActionUpdateStatus(context actionspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) CompletedActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.procHandlerCall(completedActionUpdateStatus)
 }
 

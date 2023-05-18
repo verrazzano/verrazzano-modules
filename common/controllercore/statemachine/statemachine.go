@@ -9,7 +9,7 @@ package statemachine
 
 import (
 	"fmt"
-	"github.com/verrazzano/verrazzano-modules/common/actionspi"
+	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -64,8 +64,8 @@ const (
 type StateMachine struct {
 	*runtime.Scheme
 	CR       client.Object
-	HelmInfo *actionspi.HelmInfo
-	Handler  actionspi.LifecycleActionHandler
+	HelmInfo *handlerspi.HelmInfo
+	Handler  handlerspi.StateMachineHandler
 }
 
 // Execute runs the state machine starting at the state stored in the tracker.
@@ -80,7 +80,7 @@ type StateMachine struct {
 //
 // It is important to note that if the CR generation increments, then a new tracker is created
 // and the state machine starts from the beginning.
-func (s *StateMachine) Execute(handlerContext actionspi.HandlerContext) ctrl.Result {
+func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) ctrl.Result {
 	tracker := ensureTracker(s.CR, stateInit)
 
 	actionName := s.Handler.GetActionName()
@@ -90,7 +90,7 @@ func (s *StateMachine) Execute(handlerContext actionspi.HandlerContext) ctrl.Res
 		switch tracker.state {
 		case stateInit:
 			// Init the Handler
-			config := actionspi.HandlerConfig{
+			config := handlerspi.StateMachineHandlerConfig{
 				HelmInfo: *s.HelmInfo,
 				CR:       s.CR,
 				Scheme:   s.Scheme,

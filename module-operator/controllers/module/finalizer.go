@@ -25,7 +25,7 @@ func (r Reconciler) PreRemoveFinalizer(spictx controllerspi.ReconcileContext, u 
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
 	}
-	return r.reconcileAction(spictx, cr, r.comp.UninstallActionHandler)
+	return r.reconcileAction(spictx, cr, r.HandlerInfo.UninstallActionHandler)
 }
 
 // PostRemoveFinalizer is called after the finalizer is successfully removed.

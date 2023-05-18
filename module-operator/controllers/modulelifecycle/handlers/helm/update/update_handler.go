@@ -4,7 +4,7 @@
 package update
 
 import (
-	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
@@ -22,17 +22,17 @@ type HelmHandler struct {
 type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
 
 var (
-	_ actionspi.LifecycleActionHandler = &HelmHandler{}
+	_ actionspi.StateMachineHandler = &HelmHandler{}
 
 	upgradeFunc upgradeFuncSig = helm.UpgradeRelease
 )
 
-func NewHandler() actionspi.LifecycleActionHandler {
+func NewHandler() actionspi.StateMachineHandler {
 	return &HelmHandler{}
 }
 
 // Init initializes the handler with Helm chart information
-func (h *HelmHandler) Init(ctx actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h *HelmHandler) Init(ctx actionspi.HandlerContext, config actionspi.StateMachineHandlerConfig) (ctrl.Result, error) {
 	return h.BaseHandler.Init(ctx, config)
 }
 

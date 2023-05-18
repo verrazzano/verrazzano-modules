@@ -4,7 +4,7 @@
 package uninstall
 
 import (
-	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/helm"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/modulelifecycle/handlers/common"
@@ -16,15 +16,15 @@ type HelmHandler struct {
 }
 
 var (
-	_ actionspi.LifecycleActionHandler = &HelmHandler{}
+	_ actionspi.StateMachineHandler = &HelmHandler{}
 )
 
-func NewHandler() actionspi.LifecycleActionHandler {
+func NewHandler() actionspi.StateMachineHandler {
 	return &HelmHandler{}
 }
 
 // Init initializes the handler with Helm chart information
-func (h *HelmHandler) Init(ctx actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h *HelmHandler) Init(ctx actionspi.HandlerContext, config actionspi.StateMachineHandlerConfig) (ctrl.Result, error) {
 	return h.BaseHandler.Init(ctx, config)
 }
 

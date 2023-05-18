@@ -1,11 +1,11 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package install
+package reconcile
 
 import (
 	"context"
-	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,10 +19,10 @@ type Handler struct {
 }
 
 var (
-	_ actionspi.LifecycleActionHandler = &Handler{}
+	_ actionspi.StateMachineHandler = &Handler{}
 )
 
-func NewHandler() actionspi.LifecycleActionHandler {
+func NewHandler() actionspi.StateMachineHandler {
 	return &Handler{}
 }
 
@@ -32,7 +32,7 @@ func (h Handler) GetActionName() string {
 }
 
 // Init initializes the handler
-func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.StateMachineHandlerConfig) (ctrl.Result, error) {
 	return h.BaseHandler.Init(ctx, config, moduleapi.InstallAction)
 }
 

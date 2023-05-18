@@ -5,7 +5,7 @@ package common
 
 import (
 	"context"
-	actionspi "github.com/verrazzano/verrazzano-modules/common/actionspi"
+	actionspi "github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/constants"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -14,7 +14,7 @@ import (
 
 type BaseHandler struct {
 	// Config is the handler configuration
-	Config actionspi.HandlerConfig
+	Config actionspi.StateMachineHandlerConfig
 
 	// HelmInfo has the helm information
 	actionspi.HelmInfo
@@ -30,7 +30,7 @@ type BaseHandler struct {
 }
 
 // Init initializes the handler with Helm chart information
-func (h *BaseHandler) Init(_ actionspi.HandlerContext, config actionspi.HandlerConfig) (ctrl.Result, error) {
+func (h *BaseHandler) Init(_ actionspi.HandlerContext, config actionspi.StateMachineHandlerConfig) (ctrl.Result, error) {
 	h.Config = config
 	h.HelmInfo = config.HelmInfo
 	h.ImagePullSecretKeyname = constants.GlobalImagePullSecName
