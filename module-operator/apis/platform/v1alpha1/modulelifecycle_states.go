@@ -23,21 +23,22 @@ type LifecycleCondition string
 const (
 	ConditionArrayLimit = 5
 
-	CondAlreadyInstalled   LifecycleCondition = "AlreadyInstalled"
-	CondAlreadyUninstalled LifecycleCondition = "AlreadyUninstalled"
-	CondAlreadyUpgraded    LifecycleCondition = "AlreadyUpgraded"
-	CondPreInstall         LifecycleCondition = "PreInstall"
-	CondInstallStarted     LifecycleCondition = "InstallStarted"
-	CondInstallComplete    LifecycleCondition = "InstallComplete"
-	CondPreUninstall       LifecycleCondition = "PreUninstall"
-	CondUninstallStarted   LifecycleCondition = "UninstallStarted"
-	CondUninstallComplete  LifecycleCondition = "UninstallComplete"
-	CondPreUpgrade         LifecycleCondition = "PreUpgrade"
-	CondUpgradeStarted     LifecycleCondition = "UpgradeStarted"
-	CondUpgradeComplete    LifecycleCondition = "UpgradeComplete"
-	CondReady              LifecycleCondition = "Ready"
-	CondReconciling        LifecycleCondition = "Reconciling"
-	CondFailed             LifecycleCondition = "Failed"
+	CondAlreadyInstalled    LifecycleCondition = "AlreadyInstalled"
+	CondAlreadyUninstalled  LifecycleCondition = "AlreadyUninstalled"
+	CondAlreadyUpgraded     LifecycleCondition = "AlreadyUpgraded"
+	CondPreInstall          LifecycleCondition = "PreInstall"
+	CondInstallStarted      LifecycleCondition = "InstallStarted"
+	CondInstallComplete     LifecycleCondition = "InstallComplete"
+	CondPreUninstall        LifecycleCondition = "PreUninstall"
+	CondUninstallStarted    LifecycleCondition = "UninstallStarted"
+	CondUninstallComplete   LifecycleCondition = "UninstallComplete"
+	CondPreUpgrade          LifecycleCondition = "PreUpgrade"
+	CondUpgradeStarted      LifecycleCondition = "UpgradeStarted"
+	CondUpgradeComplete     LifecycleCondition = "UpgradeComplete"
+	CondReady               LifecycleCondition = "Ready"
+	CondReconciling         LifecycleCondition = "Reconciling"
+	CondReconcilingComplete LifecycleCondition = "ReconcileComplete"
+	CondFailed              LifecycleCondition = "Failed"
 )
 
 func (m *ModuleLifecycle) SetState(state ModuleLifecycleState) {

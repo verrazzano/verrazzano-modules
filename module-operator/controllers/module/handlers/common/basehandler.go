@@ -84,6 +84,7 @@ func (h BaseHandler) DoAction(ctx handlerspi.HandlerContext) (ctrl.Result, error
 func (h BaseHandler) mutateMLC(mlc *moduleapi.ModuleLifecycle) error {
 	mlc.Spec.LifecycleClassName = moduleapi.LifecycleClassType(h.ModuleCR.Spec.ModuleName)
 	mlc.Spec.Action = h.Action
+	mlc.Spec.Version = h.ModuleCR.Spec.Version
 	mlc.Spec.Installer.HelmRelease = h.Config.HelmInfo.HelmRelease
 	mlc.Spec.Installer.HelmRelease.Overrides = h.ModuleCR.Spec.Overrides
 	return nil

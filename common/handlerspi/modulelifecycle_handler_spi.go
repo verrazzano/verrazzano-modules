@@ -11,10 +11,10 @@ import (
 // ModuleLifecycleHandlerInfo contains the ModuleLifecycle handler interfaces.
 type ModuleLifecycleHandlerInfo struct {
 	ModuleActualStateInCluster
-	InstallActionHandler   StateMachineHandler
-	UninstallActionHandler StateMachineHandler
-	UpdateActionHandler    StateMachineHandler
-	UpgradeActionHandler   StateMachineHandler
+	InstallActionHandler StateMachineHandler
+	DeleteActionHandler  StateMachineHandler
+	UpdateActionHandler  StateMachineHandler
+	UpgradeActionHandler StateMachineHandler
 }
 
 // ModuleActualState is the actual state of the module in the cluster

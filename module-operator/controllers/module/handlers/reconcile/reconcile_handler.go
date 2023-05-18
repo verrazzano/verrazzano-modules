@@ -38,7 +38,7 @@ func (h *Handler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMac
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) PreActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondReconciling, moduleapi.ModuleStateReconciling)
 }
 
 // PreAction does installation pre-action
@@ -57,14 +57,7 @@ func (h Handler) PreAction(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-
-// ActionUpdateStatus does the lifecycle Action status update
-func (h Handler) ActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallStarted, moduleapi.ModuleStateReconciling)
-}
-
-
 // CompletedActionUpdateStatus does the lifecycle pre-Action status update
 func (h Handler) CompletedActionUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
+	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondReconcilingComplete, moduleapi.ModuleStateReady, h.BaseHandler.ModuleCR.Spec.Version)
 }

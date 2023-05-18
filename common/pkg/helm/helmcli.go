@@ -214,7 +214,7 @@ func IsReleaseFailed(releaseName string, namespace string) (bool, error) {
 // IsReleaseDeployed returns true if the helmRelease is deployed
 func IsReleaseDeployed(releaseName string, namespace string) (found bool, err error) {
 	log := zap.S()
-	releaseStatus, err := getReleaseStatus(releaseName, namespace)
+	releaseStatus, err := GetHelmReleaseStatus(releaseName, namespace)
 	if err != nil {
 		log.Errorf("Getting status for chart %s/%s failed with error: %v\n", namespace, releaseName, err)
 		return false, err
@@ -230,7 +230,7 @@ func IsReleaseDeployed(releaseName string, namespace string) (found bool, err er
 
 // GetReleaseStatus returns the helmRelease status
 func GetReleaseStatus(log vzlog.VerrazzanoLogger, releaseName string, namespace string) (status string, err error) {
-	releaseStatus, err := getReleaseStatus(releaseName, namespace)
+	releaseStatus, err := GetHelmReleaseStatus(releaseName, namespace)
 	if err != nil {
 		return "", log.ErrorfNewErr("Failed getting status for chart %s/%s with stderr: %v\n", namespace, releaseName, err)
 	}
@@ -260,8 +260,8 @@ func IsReleaseInstalled(releaseName string, namespace string) (found bool, err e
 	return release.StatusDeployed == helmRelease.Info.Status, nil
 }
 
-// getReleaseStatus extracts the Helm deployment status of the specified chart from the JSON output as a string
-func getReleaseStatus(releaseName string, namespace string) (string, error) {
+// GetHelmReleaseStatus extracts the Helm deployment status of the specified chart from the JSON output as a string
+func GetHelmReleaseStatus(releaseName string, namespace string) (string, error) {
 	settings := cli.New()
 	settings.SetNamespace(namespace)
 	actionConfig, err := actionConfigFn(vzlog.DefaultLogger(), settings, namespace)

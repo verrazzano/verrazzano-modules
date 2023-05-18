@@ -11,24 +11,32 @@ import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"strings"
 )
 
-var _ handlerspi.ModuleActualStateInCluster = &moduleState{}
+var _ handlerspi.ModuleActualStateInCluster = &ModuleState{}
 
-type moduleState struct{}
+type ModuleState struct{}
 
 // GetActualModuleState gets the state of the module
-func (m moduleState) GetActualModuleState(context handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (handlerspi.ModuleActualState, ctrl.Result, error) {
+func (m ModuleState) GetActualModuleState(context handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (handlerspi.ModuleActualState, ctrl.Result, error) {
+	const notFound = "NotFound"
 	releaseName := cr.Spec.Installer.HelmRelease.Name
 	releaseNamespace := cr.Spec.Installer.HelmRelease.Namespace
-	releaseStatus, err := helm.GetReleaseStatus(context.Log, releaseName, releaseNamespace)
+	releaseStatus, err := helm.GetHelmReleaseStatus(releaseName, releaseNamespace)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return handlerspi.ModuleStateNotInstalled, ctrl.Result{}, nil
+		}
+
 		context.Log.ErrorfThrottled("Failed getting Helm release %s/%s failed with error: %v\n", releaseNamespace, releaseName, err)
 		return handlerspi.ModuleStateUnknown, util.NewRequeueWithShortDelay(), err
 	}
 	switch release.Status(releaseStatus) {
-	case release.StatusUnknown:
+	case notFound:
 		return handlerspi.ModuleStateNotInstalled, ctrl.Result{}, nil
+	case release.StatusUnknown:
+		return handlerspi.ModuleStateUnknown, ctrl.Result{}, nil
 	case release.StatusDeployed:
 		return handlerspi.ModuleStateReady, ctrl.Result{}, nil
 	case release.StatusFailed:
@@ -39,7 +47,7 @@ func (m moduleState) GetActualModuleState(context handlerspi.HandlerContext, cr 
 }
 
 // IsUpgradeNeeded checks if upgrade is needed
-func (m moduleState) IsUpgradeNeeded(context handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (bool, ctrl.Result, error) {
+func (m ModuleState) IsUpgradeNeeded(context handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (bool, ctrl.Result, error) {
 	releaseName := cr.Spec.Installer.HelmRelease.Name
 	releaseNamespace := cr.Spec.Installer.HelmRelease.Namespace
 	installedVersion, err := helm.GetReleaseChartVersion(releaseName, releaseNamespace)

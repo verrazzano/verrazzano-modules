@@ -5,14 +5,14 @@ package factory
 
 import (
 	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/delete"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/reconcile"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/uninstall"
 )
 
 // NewModuleHandlerInfo creates a new NewModuleHandlerInfo
 func NewModuleHandlerInfo() handlerspi.ModuleHandlerInfo {
 	return handlerspi.ModuleHandlerInfo{
 		ReconcileActionHandler: reconcile.NewHandler(),
-		UninstallActionHandler: uninstall.NewHandler(),
+		DeleteActionHandler:    delete.NewHandler(),
 	}
 }

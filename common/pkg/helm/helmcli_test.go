@@ -322,8 +322,8 @@ func Test_getReleaseStateChartNotFound(t *testing.T) {
 	assertion.Equalf("", state, "unpexected state: %s", state)
 }
 
-// Test_getChartStatusDeployed tests the getReleaseStatus fn
-// GIVEN a call to getReleaseStatus
+// Test_getChartStatusDeployed tests the GetHelmReleaseStatus fn
+// GIVEN a call to GetHelmReleaseStatus
 //
 //	WHEN Helm returns a deployed state
 //	THEN the function returns "deployed" and no error
@@ -332,13 +332,13 @@ func Test_getChartStatusDeployed(t *testing.T) {
 	SetActionConfigFunction(testActionConfigWithRelease)
 	defer SetDefaultActionConfigFunction()
 
-	state, err := getReleaseStatus(helmRelease, ns)
+	state, err := GetHelmReleaseStatus(helmRelease, ns)
 	assertion.NoError(err)
 	assertion.Equalf(ReleaseStatusDeployed, state, "unpexected state: %s", state)
 }
 
-// Test_getChartStatusChartNotFound tests the getReleaseStatus fn
-// GIVEN a call to getReleaseStatus
+// Test_getChartStatusChartNotFound tests the GetHelmReleaseStatus fn
+// GIVEN a call to GetHelmReleaseStatus
 //
 //	WHEN the Chart is not found
 //	THEN the function returns chart not found and no error
@@ -347,7 +347,7 @@ func Test_getChartStatusChartNotFound(t *testing.T) {
 	SetActionConfigFunction(testActionConfigWithRelease)
 	defer SetDefaultActionConfigFunction()
 
-	state, err := getReleaseStatus("weblogic-operator", "verrazzano-system")
+	state, err := GetHelmReleaseStatus("weblogic-operator", "verrazzano-system")
 	assertion.NoError(err)
 	assertion.Equalf(ReleaseNotFound, state, "unpexected state: %s", state)
 }

@@ -6,5 +6,5 @@ package handlerspi
 // ModuleHandlerInfo contains the Module handler interfaces
 type ModuleHandlerInfo struct {
 	ReconcileActionHandler StateMachineHandler
-	UninstallActionHandler StateMachineHandler
+	DeleteActionHandler    StateMachineHandler
 }

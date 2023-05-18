@@ -9,7 +9,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/common/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/controller/util"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/k8s"
-	"github.com/verrazzano/verrazzano-modules/common/pkg/semver"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -69,7 +68,12 @@ func loadHelmInfo(cr *moduleapi.ModuleLifecycle) handlerspi.HelmInfo {
 	return helmInfo
 }
 
+// getActionHandler must return one of the MLC action handlers.
 func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (handlerspi.StateMachineHandler, ctrl.Result) {
+	if cr.Spec.Action == moduleapi.DeleteAction {
+		return r.handlerInfo.DeleteActionHandler, ctrl.Result{}
+	}
+	// Get the actual state of the module from the Kubernetes cluster
 	state, res, err := r.handlerInfo.ModuleActualStateInCluster.GetActualModuleState(ctx, cr)
 	if res2 := util.DeriveResult(res, err); res2.Requeue {
 		return nil, res2
@@ -77,15 +81,20 @@ func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *modulea
 
 	switch state {
 	case handlerspi.ModuleStateNotInstalled:
+		// install
 		return r.handlerInfo.InstallActionHandler, ctrl.Result{}
 	case handlerspi.ModuleStateReady:
+		// the module is installed, if the version is changing this is an upgrade, else update
 		upgrade, res, err := r.handlerInfo.ModuleActualStateInCluster.IsUpgradeNeeded(ctx, cr)
 		if res2 := util.DeriveResult(res, err); res2.Requeue {
 			return nil, res2
 		}
 		if upgrade {
+			// upgrade
 			return r.handlerInfo.UpgradeActionHandler, ctrl.Result{}
 		}
+		// update
+		return r.handlerInfo.UpdateActionHandler, ctrl.Result{}
 	default:
 		ctx.Log.Progressf("Module is not is a state where any action can be taken %s/%s state: %s", state)
 		return nil, ctrl.Result{}
@@ -95,26 +104,4 @@ func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *modulea
 
 func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
 	return sm.Execute(ctx)
-}
-
-func isConditionPresent(cr *moduleapi.ModuleLifecycle, condition moduleapi.LifecycleCondition) bool {
-	for _, each := range cr.Status.Conditions {
-		if each.Type == condition {
-			return true
-		}
-	}
-	return false
-}
-
-// IsUpgradeNeeded returns true if upgrade is needed
-func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
-	desiredSemver, err := semver.NewSemVersion(desiredVersion)
-	if err != nil {
-		return false, err
-	}
-	installedSemver, err := semver.NewSemVersion(installedVersion)
-	if err != nil {
-		return false, err
-	}
-	return installedSemver.IsLessThan(desiredSemver), nil
 }
