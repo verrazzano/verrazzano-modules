@@ -24,7 +24,7 @@ func NewHandler() actionspi.StateMachineHandler {
 
 // GetActionName returns the action name
 func (h Handler) GetActionName() string {
-	return "uninstall"
+	return string(moduleapi.DeleteAction)
 }
 
 // Init initializes the handler

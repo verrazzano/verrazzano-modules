@@ -28,7 +28,7 @@ func NewHandler() actionspi.StateMachineHandler {
 
 // GetActionName returns the action name
 func (h Handler) GetActionName() string {
-	return "install"
+	return string(moduleapi.ReconcileAction)
 }
 
 // Init initializes the handler
@@ -39,13 +39,6 @@ func (h *Handler) Init(ctx actionspi.HandlerContext, config actionspi.StateMachi
 // IsActionNeeded returns true if install is needed
 func (h Handler) IsActionNeeded(ctx actionspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
-
-	//installed, err := vzhelm.IsReleaseInstalled(h.ReleaseName, h.chartDir)
-	//if err != nil {
-	//	ctx.Log().ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.chartDir, h.ReleaseName)
-	//	return true, ctrl.Result{}, err
-	//}
-	//return !installed, ctrl.Result{}, err
 }
 
 // PreActionUpdateStatus does the lifecycle pre-Action status update
