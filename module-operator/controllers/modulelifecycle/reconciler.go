@@ -99,7 +99,6 @@ func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *modulea
 		ctx.Log.Progressf("Module is not is a state where any action can be taken %s/%s state: %s", state)
 		return nil, ctrl.Result{}
 	}
-	return nil, ctrl.Result{}
 }
 
 func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
