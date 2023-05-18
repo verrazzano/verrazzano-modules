@@ -91,7 +91,7 @@ func (h *BaseHandler) WorkCompletedUpdateStatus(context handlerspi.HandlerContex
 }
 
 // UpdateStatus does the lifecycle pre-Work status update
-func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleLifecycleState) (ctrl.Result, error) {
+func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleActionState) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
 	h.ModuleCR.Status.State = state
 	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {

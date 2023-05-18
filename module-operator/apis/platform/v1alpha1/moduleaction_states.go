@@ -3,19 +3,19 @@
 
 package v1alpha1
 
-// ModuleLifecycleState describes the current reconciling stage of a ModuleAction instance
-type ModuleLifecycleState string
+// ModuleActionState describes the current reconciling stage of a ModuleAction instance
+type ModuleActionState string
 
 const (
-	StatePreinstall   ModuleLifecycleState = "PreInstalling"
-	StateInstalling   ModuleLifecycleState = "Installing"
-	StateUninstalling ModuleLifecycleState = "Uninstalling"
-	StatePreUpgrade   ModuleLifecycleState = "PreUpgrading"
-	StateUpgrading    ModuleLifecycleState = "Upgrading"
-	StateFailed       ModuleLifecycleState = "Failed"
-	StateNotNeeded    ModuleLifecycleState = "NotNeeded"
-	StateReady        ModuleLifecycleState = "Ready"
-	StateCompleted    ModuleLifecycleState = "Completed"
+	StatePreinstall   ModuleActionState = "PreInstalling"
+	StateInstalling   ModuleActionState = "Installing"
+	StateUninstalling ModuleActionState = "Uninstalling"
+	StatePreUpgrade   ModuleActionState = "PreUpgrading"
+	StateUpgrading    ModuleActionState = "Upgrading"
+	StateFailed       ModuleActionState = "Failed"
+	StateNotNeeded    ModuleActionState = "NotNeeded"
+	StateReady        ModuleActionState = "Ready"
+	StateCompleted    ModuleActionState = "Completed"
 )
 
 type LifecycleCondition string
@@ -41,11 +41,11 @@ const (
 	CondFailed              LifecycleCondition = "Failed"
 )
 
-func (m *ModuleAction) SetState(state ModuleLifecycleState) {
+func (m *ModuleAction) SetState(state ModuleActionState) {
 	m.Status.State = state
 }
 
-func LifecycleState(condition LifecycleCondition) ModuleLifecycleState {
+func LifecycleState(condition LifecycleCondition) ModuleActionState {
 	switch condition {
 	case CondPreInstall:
 		return StatePreinstall

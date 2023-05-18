@@ -29,11 +29,3 @@ func (h CalicoHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, erro
 
 	return h.HelmHandler.PreWork(ctx)
 }
-
-// IsPreActionDone returns true if pre-action done
-func (h CalicoHandler) IsPreActionDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-
-	// TODO - Do Calico specific work here
-
-	return h.HelmHandler.IsPreActionDone(ctx)
-}

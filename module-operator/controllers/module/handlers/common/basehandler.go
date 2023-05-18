@@ -30,7 +30,7 @@ func (h *BaseHandler) GetActionName() string {
 func (h *BaseHandler) Init(_ handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig, action moduleapi.ModuleActionType) (ctrl.Result, error) {
 	h.Config = config
 	h.ModuleCR = config.CR.(*moduleapi.Module)
-	h.ModuleActionName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmLifecycleClass, action)
+	h.ModuleActionName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmModuleClass, action)
 	h.ModuleActionNamespace = h.ModuleCR.Namespace
 	h.Action = action
 	return ctrl.Result{}, nil

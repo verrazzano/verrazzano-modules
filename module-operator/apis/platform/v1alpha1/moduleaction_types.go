@@ -12,10 +12,10 @@ import (
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.state",description="State of Module reconciliation"
 //+kubebuilder:storageversion
-//+kubebuilder:resource:path=modulelifecycles,shortName=mlc;mlcs
+//+kubebuilder:resource:path=moduleactions
 //+genclient
 
-// ModuleAction defines the schema for a module lifecycle operation
+// ModuleAction defines the schema for a module action
 type ModuleAction struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -34,11 +34,11 @@ type ModuleActionList struct {
 }
 
 type ModuleActionSpec struct {
-	// ModuleClassName defines the lifecycle class name required to process the ModuleAction instance
+	// ModuleClassName defines the class name required to process the ModuleAction instance
 	ModuleClassName ModuleClassType `json:"moduleClassName,omitempty"`
-	// Action Defines lifecycle action to perform
+	// Action Defines action to perform
 	Action ModuleActionType `json:"action"`
-	// Installer Defines the installer information required to perform the lifecycle operation
+	// Installer Defines the installer information required to perform the operation
 	Installer ModuleInstaller `json:"installer"`
 	// The Module version
 	Version string `json:"version,omitempty"`
@@ -66,8 +66,8 @@ type HelmRelease struct {
 // ModuleActionStatus defines the observed state of Module
 type ModuleActionStatus struct {
 	// Information about the current state of a component
-	State              ModuleLifecycleState    `json:"state,omitempty"`
-	Conditions         []ModuleActionCondition `json:"conditions,omitempty"`
+	State      ModuleActionState       `json:"state,omitempty"`
+	Conditions []ModuleActionCondition `json:"conditions,omitempty"`
 	ObservedGeneration int64                   `json:"observedGeneration,omitempty"`
 	ReconciledAt       string                  `json:"reconciledAt,omitempty"`
 	// The Module version
@@ -92,12 +92,12 @@ type ModuleActionCondition struct {
 type ModuleClassType string
 
 const (
-	// HelmLifecycleClass defines the class name used by the Helm operator
-	HelmLifecycleClass ModuleClassType = "helm"
+	// HelmModuleClass defines the class name used by the Helm operator
+	HelmModuleClass ModuleClassType = "helm"
 
-	// CalicoLifecycleClass defines the class name used by the Calico operator
-	CalicoLifecycleClass ModuleClassType = "calico"
-	CCMLifecycleClass    ModuleClassType = "ccm"
+	// CalicoModuleClass defines the class name used by the Calico operator
+	CalicoModuleClass ModuleClassType = "calico"
+	CCMModuleClass    ModuleClassType = "ccm"
 )
 
 // ModuleActionType defines the type of action to be performed in a ModuleAction instance

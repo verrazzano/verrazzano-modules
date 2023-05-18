@@ -51,7 +51,7 @@ func TestReconcile(t *testing.T) {
 		statemachineError          bool
 		expectedRequeue            bool
 		expectedError              bool
-		startingStatusState        moduleapi.ModuleLifecycleState
+		startingStatusState        moduleapi.ModuleActionState
 		statusGeneration           int64
 		desiredVersion             string
 		actualVersion              string

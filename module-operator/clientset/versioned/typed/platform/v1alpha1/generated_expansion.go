@@ -7,4 +7,4 @@ package v1alpha1
 
 type ModuleExpansion interface{}
 
-type ModuleLifecycleExpansion interface{}
+type ModuleActionExpansion interface{}
