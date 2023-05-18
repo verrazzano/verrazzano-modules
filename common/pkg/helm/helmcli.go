@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 
+	os2 "github.com/verrazzano/verrazzano-modules/common/pkg/os"
 	"github.com/verrazzano/verrazzano-modules/common/pkg/vzlog"
 	yaml2 "github.com/verrazzano/verrazzano-modules/common/pkg/yaml"
 	"go.uber.org/zap"
@@ -392,6 +393,9 @@ func getActionConfig(log vzlog.VerrazzanoLogger, settings *cli.EnvSettings, name
 }
 
 func loadChart(chartDir string) (*chart.Chart, error) {
+	if !os2.FileExists(chartDir) {
+		return nil, fmt.Errorf("No such file: %s", chartDir)
+	}
 	return loader.Load(chartDir)
 }
 
