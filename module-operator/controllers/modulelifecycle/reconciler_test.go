@@ -29,7 +29,13 @@ type handler struct {
 	statemachineCalled bool
 }
 
+type moduleHandler struct {
+	actualVersion string
+	handlerspi.ModuleActualState
+}
+
 var _ handlerspi.StateMachineHandler = &handler{}
+var _ handlerspi.ModuleActualStateInCluster = &moduleHandler{}
 
 // TestReconcile tests that the Reconcile implementation works correctly
 // GIVEN a Reconciler
@@ -47,9 +53,13 @@ func TestReconcile(t *testing.T) {
 		expectedError              bool
 		startingStatusState        moduleapi.ModuleLifecycleState
 		statusGeneration           int64
+		desiredVersion             string
+		actualVersion              string
+		handlerspi.ModuleActualState
 	}{
 		{
 			name:                       "test-install",
+			ModuleActualState:          handlerspi.ModuleStateNotInstalled,
 			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          false,
@@ -59,6 +69,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-statemachine-error",
+			ModuleActualState:          handlerspi.ModuleStateNotInstalled,
 			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          true,
@@ -68,6 +79,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-state-completed",
+			ModuleActualState:          handlerspi.ModuleStateNotInstalled,
 			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        moduleapi.StateCompleted,
 			statemachineError:          false,
@@ -77,6 +89,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "install-state-not-needed",
+			ModuleActualState:          handlerspi.ModuleStateNotInstalled,
 			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        moduleapi.StateNotNeeded,
 			statemachineError:          false,
@@ -86,15 +99,19 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                       "test-action-upgrade",
+			ModuleActualState:          handlerspi.ModuleStateReady,
 			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          false,
 			expectedStatemachineCalled: false,
 			expectedRequeue:            true,
 			expectedError:              false,
+			actualVersion:              "v1",
+			desiredVersion:             "v2",
 		},
 		{
 			name:                       "test-action-update",
+			ModuleActualState:          handlerspi.ModuleStateReady,
 			action:                     moduleapi.ReconcileAction,
 			startingStatusState:        "",
 			statemachineError:          false,
@@ -141,6 +158,7 @@ func TestReconcile(t *testing.T) {
 				},
 				Spec: moduleapi.ModuleLifecycleSpec{
 					Action:             test.action,
+					Version:            test.desiredVersion,
 					LifecycleClassName: moduleapi.LifecycleClassType(moduleapi.CalicoLifecycleClass),
 				},
 				Status: moduleapi.ModuleLifecycleStatus{
@@ -155,6 +173,10 @@ func TestReconcile(t *testing.T) {
 				Client: clientBuilder.Build(),
 				Scheme: initScheme(),
 				handlerInfo: handlerspi.ModuleLifecycleHandlerInfo{
+					ModuleActualStateInCluster: moduleHandler{
+						ModuleActualState: test.ModuleActualState,
+						actualVersion:     test.actualVersion,
+					},
 					InstallActionHandler: &handler{},
 				},
 			}
@@ -235,4 +257,12 @@ func (h handler) IsPostActionDone(context handlerspi.HandlerContext) (bool, ctrl
 
 func (h handler) CompletedActionUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
+}
+
+func (m moduleHandler) GetActualModuleState(context handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (handlerspi.ModuleActualState, ctrl.Result, error) {
+	return m.ModuleActualState, ctrl.Result{}, nil
+}
+
+func (m moduleHandler) IsUpgradeNeeded(context handlerspi.HandlerContext, cr *moduleapi.ModuleLifecycle) (bool, ctrl.Result, error) {
+	return m.actualVersion != cr.Spec.Version, ctrl.Result{}, nil
 }
