@@ -53,9 +53,9 @@ func lookupChartLeafDirName(mod *moduleapi.Module) string {
 
 	switch mod.Spec.ModuleName {
 	case string(moduleapi.CalicoModuleClass):
-		dir = "calico"
+		dir = "modules/calico"
 	case string(moduleapi.CCMModuleClass):
-		dir = "ccm"
+		dir = "modules/ccm"
 	case string(moduleapi.HelmModuleClass):
 		dir = filepath.Join("vz-test", mod.Spec.Version)
 		if mod.Spec.Version == "" {
