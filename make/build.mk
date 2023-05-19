@@ -50,7 +50,7 @@ unit-test: go-install
 
 .PHONY: install-crds
 install-crds:
-	kubectl apply -f charts/verrazzano-module-operator/crd
+	kubectl apply -f charts/operators/verrazzano-module-operator/crd
 
 .PHONY: run
 run: ## Run a controller from your host.

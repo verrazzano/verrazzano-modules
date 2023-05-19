@@ -13,7 +13,7 @@ const (
 	rootDirEnv                     = "VZ_ROOT_DIR"
 	defaultRootDir                 = "/home/verrazzano"
 	manifestRelDir                 = "manifests"
-	chartsRelDir                   = "manifests/charts"
+	chartsRelDir                   = "manifests/charts/modules"
 )
 
 // OperatorConfig specifies the module operator config
