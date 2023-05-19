@@ -23,7 +23,7 @@ type Reconciler struct {
 	Scheme *runtime.Scheme
 
 	// handlerInfo contains the ModuleAction handler information
-	handlerInfo handlerspi.ModuleLifecycleHandlerInfo
+	handlerInfo handlerspi.ModuleActionHandlerInfo
 
 	// ModuleClassName is the class name of the controller
 	ClassName moduleapi.ModuleClassType
@@ -33,7 +33,7 @@ type Reconciler struct {
 var _ controllerspi.Reconciler = Reconciler{}
 
 // InitController start the  controller
-func InitController(mgr ctrlruntime.Manager, handlers handlerspi.ModuleLifecycleHandlerInfo, className moduleapi.ModuleClassType) error {
+func InitController(mgr ctrlruntime.Manager, handlers handlerspi.ModuleActionHandlerInfo, className moduleapi.ModuleClassType) error {
 	var controller Reconciler
 
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.

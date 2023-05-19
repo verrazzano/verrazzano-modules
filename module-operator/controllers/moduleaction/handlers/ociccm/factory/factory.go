@@ -11,9 +11,9 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 )
 
-// NewLModuleLifecycleHandlerInfo creates a new ModuleLifecycleHandlerInfo
-func NewLModuleLifecycleHandlerInfo() handlerspi.ModuleLifecycleHandlerInfo {
-	return handlerspi.ModuleLifecycleHandlerInfo{
+// NewLModuleActionHandlerInfo creates a new ModuleActionHandlerInfo
+func NewLModuleActionHandlerInfo() handlerspi.ModuleActionHandlerInfo {
+	return handlerspi.ModuleActionHandlerInfo{
 		ModuleActualStateInCluster: nil,
 		InstallActionHandler:       install.NewHandler(),
 		DeleteActionHandler:        delete.NewHandler(),

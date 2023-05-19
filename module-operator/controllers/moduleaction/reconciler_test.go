@@ -172,7 +172,7 @@ func TestReconcile(t *testing.T) {
 			r := Reconciler{
 				Client: clientBuilder.Build(),
 				Scheme: initScheme(),
-				handlerInfo: handlerspi.ModuleLifecycleHandlerInfo{
+				handlerInfo: handlerspi.ModuleActionHandlerInfo{
 					ModuleActualStateInCluster: moduleHandler{
 						ModuleActualState: test.ModuleActualState,
 						actualVersion:     test.actualVersion,

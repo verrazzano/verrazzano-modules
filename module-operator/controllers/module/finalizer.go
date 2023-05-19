@@ -11,7 +11,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const finalizerName = "platform.verrazzano.io/modulelifecycle.finalizer"
+const finalizerName = "module.platform.verrazzano.io/finalizer"
 
 // GetName returns the name of the finalizer
 func (r Reconciler) GetName() string {

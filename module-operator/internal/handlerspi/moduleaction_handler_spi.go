@@ -8,8 +8,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-// ModuleLifecycleHandlerInfo contains the ModuleAction handler interfaces.
-type ModuleLifecycleHandlerInfo struct {
+// ModuleActionHandlerInfo contains the ModuleAction handler interfaces.
+type ModuleActionHandlerInfo struct {
 	ModuleActualStateInCluster
 	DeleteActionHandler  StateMachineHandler
 	InstallActionHandler StateMachineHandler
