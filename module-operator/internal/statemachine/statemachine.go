@@ -1,7 +1,7 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-// Package statemachine provides a state machine for executing the flow of life-cycle actions.
+// Package statemachine provides a state machine for executing the flow of life-cycle works.
 // The current state of the state machine is stored in a tracker that is unique for each ModuleCR generation.
 // This allows the state machine to be initialized and called several times until all states have executed,
 // during a controller-runtime reconcile loop, where the Reconcile method is called repeatedly.
@@ -16,36 +16,36 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// state identifies the state of a component during action
+// state identifies the state of a component during work
 type state string
 
 const (
 	// stateInit is the state when a component is initialized
 	stateInit state = "stateInit"
 
-	// stateCheckActionNeeded is the state to check if action is needed
-	stateCheckActionNeeded state = "stateCheckActionNeeded"
+	// stateCheckWorkNeeded is the state to check if work is needed
+	stateCheckWorkNeeded state = "stateCheckWorkNeeded"
 
-	// statePreActionUpdateStatus is the state when the status is updated to start pre action
-	statePreActionUpdateStatus state = "statePreActionUpdateStatus"
+	// statePreWorkUpdateStatus is the state when the status is updated to start pre work
+	statePreWorkUpdateStatus state = "statePreWorkUpdateStatus"
 
-	// statePreAction is the state when a component does a pre-action
-	statePreAction state = "statePreAction"
+	// statePreWork is the state when a component does a pre-work
+	statePreWork state = "statePreWork"
 
-	// stateActionUpdateStatus is the state when the status is updated to start action
-	stateActionUpdateStatus state = "stateActionUpdateStatus"
+	// stateWorkUpdateStatus is the state when the status is updated to start work
+	stateWorkUpdateStatus state = "stateWorkUpdateStatus"
 
-	// stateAction is the state where a component does an action
-	stateAction state = "stateAction"
+	// stateWork is the state where a component does an work
+	stateWork state = "stateWork"
 
-	// stateActionWaitDone is the state when a component is waiting for action to be done
-	stateActionWaitDone state = "stateActionWaitDone"
+	// stateWorkWaitDone is the state when a component is waiting for work to be done
+	stateWorkWaitDone state = "stateWorkWaitDone"
 
-	// statePostActionUpdateStatus is the state when the status is updated to start post-action
-	statePostActionUpdateStatus state = "statePostActionUpdateStatus"
+	// statePostWorkUpdateStatus is the state when the status is updated to start post-work
+	statePostWorkUpdateStatus state = "statePostWorkUpdateStatus"
 
-	// statePostAction is the state when a component does a post-action
-	statePostAction state = "statePostAction"
+	// statePostWork is the state when a component does a post-work
+	statePostWork state = "statePostWork"
 
 	// stateCompleteUpdateStatus is the state when the status is updated to completed
 	stateCompleteUpdateStatus state = "stateCompleteUpdateStatus"
@@ -64,7 +64,7 @@ type StateMachine struct {
 
 // Execute runs the state machine starting at the state stored in the tracker.
 // Each CR has a unique tracker for a given generation that tracks the current state.
-// The state machine uses an action handler to implement module specific logic.  This
+// The state machine uses a work handler to implement module specific logic.  This
 // state machine code is used by different types of controllers, such as the Module and
 // ModuleLifeCycle controllers.
 //
@@ -77,7 +77,7 @@ type StateMachine struct {
 func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) ctrl.Result {
 	tracker := ensureTracker(s.CR, stateInit)
 
-	actionName := s.Handler.GetWorkName()
+	workerName := s.Handler.GetWorkName()
 	nsn := fmt.Sprintf("%s/%s", s.CR.GetNamespace(), s.CR.GetName())
 
 	for tracker.state != stateEnd {
@@ -93,9 +93,9 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) ctrl.Re
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			tracker.state = stateCheckActionNeeded
+			tracker.state = stateCheckWorkNeeded
 
-		case stateCheckActionNeeded:
+		case stateCheckWorkNeeded:
 			needed, res, err := s.Handler.IsWorkNeeded(handlerContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
@@ -103,40 +103,40 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) ctrl.Re
 			if !needed {
 				tracker.state = stateEnd
 			} else {
-				tracker.state = statePreActionUpdateStatus
+				tracker.state = statePreWorkUpdateStatus
 			}
 
-		case statePreActionUpdateStatus:
+		case statePreWorkUpdateStatus:
 			res, err := s.Handler.PreWorkUpdateStatus(handlerContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			tracker.state = statePreAction
+			tracker.state = statePreWork
 
-		case statePreAction:
-			handlerContext.Log.Progressf("Doing pre-%s for %s", actionName, nsn)
+		case statePreWork:
+			handlerContext.Log.Progressf("Doing pre-%s for %s", workerName, nsn)
 			res, err := s.Handler.PreWork(handlerContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			tracker.state = stateActionUpdateStatus
+			tracker.state = stateWorkUpdateStatus
 
-		case stateActionUpdateStatus:
+		case stateWorkUpdateStatus:
 			res, err := s.Handler.DoWorkUpdateStatus(handlerContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			tracker.state = stateAction
+			tracker.state = stateWork
 
-		case stateAction:
-			handlerContext.Log.Progressf("Doing %s for %s", actionName, nsn)
+		case stateWork:
+			handlerContext.Log.Progressf("Doing %s for %s", workerName, nsn)
 			res, err := s.Handler.DoWork(handlerContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			tracker.state = stateActionWaitDone
+			tracker.state = stateWorkWaitDone
 
-		case stateActionWaitDone:
+		case stateWorkWaitDone:
 			done, res, err := s.Handler.IsWorkDone(handlerContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
@@ -144,17 +144,17 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) ctrl.Re
 			if !done {
 				return util.NewRequeueWithShortDelay()
 			}
-			tracker.state = statePostActionUpdateStatus
+			tracker.state = statePostWorkUpdateStatus
 
-		case statePostActionUpdateStatus:
+		case statePostWorkUpdateStatus:
 			res, err := s.Handler.PostWorkUpdateStatus(handlerContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
 			}
-			tracker.state = statePostAction
+			tracker.state = statePostWork
 
-		case statePostAction:
-			handlerContext.Log.Progressf("Doing post-%s for %s", actionName, nsn)
+		case statePostWork:
+			handlerContext.Log.Progressf("Doing post-%s for %s", workerName, nsn)
 			res, err := s.Handler.PostWork(handlerContext)
 			if res2 := util.DeriveResult(res, err); res2.Requeue {
 				return res2
