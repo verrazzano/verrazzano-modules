@@ -30,7 +30,7 @@ func (h *BaseHandler) GetActionName() string {
 func (h *BaseHandler) Init(_ handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig, action moduleapi.ModuleActionType) (ctrl.Result, error) {
 	h.Config = config
 	h.ModuleCR = config.CR.(*moduleapi.Module)
-	h.ModuleActionName = DeriveModuleLifeCycleName(h.ModuleCR.Name, moduleapi.HelmModuleClass, action)
+	h.ModuleActionName = BuildModuleActionCRName(h.ModuleCR.Name, moduleapi.HelmModuleClass, action)
 	h.ModuleActionNamespace = h.ModuleCR.Namespace
 	h.Action = action
 	return ctrl.Result{}, nil
@@ -91,7 +91,7 @@ func (h BaseHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, ctrl.Resul
 		return true, ctrl.Result{}, nil
 	}
 
-	moduleAction, err := h.GetModuleLifecycle(ctx)
+	moduleAction, err := h.GetModuleAction(ctx)
 	if err != nil {
 		return false, util.NewRequeueWithShortDelay(), nil
 	}
@@ -108,7 +108,7 @@ func (h BaseHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 		return ctrl.Result{}, nil
 	}
 
-	if err := h.DeleteModuleLifecycle(ctx); err != nil {
+	if err := h.DeleteModuleAction(ctx); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	return ctrl.Result{}, nil

@@ -22,7 +22,7 @@ resources:
   controller: true
   domain: verrazzano.io
   group: platform
-  kind: ModuleLifecycle
+  kind: ModuleAction
   path: github.com/verrazzano/verrazzano-modules/apis/platform/v1alpha1
   version: v1alpha1
 version: "3"

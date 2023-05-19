@@ -12,7 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (h BaseHandler) GetModuleLifecycle(ctx handlerspi.HandlerContext) (*moduleapi.ModuleAction, error) {
+// GetModuleAction gets a ModuleAction CR
+func (h BaseHandler) GetModuleAction(ctx handlerspi.HandlerContext) (*moduleapi.ModuleAction, error) {
 	moduleAction := moduleapi.ModuleAction{}
 	nsn := types.NamespacedName{
 		Name:      h.ModuleActionName,
@@ -26,8 +27,8 @@ func (h BaseHandler) GetModuleLifecycle(ctx handlerspi.HandlerContext) (*modulea
 	return &moduleAction, nil
 }
 
-// DeleteModuleLifecycle deletes a moduleLifecycle
-func (h BaseHandler) DeleteModuleLifecycle(ctx handlerspi.HandlerContext) error {
+// DeleteModuleAction deletes a ModuleAction CR
+func (h BaseHandler) DeleteModuleAction(ctx handlerspi.HandlerContext) error {
 	moduleAction := moduleapi.ModuleAction{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      h.ModuleActionName,
@@ -36,12 +37,13 @@ func (h BaseHandler) DeleteModuleLifecycle(ctx handlerspi.HandlerContext) error 
 	}
 
 	if err := ctx.Client.Delete(context.TODO(), &moduleAction); err != nil {
-		ctx.Log.ErrorfThrottled("Failed trying to delete ModuleLifecycles/%s: %v", moduleAction.Namespace, moduleAction.Name, err)
+		ctx.Log.ErrorfThrottled("Failed trying to delete ModuleAction %s/%s: %v", moduleAction.Namespace, moduleAction.Name, err)
 		return err
 	}
 	return nil
 }
 
-func DeriveModuleLifeCycleName(moduleCRName string, lifecycleClassName moduleapi.ModuleClassType, action moduleapi.ModuleActionType) string {
+// BuildModuleActionCRName builds a ModuleAction CR name
+func BuildModuleActionCRName(moduleCRName string, lifecycleClassName moduleapi.ModuleClassType, action moduleapi.ModuleActionType) string {
 	return fmt.Sprintf("%s-%s-%s", moduleCRName, lifecycleClassName, action)
 }

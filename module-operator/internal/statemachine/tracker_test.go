@@ -120,6 +120,6 @@ func TestRemoveTracker(t *testing.T) {
 
 // get a random state
 func getRandomState() state {
-	states := []state{stateInit, stateAction, statePostAction, statePreAction, stateActionUpdateStatus, stateEnd}
+	states := []state{stateInit, stateWork, statePostWork, statePreWork, stateWorkUpdateStatus, stateEnd}
 	return states[rand.IntnRange(0, len(states)-1)]
 }
