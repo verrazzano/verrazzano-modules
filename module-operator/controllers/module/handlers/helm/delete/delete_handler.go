@@ -5,7 +5,7 @@ package delete
 
 import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/moduleaction/handlers/common"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -76,5 +76,5 @@ func (h HelmHandler) IsWorkDone(context handlerspi.HandlerContext) (bool, ctrl.R
 
 // CompletedActionUpdateStatus does the lifecycle completed Action status update
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallComplete, moduleapi.StateCompleted)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady)
 }

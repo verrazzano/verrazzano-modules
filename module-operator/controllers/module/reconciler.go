@@ -29,7 +29,16 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return ctrl.Result{}, nil
 	}
 
-	return r.reconcileAction(spictx, cr, r.HandlerInfo.ReconcileActionHandler)
+	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
+	handler, res := r.getActionHandler(ctx, cr)
+	if res.Requeue {
+		return res, nil
+	}
+	if handler == nil {
+		return util.NewRequeueWithShortDelay(), nil
+	}
+
+	return r.reconcileAction(spictx, cr, handler)
 }
 
 // reconcileAction reconciles the Module CR for a particular action
@@ -54,4 +63,44 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 
 	res := sm.Execute(ctx)
 	return res, nil
+}
+
+// getActionHandler must return one of the Module action handlers.
+func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, ctrl.Result) {
+
+	helmInfo, err := loadHelmInfo(cr)
+	if err != nil {
+		if strings.Contains(err.Error(), "FileNotFound") {
+			ctx.Log.ErrorfThrottled("Failed loading file information: %v", err)
+			return nil, util.NewRequeueWithShortDelay()
+		}
+		ctx.Log.ErrorfThrottled("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
+		return nil, util.NewRequeueWithShortDelay()
+	}
+	// Get the actual state of the module from the Kubernetes cluster
+	state, res, err := r.HandlerInfo.ModuleActualStateInCluster.GetActualModuleState(ctx, helmInfo)
+	if res2 := util.DeriveResult(res, err); res2.Requeue {
+		return nil, res2
+	}
+
+	switch state {
+	case handlerspi.ModuleStateNotInstalled:
+		// install
+		return r.HandlerInfo.InstallActionHandler, ctrl.Result{}
+	case handlerspi.ModuleStateReady:
+		// the module is installed, if the version is changing this is an upgrade, else update
+		upgrade, res, err := r.HandlerInfo.ModuleActualStateInCluster.IsUpgradeNeeded(ctx, cr, helmInfo)
+		if res2 := util.DeriveResult(res, err); res2.Requeue {
+			return nil, res2
+		}
+		if upgrade {
+			// upgrade
+			return r.HandlerInfo.UpgradeActionHandler, ctrl.Result{}
+		}
+		// update
+		return r.HandlerInfo.UpdateActionHandler, ctrl.Result{}
+	default:
+		ctx.Log.Progressf("Module is not is a state where any action can be taken %s/%s state: %s", state)
+		return nil, ctrl.Result{}
+	}
 }

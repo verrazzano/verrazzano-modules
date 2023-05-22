@@ -3,8 +3,45 @@
 
 package handlerspi
 
-// ModuleHandlerInfo contains the Module handler interfaces
+import (
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	ctrl "sigs.k8s.io/controller-runtime"
+)
+
+// ModuleHandlerInfo contains the Module handler interfaces.
 type ModuleHandlerInfo struct {
-	ReconcileActionHandler StateMachineHandler
-	DeleteActionHandler    StateMachineHandler
+	ModuleActualStateInCluster
+	DeleteActionHandler  StateMachineHandler
+	InstallActionHandler StateMachineHandler
+	UpdateActionHandler  StateMachineHandler
+	UpgradeActionHandler StateMachineHandler
+}
+
+// ModuleActualState is the actual state of the module in the cluster
+type ModuleActualState string
+
+const (
+	// ModuleStateFailed means the module is failed
+	ModuleStateFailed ModuleActualState = "Failed"
+
+	// ModuleStateNotInstalled means the module is not installed
+	ModuleStateNotInstalled ModuleActualState = "NotInstalled"
+
+	// ModuleStateReady means the module is installed or upgraded and is in a ready state
+	ModuleStateReady ModuleActualState = "Ready"
+
+	// ModuleStateReconciling means the module installation, upgrade, or deletion is in progress
+	ModuleStateReconciling ModuleActualState = "Reconciling"
+
+	// ModuleStateUnknown means the module is unknown
+	ModuleStateUnknown ModuleActualState = "Unknown"
+)
+
+// ModuleActualStateInCluster interface describes the actual state of the module in the cluster
+type ModuleActualStateInCluster interface {
+	// GetActualModuleState gets the state of the module
+	GetActualModuleState(context HandlerContext, helmInfo HelmInfo) (ModuleActualState, ctrl.Result, error)
+
+	// IsUpgradeNeeded checks if upgrade is needed
+	IsUpgradeNeeded(context HandlerContext, cr *moduleapi.Module, helmInfo HelmInfo) (bool, ctrl.Result, error)
 }
