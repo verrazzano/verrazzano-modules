@@ -4,7 +4,7 @@
 package install
 
 import (
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/moduleaction/handlers/helm/install"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/install"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	ctrl "sigs.k8s.io/controller-runtime"
 )

@@ -15,6 +15,10 @@ import (
 // FuncShouldReconcile returns true if the watched object event should trigger reconcile
 type FuncShouldReconcile func(object client.Object, event WatchEvent) bool
 
+// FuncControllerEventFilter is the predicate event handler filter that returns true if the object should be reconciled.
+// This is needed to use same CR for multiple controllers
+type FuncControllerEventFilter func(cli client.Client, object client.Object) bool
+
 type WatchEvent int
 
 const (
@@ -47,6 +51,13 @@ type Reconciler interface {
 
 	// GetReconcileObject returns the client object being reconciled
 	GetReconcileObject() client.Object
+}
+
+// EventFilter is an interface used by controllers filter events
+type EventFilter interface {
+	// HandlePredicateEvent is the predicate event handler filter that returns true if the object should be reconciled.
+	// This is needed to use same CR for multiple controllers
+	HandlePredicateEvent(cli client.Client, object client.Object) bool
 }
 
 // Watcher is an interface used by controllers that watch resources

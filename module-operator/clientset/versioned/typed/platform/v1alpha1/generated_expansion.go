@@ -6,5 +6,3 @@
 package v1alpha1
 
 type ModuleExpansion interface{}
-
-type ModuleActionExpansion interface{}

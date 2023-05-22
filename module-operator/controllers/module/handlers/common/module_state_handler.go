@@ -19,10 +19,10 @@ var _ handlerspi.ModuleActualStateInCluster = &ModuleState{}
 type ModuleState struct{}
 
 // GetActualModuleState gets the state of the module
-func (m ModuleState) GetActualModuleState(context handlerspi.HandlerContext, cr *moduleapi.ModuleAction) (handlerspi.ModuleActualState, ctrl.Result, error) {
+func (m ModuleState) GetActualModuleState(context handlerspi.HandlerContext, helmInfo handlerspi.HelmInfo) (handlerspi.ModuleActualState, ctrl.Result, error) {
 	const notFound = "NotFound"
-	releaseName := cr.Spec.Installer.HelmRelease.Name
-	releaseNamespace := cr.Spec.Installer.HelmRelease.Namespace
+	releaseName := helmInfo.HelmRelease.Name
+	releaseNamespace := helmInfo.HelmRelease.Namespace
 	releaseStatus, err := helm2.GetHelmReleaseStatus(releaseName, releaseNamespace)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -47,9 +47,9 @@ func (m ModuleState) GetActualModuleState(context handlerspi.HandlerContext, cr 
 }
 
 // IsUpgradeNeeded checks if upgrade is needed
-func (m ModuleState) IsUpgradeNeeded(context handlerspi.HandlerContext, cr *moduleapi.ModuleAction) (bool, ctrl.Result, error) {
-	releaseName := cr.Spec.Installer.HelmRelease.Name
-	releaseNamespace := cr.Spec.Installer.HelmRelease.Namespace
+func (m ModuleState) IsUpgradeNeeded(context handlerspi.HandlerContext, cr *moduleapi.Module, helmInfo handlerspi.HelmInfo) (bool, ctrl.Result, error) {
+	releaseName := helmInfo.HelmRelease.Name
+	releaseNamespace := helmInfo.HelmRelease.Namespace
 	installedVersion, err := helm2.GetReleaseChartVersion(releaseName, releaseNamespace)
 	if err != nil {
 		context.Log.ErrorfThrottled("Failed getting version for Helm release %s/%s failed with error: %v\n", releaseNamespace, releaseName, err)
