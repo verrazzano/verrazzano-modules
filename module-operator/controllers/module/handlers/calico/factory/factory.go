@@ -6,7 +6,7 @@ package factory
 import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/calico/install"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
-	delete2 "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/delete"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/delete"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/update"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/upgrade"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
@@ -17,7 +17,7 @@ func NewModuleHandlerInfo() handlerspi.ModuleHandlerInfo {
 	return handlerspi.ModuleHandlerInfo{
 		ModuleActualStateInCluster: common.ModuleState{},
 		InstallActionHandler:       install.NewHandler(),
-		DeleteActionHandler:        delete2.NewHandler(),
+		DeleteActionHandler:        delete.NewHandler(),
 		UpdateActionHandler:        update.NewHandler(),
 		UpgradeActionHandler:       upgrade.NewHandler(),
 	}

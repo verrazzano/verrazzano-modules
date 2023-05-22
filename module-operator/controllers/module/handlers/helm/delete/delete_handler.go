@@ -48,7 +48,7 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 	return ctrl.Result{}, nil
 }
 
-// DoWorkUpdateStatus does the lifecycle Work status update
+// DoWorkUpdateStatus does the work status update
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUninstallStarted, moduleapi.ModuleStateReconciling)
 }
@@ -77,7 +77,7 @@ func (h HelmHandler) IsWorkDone(context handlerspi.HandlerContext) (bool, ctrl.R
 
 	deployed, err := helm.IsReleaseDeployed(h.HelmRelease.Name, h.HelmRelease.Namespace)
 	if err != nil {
-		context.Log.ErrorfThrottled("Error occurred checking release deloyment: %v", err.Error())
+		context.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
 		return false, ctrl.Result{}, err
 	}
 
