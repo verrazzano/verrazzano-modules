@@ -40,7 +40,6 @@ type ReconcilerImpl struct {
 	reconcileCalled bool
 	getObjectCalled bool
 	returnNilObject bool
-	className       string
 }
 
 type WatcherImpl struct {

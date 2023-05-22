@@ -24,12 +24,10 @@ type Reconciler struct {
 	ModuleClass moduleapi.ModuleClassType
 }
 
-var _ spi.Reconciler = Reconciler{}
-
-var controller Reconciler
-
 // InitController start the  controller
 func InitController(mgr ctrlruntime.Manager, handlerInfo handlerspi.ModuleHandlerInfo, class moduleapi.ModuleClassType) error {
+	controller := Reconciler{}
+
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
 		Reconciler:  &controller,

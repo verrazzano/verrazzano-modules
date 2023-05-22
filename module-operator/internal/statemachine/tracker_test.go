@@ -27,7 +27,7 @@ func TestEnsureTracker(t *testing.T) {
 		wg.Add(1)
 		go func(y int) {
 			defer wg.Done()
-			cr := &v1alpha1.ModuleAction{
+			cr := &v1alpha1.Module{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       fmt.Sprintf("%s-%d", "fakeName", y),
 					Namespace:  "mynamespace",
@@ -89,7 +89,7 @@ func TestRemoveTracker(t *testing.T) {
 		wg.Add(1)
 		go func(y int) {
 			defer wg.Done()
-			cr := &v1alpha1.ModuleAction{
+			cr := &v1alpha1.Module{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       fmt.Sprintf("%s-%d", "fakeName2", y),
 					Namespace:  "mynamespace",

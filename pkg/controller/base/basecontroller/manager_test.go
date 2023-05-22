@@ -14,10 +14,7 @@ import (
 )
 
 type ManagerReconcilerImpl struct {
-	reconcileCalled bool
-	getObjectCalled bool
-	returnNilObject bool
-	className       string
+	className string
 }
 
 // TestCreatePredicateFilter tests the creation of the predicate filter
