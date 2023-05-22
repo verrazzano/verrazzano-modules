@@ -33,7 +33,7 @@ func NewHandler() handlerspi.StateMachineHandler {
 
 // Init initializes the handler with Helm chart information
 func (h *HelmHandler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.Init(ctx, config)
+	return h.BaseHandler.InitHandler(ctx, config)
 }
 
 // GetWorkName returns the action name
@@ -43,17 +43,22 @@ func (h HelmHandler) GetWorkName() string {
 
 // IsWorkNeeded returns true if update is needed
 func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	installed, err := helm2.IsReleaseInstalled(h.HelmRelease.Name, h.HelmRelease.Namespace)
+	installed, err := helm2.IsReleaseInstalled(h.HelmRelease.Name, h.BaseHandler.Config.Namespace)
 	if err != nil {
-		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.BaseHandler.Config.ChartDir, h.HelmRelease.Name)
+		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.HelmRelease.Namespace, h.HelmRelease.Name)
 		return true, ctrl.Result{}, err
 	}
-	return !installed, ctrl.Result{}, err
+	return installed, ctrl.Result{}, err
 }
 
 // PreWorkUpdateStatus updates the status for the pre-work state
 func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
+}
+
+// PreWork does the pre-work
+func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
 }
 
 // DoWorkUpdateStatus updates the status for the work state
@@ -103,6 +108,16 @@ func (h HelmHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, ctrl.Resul
 
 	// TODO check if release is ready (check deployments)
 	return true, ctrl.Result{}, err
+}
+
+// PostWorkUpdateStatus does the post-work status update
+func (h HelmHandler) PostWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// PostWork does installation pre-work
+func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
 }
 
 // WorkCompletedUpdateStatus updates the status to completed

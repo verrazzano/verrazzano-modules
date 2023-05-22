@@ -33,7 +33,7 @@ func NewHandler() handlerspi.StateMachineHandler {
 
 // Init initializes the handler with Helm chart information
 func (h *HelmHandler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.Init(ctx, config)
+	return h.BaseHandler.InitHandler(ctx, config)
 }
 
 // GetWorkName returns the work name
@@ -54,6 +54,11 @@ func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Res
 // PreWorkUpdateStatus updates the status for the pre-work state
 func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreUpgrade, moduleapi.ModuleStateReconciling)
+}
+
+// PreWork does the pre-work
+func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
 }
 
 // DoWorkUpdateStatus updates the status for the work state
@@ -104,7 +109,17 @@ func (h HelmHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, ctrl.Resul
 	return true, ctrl.Result{}, err
 }
 
+// PostWorkUpdateStatus does the post-work status update
+func (h HelmHandler) PostWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// PostWork does installation pre-work
+func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
 // WorkCompletedUpdateStatus updates the status to completed
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUpgradeComplete, moduleapi.ModuleStateReady)
+	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondUpgradeComplete, moduleapi.ModuleStateReady, h.ModuleCR.Spec.Version)
 }

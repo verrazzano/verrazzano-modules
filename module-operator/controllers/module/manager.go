@@ -4,6 +4,7 @@
 package module
 
 import (
+	"context"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/basecontroller"
@@ -20,6 +21,7 @@ type Reconciler struct {
 	Client      client.Client
 	Scheme      *runtime.Scheme
 	HandlerInfo handlerspi.ModuleHandlerInfo
+	ModuleClass moduleapi.ModuleClassType
 }
 
 var _ spi.Reconciler = Reconciler{}
@@ -27,13 +29,14 @@ var _ spi.Reconciler = Reconciler{}
 var controller Reconciler
 
 // InitController start the  controller
-func InitController(mgr ctrlruntime.Manager, comp handlerspi.ModuleHandlerInfo, class moduleapi.ModuleClassType) error {
+func InitController(mgr ctrlruntime.Manager, handlerInfo handlerspi.ModuleHandlerInfo, class moduleapi.ModuleClassType) error {
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
-		Reconciler: &controller,
-		Finalizer:  &controller,
+		Reconciler:  &controller,
+		Finalizer:   &controller,
+		EventFilter: &controller,
 	}
-	baseController, err := basecontroller.CreateControllerAndAddItToManager(mgr, config, class)
+	baseController, err := basecontroller.CreateControllerAndAddItToManager(mgr, config)
 	if err != nil {
 		return err
 	}
@@ -41,11 +44,21 @@ func InitController(mgr ctrlruntime.Manager, comp handlerspi.ModuleHandlerInfo, 
 	// init other controller fields
 	controller.Client = baseController.Client
 	controller.Scheme = baseController.Scheme
-	controller.HandlerInfo = comp
+	controller.HandlerInfo = handlerInfo
+	controller.ModuleClass = class
 	return nil
 }
 
 // GetReconcileObject returns the kind of object being reconciled
 func (r Reconciler) GetReconcileObject() client.Object {
 	return &moduleapi.Module{}
+}
+
+func (r Reconciler) HandlePredicateEvent(cli client.Client, object client.Object) bool {
+	mlc := moduleapi.Module{}
+	objectkey := client.ObjectKeyFromObject(object)
+	if err := cli.Get(context.TODO(), objectkey, &mlc); err != nil {
+		return false
+	}
+	return mlc.Spec.ModuleName == string(r.ModuleClass)
 }

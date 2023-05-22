@@ -25,25 +25,35 @@ func NewHandler() handlerspi.StateMachineHandler {
 
 // Init initializes the handler with Helm chart information
 func (h *HelmHandler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.Init(ctx, config)
+	return h.BaseHandler.InitHandler(ctx, config)
 }
 
-// GetActionName returns the action name
+// GetWorkName returns the work name
 func (h HelmHandler) GetWorkName() string {
 	return "uninstall"
 }
 
-// PreActionUpdateStatus does the lifecycle pre-Action status update
+// IsWorkNeeded returns true if install is needed
+func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
+	return true, ctrl.Result{}, nil
+}
+
+// PreWorkUpdateStatus does the lifecycle pre-Work status update
 func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreUninstall, moduleapi.ModuleStateReconciling)
 }
 
-// ActionUpdateStatus does the lifecycle Action status update
+// PreWork does the pre-work
+func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// DoWorkUpdateStatus does the lifecycle Work status update
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUninstallStarted, moduleapi.ModuleStateReconciling)
 }
 
-// DoAction uninstalls the module using Helm
+// DoWork uninstalls the module using Helm
 func (h HelmHandler) DoWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	installed, err := helm.IsReleaseInstalled(h.HelmRelease.Name, h.HelmRelease.Namespace)
 	if err != nil {
@@ -58,7 +68,7 @@ func (h HelmHandler) DoWork(context handlerspi.HandlerContext) (ctrl.Result, err
 	return ctrl.Result{}, err
 }
 
-// IsActionDone Indicates whether a module is uninstalled
+// IsWorkDone Indicates whether a module is uninstalled
 func (h HelmHandler) IsWorkDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	if context.DryRun {
 		context.Log.Debugf("IsReady() dry run for %s", h.HelmRelease.Name)
@@ -74,7 +84,17 @@ func (h HelmHandler) IsWorkDone(context handlerspi.HandlerContext) (bool, ctrl.R
 	return !deployed, ctrl.Result{}, nil
 }
 
-// CompletedActionUpdateStatus does the lifecycle completed Action status update
+// PostWorkUpdateStatus does the post-work status update
+func (h HelmHandler) PostWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// PostWork does installation pre-work
+func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// CompletedWorkUpdateStatus does the lifecycle completed Work status update
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady)
 }

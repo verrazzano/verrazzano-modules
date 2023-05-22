@@ -4,6 +4,7 @@
 package install
 
 import (
+	"context"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
@@ -12,6 +13,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"time"
 )
 
 type HelmHandler struct {
@@ -33,17 +35,38 @@ func NewHandler() handlerspi.StateMachineHandler {
 
 // Init initializes the handler with Helm chart information
 func (h *HelmHandler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.Init(ctx, config)
+	return h.BaseHandler.InitHandler(ctx, config)
 }
 
-// GetWorkName returns the action name
+// GetWorkName returns the work name
 func (h HelmHandler) GetWorkName() string {
 	return "install"
 }
 
-// PreWorkUpdateStatus does the pre-Action status update
+// IsWorkNeeded returns true if install is needed
+func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
+	return true, ctrl.Result{}, nil
+}
+
+// PreWorkUpdateStatus does the pre-Work status update
 func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return h.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
+}
+
+// PreWork does the pre-work
+func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	// Update the spec version if it is not set
+	if len(h.ModuleCR.Spec.Version) == 0 {
+		// Update spec version to match chart, always requeue to get ModuleCR with version
+		h.ModuleCR.Spec.Version = h.Config.ChartInfo.Version
+		if err := ctx.Client.Update(context.TODO(), h.ModuleCR); err != nil {
+			return util.NewRequeueWithShortDelay(), nil
+		}
+		// ALways reconcile so that we get a new tracker with the latest ModuleCR
+		return util.NewRequeueWithDelay(1, 2, time.Second), nil
+	}
+
+	return ctrl.Result{}, nil
 }
 
 // DoWorkUpdateStatus does th status update
@@ -107,7 +130,17 @@ func (h HelmHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, ctrl.Resul
 	return true, ctrl.Result{}, err
 }
 
+// PostWorkUpdateStatus does the post-work status update
+func (h HelmHandler) PostWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+// PostWork does installation pre-work
+func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
 // WorkCompletedUpdateStatus updates the status to completed
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady)
+	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady, h.ModuleCR.Spec.Version)
 }

@@ -4,18 +4,26 @@
 package basecontroller
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	fakes "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"testing"
 )
 
+type ManagerReconcilerImpl struct {
+	reconcileCalled bool
+	getObjectCalled bool
+	returnNilObject bool
+	className       string
+}
+
 // TestCreatePredicateFilter tests the creation of the predicate filter
 // GIVEN a base controller
 // WHEN CreatePredicateFilter is called
-// THEN the filer should be properly initialized
+// THEN the filter should be properly initialized
 func TestCreatePredicateFilter(t *testing.T) {
 	asserts := assert.New(t)
 
@@ -52,16 +60,16 @@ func TestCreatePredicateFilter(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			reconciler := ReconcilerImpl{className: test.className}
+			reconciler := ManagerReconcilerImpl{className: test.className}
 			config := ControllerConfig{
-				Reconciler: &reconciler,
+				EventFilter: &reconciler,
 			}
-			cr := newModuleLifecycleCR(namespace, name, test.crClassName)
+			cr := newModuleCR(namespace, name)
+			cr.Spec.ModuleName = test.crClassName
 			clientBuilder := fakes.NewClientBuilder()
 			c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
 			r := newReconciler(c, config)
-			r.LifecycleClass = moduleapi.ModuleClassType(test.className)
-			f := r.createPredicateFilter()
+			f := r.createPredicateFilter(r.EventFilter)
 
 			asserts.NotNil(f.Create)
 			asserts.NotNil(f.Delete)
@@ -76,15 +84,11 @@ func TestCreatePredicateFilter(t *testing.T) {
 	}
 }
 
-func newModuleLifecycleCR(namespace string, name string, className string) *moduleapi.ModuleAction {
-	m := &moduleapi.ModuleAction{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: moduleapi.ModuleActionSpec{
-			ModuleClassName: moduleapi.ModuleClassType(className),
-		},
+func (r *ManagerReconcilerImpl) HandlePredicateEvent(cli client.Client, object client.Object) bool {
+	mlc := moduleapi.Module{}
+	objectkey := client.ObjectKeyFromObject(object)
+	if err := cli.Get(context.TODO(), objectkey, &mlc); err != nil {
+		return false
 	}
-	return m
+	return mlc.Spec.ModuleName == string(r.className)
 }

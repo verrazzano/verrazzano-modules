@@ -8,6 +8,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/pkg/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,40 +68,44 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 
 // getActionHandler must return one of the Module action handlers.
 func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, ctrl.Result) {
+	if !hasInstalledCondition(ctx, cr) {
+		return r.HandlerInfo.InstallActionHandler, ctrl.Result{}
+	}
 
-	helmInfo, err := loadHelmInfo(cr)
+	// return UpgradeAction only when the desired version is different from current
+	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
 	if err != nil {
-		if strings.Contains(err.Error(), "FileNotFound") {
-			ctx.Log.ErrorfThrottled("Failed loading file information: %v", err)
-			return nil, util.NewRequeueWithShortDelay()
-		}
-		ctx.Log.ErrorfThrottled("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
+		ctx.Log.ErrorfThrottled("Failed checking if upgrade needed for Module %s/%s failed with error: %v\n", cr.Namespace, cr.Name, err)
 		return nil, util.NewRequeueWithShortDelay()
 	}
-	// Get the actual state of the module from the Kubernetes cluster
-	state, res, err := r.HandlerInfo.ModuleActualStateInCluster.GetActualModuleState(ctx, helmInfo)
-	if res2 := util.DeriveResult(res, err); res2.Requeue {
-		return nil, res2
+	if upgradeNeeded {
+		return r.HandlerInfo.UpgradeActionHandler, ctrl.Result{}
 	}
+	return r.HandlerInfo.UpdateActionHandler, ctrl.Result{}
 
-	switch state {
-	case handlerspi.ModuleStateNotInstalled:
-		// install
-		return r.HandlerInfo.InstallActionHandler, ctrl.Result{}
-	case handlerspi.ModuleStateReady:
-		// the module is installed, if the version is changing this is an upgrade, else update
-		upgrade, res, err := r.HandlerInfo.ModuleActualStateInCluster.IsUpgradeNeeded(ctx, cr, helmInfo)
-		if res2 := util.DeriveResult(res, err); res2.Requeue {
-			return nil, res2
+}
+
+func hasInstalledCondition(ctx handlerspi.HandlerContext, cr *moduleapi.Module) bool {
+	for _, cond := range cr.Status.Conditions {
+		if cond.Type == moduleapi.CondInstallComplete {
+			return true
 		}
-		if upgrade {
-			// upgrade
-			return r.HandlerInfo.UpgradeActionHandler, ctrl.Result{}
-		}
-		// update
-		return r.HandlerInfo.UpdateActionHandler, ctrl.Result{}
-	default:
-		ctx.Log.Progressf("Module is not is a state where any action can be taken %s/%s state: %s", state)
-		return nil, ctrl.Result{}
 	}
+	return false
+}
+
+// IsUpgradeNeeded returns true if upgrade is needed
+func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
+	if len(desiredVersion) == 0 {
+		return false, nil
+	}
+	desiredSemver, err := semver.NewSemVersion(desiredVersion)
+	if err != nil {
+		return false, err
+	}
+	installedSemver, err := semver.NewSemVersion(installedVersion)
+	if err != nil {
+		return false, err
+	}
+	return installedSemver.IsLessThan(desiredSemver), nil
 }

@@ -4,8 +4,6 @@
 package basecontroller
 
 import (
-	"context"
-	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,6 +22,7 @@ import (
 type ControllerConfig struct {
 	controllerspi.Finalizer
 	controllerspi.Reconciler
+	controllerspi.EventFilter
 	controllerspi.Watcher
 }
 
@@ -33,7 +32,6 @@ type Reconciler struct {
 	Scheme     *runtime.Scheme
 	Controller controller.Controller
 	ControllerConfig
-	LifecycleClass      moduleapi.ModuleClassType
 	watchersInitialized bool
 	watchContexts       []*WatchContext
 
@@ -45,26 +43,25 @@ type Reconciler struct {
 }
 
 // CreateControllerAndAddItToManager creates the base controller and adds it to the manager.
-func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controllerConfig ControllerConfig, class moduleapi.ModuleClassType) (*Reconciler, error) {
+func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controllerConfig ControllerConfig) (*Reconciler, error) {
 	r := Reconciler{
 		Client:              mgr.GetClient(),
 		Scheme:              mgr.GetScheme(),
 		ControllerConfig:    controllerConfig,
-		LifecycleClass:      class,
 		controllerResources: make(map[types.NamespacedName]bool),
 		mutex:               sync.RWMutex{},
 	}
 
 	// Create the controller and add it to the manager (Build does an implicit add)
 	var err error
-	if class == "" {
+	if controllerConfig.EventFilter == nil {
 		r.Controller, err = ctrl.NewControllerManagedBy(mgr).
 			For(controllerConfig.Reconciler.GetReconcileObject()).
 			Build(&r)
 	} else {
 		r.Controller, err = ctrl.NewControllerManagedBy(mgr).
 			For(controllerConfig.Reconciler.GetReconcileObject()).
-			WithEventFilter(r.createPredicateFilter()).
+			WithEventFilter(r.createPredicateFilter(controllerConfig.EventFilter)).
 			Build(&r)
 	}
 
@@ -74,28 +71,19 @@ func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controller
 	return &r, nil
 }
 
-func (r *Reconciler) createPredicateFilter() predicate.Predicate {
+func (r *Reconciler) createPredicateFilter(filter controllerspi.EventFilter) predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			return r.handlesEvent(e.Object)
+			return filter.HandlePredicateEvent(r.Client, e.Object)
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			return r.handlesEvent(e.Object)
+			return filter.HandlePredicateEvent(r.Client, e.Object)
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return r.handlesEvent(e.ObjectOld)
+			return filter.HandlePredicateEvent(r.Client, e.ObjectOld)
 		},
 		GenericFunc: func(e event.GenericEvent) bool {
-			return r.handlesEvent(e.Object)
+			return filter.HandlePredicateEvent(r.Client, e.Object)
 		},
 	}
-}
-
-func (r *Reconciler) handlesEvent(object client.Object) bool {
-	mlc := moduleapi.ModuleAction{}
-	objectkey := client.ObjectKeyFromObject(object)
-	if err := r.Get(context.TODO(), objectkey, &mlc); err != nil {
-		return false
-	}
-	return mlc.Spec.ModuleClassName == r.LifecycleClass
 }

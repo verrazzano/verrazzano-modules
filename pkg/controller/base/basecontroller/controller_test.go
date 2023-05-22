@@ -42,6 +42,7 @@ type ReconcilerImpl struct {
 	returnNilObject bool
 	className       string
 }
+
 type WatcherImpl struct {
 	called bool
 }
@@ -418,7 +419,7 @@ func (r *ReconcilerImpl) Reconcile(spictx controllerspi.ReconcileContext, u *uns
 func (r *WatcherImpl) GetWatchDescriptors() []controllerspi.WatchDescriptor {
 	r.called = true
 	return []controllerspi.WatchDescriptor{{
-		WatchKind:           source.Kind{Type: &moduleapi.ModuleAction{}},
+		WatchKind:           source.Kind{Type: &moduleapi.Module{}},
 		FuncShouldReconcile: nil,
 	}}
 }

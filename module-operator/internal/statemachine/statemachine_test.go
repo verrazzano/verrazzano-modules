@@ -71,7 +71,7 @@ func TestAllStatesSucceed(t *testing.T) {
 		workNeeded:  true,
 		behaviorMap: getBehaviorMap(),
 	}
-	cr := &v1alpha1.ModuleAction{
+	cr := &v1alpha1.Module{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       "TestAllStatesSucceed",
 			Namespace:  "testns",
@@ -116,7 +116,7 @@ func TestEachStateRequeue(t *testing.T) {
 			workNeeded:  true,
 			behaviorMap: getBehaviorMap(),
 		}
-		cr := &v1alpha1.ModuleAction{
+		cr := &v1alpha1.Module{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:       "TestEachStateRequeue",
 				Namespace:  "testns",
@@ -183,7 +183,7 @@ func TestNotDone(t *testing.T) {
 				workNeeded:  true,
 				behaviorMap: getBehaviorMap(),
 			}
-			cr := &v1alpha1.ModuleAction{
+			cr := &v1alpha1.Module{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "TestEachStateRequeue-" + test.stateNotDone,
 					Namespace:  "testns",
