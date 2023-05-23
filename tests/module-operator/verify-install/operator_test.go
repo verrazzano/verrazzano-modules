@@ -12,14 +12,14 @@ import (
 
 func (suite *OperatorTestSuite) TestOperatorRunning() {
 	client, err := k8sutil.GetKubernetesClientset()
-	suite.gomega.Expect(err).Should(gomega.HaveOccurred())
+	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	deployment, err := client.AppsV1().Deployments("verrazzano-install").Get(context.TODO(), "verrazzano-module-operator", v1.GetOptions{})
-	suite.gomega.Expect(err).Should(gomega.HaveOccurred())
+	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	suite.gomega.Expect(int(deployment.Status.ReadyReplicas)).To(gomega.Equal(1))
 }
 
 func (suite *OperatorTestSuite) TestCRDsInstalled() {
 	crdInstalled, err := k8sutil.CheckCRDsExist([]string{"modules.platform.verrazzano.io", "moduleactions.platform.verrazzano.io"})
-	suite.gomega.Expect(err).Should(gomega.HaveOccurred())
+	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	suite.gomega.Expect(crdInstalled).To(gomega.BeTrue())
 }
