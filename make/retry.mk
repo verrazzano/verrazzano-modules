@@ -11,5 +11,5 @@ define retry_cmd
 endef
 
 define retry_docker_push
-    $(call retry_cmd,${DEFAULT_RETRIES},docker push $1)
+    $(call retry_cmd,${DEFAULT_RETRIES},${DOCKER_CMD} push $1)
 endef
