@@ -100,8 +100,8 @@ func TestWatch(t *testing.T) {
 
 func (w watchController) Watch(src source.Source, eventhandler handler.EventHandler, predicates ...predicate.Predicate) error {
 	asserts := assert.New(w.t)
-	cr := newModuleLifecycleCR("test", "test", "")
-	cr2 := newModuleLifecycleCR("test2", "test2", "")
+	cr := newModuleCR("test", "test")
+	cr2 := newModuleCR("test2", "test2")
 
 	for _, p := range predicates {
 		asserts.Equal(w.predicate, p.Create(event.CreateEvent{Object: cr}))

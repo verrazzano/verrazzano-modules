@@ -29,7 +29,7 @@ function check_helm_version {
 check_helm_version || exit 1
 
 # Copy chart to an output location
-CHART_LOCATION=${MODULE_ROOT}/manifests/charts
+CHART_LOCATION=${MODULE_ROOT}/manifests/charts/operators
 CHART_OUT=${BUILD_OUT}/charts
 mkdir -p ${CHART_OUT}
 cp -pr ${CHART_LOCATION}/${CHART_NAME} ${CHART_OUT}

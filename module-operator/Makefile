@@ -26,7 +26,7 @@ REPO_NAME:=verrazzano-module-operator
 CONTROLLER_GEN_VERSION ?= $(shell go list -m -f '{{.Version}}' sigs.k8s.io/controller-tools)
 CREATE_LATEST_TAG=0
 CRD_OPTIONS ?= "crd:crdVersions=v1,maxDescLen=0"
-CRD_PATH = manifests/charts/${NAME}/crds
+CRD_PATH = manifests/charts/operators/${NAME}/crds
 TEST_PATHS = ./internal ./controllers/... ./apis/...
 DOCKER_IMAGE_TAG ?= local-$(shell git rev-parse --short HEAD)
 SHORT_COMMIT_HASH ?= $(shell git rev-parse --short=8 HEAD)

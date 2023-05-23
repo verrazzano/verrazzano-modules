@@ -7,11 +7,9 @@ import (
 	"flag"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
-	modulefactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/factory"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/moduleaction"
-	calicofactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/moduleaction/handlers/calico/factory"
-	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/moduleaction/handlers/helm/factory"
-	ccmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/moduleaction/handlers/ociccm/factory"
+	calicofactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/calico/factory"
+	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/factory"
+	ccmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/ociccm/factory"
 	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	"github.com/verrazzano/verrazzano-modules/pkg/k8sutil"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
@@ -37,26 +35,20 @@ func main() {
 		return
 	}
 
-	// init module controller
-	if err := module.InitController(mgr, modulefactory.NewModuleHandlerInfo(), ""); err != nil {
-		log.Errorf("Failed to start the module controller", err)
-		return
-	}
-
-	// init Helm lifecycle controller
-	if err := moduleaction.InitController(mgr, helmfactory.NewLModuleLifecycleHandlerInfo(), moduleapi.HelmModuleClass); err != nil {
+	// init Helm controller
+	if err := module.InitController(mgr, helmfactory.NewModuleHandlerInfo(), moduleapi.HelmModuleClass); err != nil {
 		log.Errorf("Failed to start Helm controller", err)
 		return
 	}
 
-	// init Calico lifecycle controller
-	if err := moduleaction.InitController(mgr, calicofactory.NewLModuleLifecycleHandlerInfo(), moduleapi.CalicoModuleClass); err != nil {
+	// init Calico controller
+	if err := module.InitController(mgr, calicofactory.NewModuleHandlerInfo(), moduleapi.CalicoModuleClass); err != nil {
 		log.Errorf("Failed to start the Calico controller", err)
 		return
 	}
 
-	// init CCM lifecycle controller
-	if err := moduleaction.InitController(mgr, ccmfactory.NewLModuleLifecycleHandlerInfo(), moduleapi.CCMModuleClass); err != nil {
+	// init CCM controller
+	if err := module.InitController(mgr, ccmfactory.NewModuleHandlerInfo(), moduleapi.CCMModuleClass); err != nil {
 		log.Errorf("Failed to start OCI-CCM controller", err)
 		return
 	}

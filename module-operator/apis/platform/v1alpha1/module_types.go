@@ -65,13 +65,13 @@ const (
 // ModuleStatus defines the observed state of a Verrazzano Module resource.
 type ModuleStatus struct {
 	// State is the Module state
-	State   ModuleStateType `json:"state,omitempty"`
+	State ModuleStateType `json:"state,omitempty"`
 	// The latest available observations of an object's current state.
 	Conditions []ModuleCondition `json:"conditions,omitempty"`
 	// ObservedGeneration is the actual generation that was reconciled
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// The version of module that is installed.
-	Version string          `json:"version,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 // ModuleCondition describes the current state of an installation.
@@ -105,6 +105,55 @@ type ModuleSource struct {
 	ChartRepo *HelmChartRepository `json:"repo,omitempty"`
 	SourceRef *ModuleSourceRef     `json:"sourceRef,omitempty"`
 }
+
+// ModuleClassType Identifies the lifecycle class used to manage a subset of Module types
+type ModuleClassType string
+
+const (
+	// HelmModuleClass defines the class name used by the Helm operator
+	HelmModuleClass ModuleClassType = "helm"
+
+	// CalicoModuleClass defines the class name used by the Calico operator
+	CalicoModuleClass ModuleClassType = "calico"
+	CCMModuleClass    ModuleClassType = "ccm"
+)
+
+type HelmChart struct {
+	Name    string `json:"name"`
+	Version string `json:"version,omitempty"`
+	Path    string `json:"path,omitempty"`
+}
+
+type HelmRelease struct {
+	Name       string              `json:"name"`
+	Namespace  string              `json:"namespace,omitempty"`
+	ChartInfo  HelmChart           `json:"chart,omitempty"`
+	Repository HelmChartRepository `json:"repo,omitempty"`
+	Overrides  []Overrides         `json:"overrides,omitempty"`
+}
+
+type LifecycleCondition string
+
+const (
+	ConditionArrayLimit = 5
+
+	CondAlreadyInstalled    LifecycleCondition = "AlreadyInstalled"
+	CondAlreadyUninstalled  LifecycleCondition = "AlreadyUninstalled"
+	CondAlreadyUpgraded     LifecycleCondition = "AlreadyUpgraded"
+	CondPreInstall          LifecycleCondition = "PreInstall"
+	CondInstallStarted      LifecycleCondition = "InstallStarted"
+	CondInstallComplete     LifecycleCondition = "InstallComplete"
+	CondPreUninstall        LifecycleCondition = "PreUninstall"
+	CondUninstallStarted    LifecycleCondition = "UninstallStarted"
+	CondUninstallComplete   LifecycleCondition = "UninstallComplete"
+	CondPreUpgrade          LifecycleCondition = "PreUpgrade"
+	CondUpgradeStarted      LifecycleCondition = "UpgradeStarted"
+	CondUpgradeComplete     LifecycleCondition = "UpgradeComplete"
+	CondReady               LifecycleCondition = "Ready"
+	CondReconciling         LifecycleCondition = "Reconciling"
+	CondReconcilingComplete LifecycleCondition = "ReconcileComplete"
+	CondFailed              LifecycleCondition = "Failed"
+)
 
 func init() {
 	SchemeBuilder.Register(&Module{}, &ModuleList{})

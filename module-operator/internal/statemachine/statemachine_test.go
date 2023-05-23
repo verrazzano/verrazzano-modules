@@ -25,38 +25,38 @@ type behavior struct {
 type behaviorMap map[string]*behavior
 
 type handler struct {
-	actionNeeded bool
+	workNeeded bool
 	behaviorMap
 }
 
 const (
-	getActionName               = "GetWorkName"
-	initFunc                    = "init"
-	isActionNeeded              = "isActionNeeded"
-	preActionUpdateStatus       = "preActionUpdateStatus"
-	preAction                   = "preAction"
-	actionUpdateStatus          = "DoWorkUpdateStatus"
-	doAction                    = "doAction"
-	isActionDone                = "isActionDone"
-	postAction                  = "postAction"
-	postActionUpdateStatus      = "postActionUpdateStatus"
-	completedActionUpdateStatus = "WorkCompletedUpdateStatus"
+	getWorkName               = "GetWorkName"
+	initFunc                  = "init"
+	isWorkNeeded              = "isWorkNeeded"
+	preWorkUpdateStatus       = "preWorkUpdateStatus"
+	preWork                   = "preWork"
+	workUpdateStatus          = "DoWorkUpdateStatus"
+	doWork                    = "doWork"
+	isWorkDone                = "isWorkDone"
+	postWork                  = "postWork"
+	postWorkUpdateStatus      = "postWorkUpdateStatus"
+	completedWorkUpdateStatus = "WorkCompletedUpdateStatus"
 )
 
 // getStatesInOrder returns the states in order of execution
 func getStatesInOrder() []string {
 	return []string{
-		getActionName,
+		getWorkName,
 		initFunc,
-		isActionNeeded,
-		preActionUpdateStatus,
-		preAction,
-		actionUpdateStatus,
-		doAction,
-		isActionDone,
-		postActionUpdateStatus,
-		postAction,
-		completedActionUpdateStatus,
+		isWorkNeeded,
+		preWorkUpdateStatus,
+		preWork,
+		workUpdateStatus,
+		doWork,
+		isWorkDone,
+		postWorkUpdateStatus,
+		postWork,
+		completedWorkUpdateStatus,
 	}
 }
 
@@ -68,10 +68,10 @@ func TestAllStatesSucceed(t *testing.T) {
 	asserts := assert.New(t)
 
 	h := handler{
-		actionNeeded: true,
-		behaviorMap:  getBehaviorMap(),
+		workNeeded:  true,
+		behaviorMap: getBehaviorMap(),
 	}
-	cr := &v1alpha1.ModuleAction{
+	cr := &v1alpha1.Module{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       "TestAllStatesSucceed",
 			Namespace:  "testns",
@@ -108,15 +108,15 @@ func TestEachStateRequeue(t *testing.T) {
 
 	// Check for a Requeue result for every state
 	for i, s := range getStatesInOrder() {
-		if s == getActionName {
+		if s == getWorkName {
 			continue
 		}
 
 		h := handler{
-			actionNeeded: true,
-			behaviorMap:  getBehaviorMap(),
+			workNeeded:  true,
+			behaviorMap: getBehaviorMap(),
 		}
-		cr := &v1alpha1.ModuleAction{
+		cr := &v1alpha1.Module{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:       "TestEachStateRequeue",
 				Namespace:  "testns",
@@ -139,7 +139,7 @@ func TestEachStateRequeue(t *testing.T) {
 		// Make sure all the states were visited only up to the one that requeued, check in order
 		expectedVisited := true
 		for _, s := range getStatesInOrder() {
-			if s == getActionName {
+			if s == getWorkName {
 				continue
 			}
 			b := h.behaviorMap[s]
@@ -167,23 +167,23 @@ func TestNotDone(t *testing.T) {
 		expectRequeue bool
 	}{
 		{
-			name:          "isActionNeeded",
-			stateNotDone:  isActionNeeded,
+			name:          "isWorkNeeded",
+			stateNotDone:  isWorkNeeded,
 			expectRequeue: false,
 		},
 		{
-			name:          "isActionDone",
-			stateNotDone:  isActionDone,
+			name:          "isWorkDone",
+			stateNotDone:  isWorkDone,
 			expectRequeue: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			h := handler{
-				actionNeeded: true,
-				behaviorMap:  getBehaviorMap(),
+				workNeeded:  true,
+				behaviorMap: getBehaviorMap(),
 			}
-			cr := &v1alpha1.ModuleAction{
+			cr := &v1alpha1.Module{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:       "TestEachStateRequeue-" + test.stateNotDone,
 					Namespace:  "testns",
@@ -206,7 +206,7 @@ func TestNotDone(t *testing.T) {
 			// Make sure all the states were visited only up to the one that requeued, check in order
 			expectedVisited := true
 			for _, s := range getStatesInOrder() {
-				if s == getActionName {
+				if s == getWorkName {
 					continue
 				}
 				b := h.behaviorMap[s]
@@ -229,7 +229,7 @@ func getBehaviorMap() behaviorMap {
 
 // Implement the handler SPI
 func (h handler) GetWorkName() string {
-	b := h.behaviorMap[getActionName]
+	b := h.behaviorMap[getWorkName]
 	b.visited = true
 	return "install"
 }
@@ -239,39 +239,39 @@ func (h handler) Init(context handlerspi.HandlerContext, config handlerspi.State
 }
 
 func (h handler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return h.procHandlerBool(isActionNeeded)
+	return h.procHandlerBool(isWorkNeeded)
 }
 
 func (h handler) PreWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.procHandlerCall(preAction)
+	return h.procHandlerCall(preWork)
 }
 
 func (h handler) PreWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.procHandlerCall(preActionUpdateStatus)
+	return h.procHandlerCall(preWorkUpdateStatus)
 }
 
 func (h handler) DoWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.procHandlerCall(actionUpdateStatus)
+	return h.procHandlerCall(workUpdateStatus)
 }
 
 func (h handler) DoWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.procHandlerCall(doAction)
+	return h.procHandlerCall(doWork)
 }
 
 func (h handler) IsWorkDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return h.procHandlerBool(isActionDone)
+	return h.procHandlerBool(isWorkDone)
 }
 
 func (h handler) PostWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.procHandlerCall(postActionUpdateStatus)
+	return h.procHandlerCall(postWorkUpdateStatus)
 }
 
 func (h handler) PostWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.procHandlerCall(postAction)
+	return h.procHandlerCall(postWork)
 }
 
 func (h handler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.procHandlerCall(completedActionUpdateStatus)
+	return h.procHandlerCall(completedWorkUpdateStatus)
 }
 
 func (h handler) procHandlerCall(name string) (ctrl.Result, error) {
