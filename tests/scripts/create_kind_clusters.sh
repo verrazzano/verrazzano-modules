@@ -116,6 +116,7 @@ create_kind_cluster
 
 kubectl config set-context kind-${CLUSTER_NAME}
 kind get kubeconfig --name=${CLUSTER_NAME} >$KUBECONFIG
+echo "KUBECONFIG generate at $KUBECONFIG"
 
 if [ "${CONNECT_JENKINS_RUNNER_TO_NETWORK}" == "true" ]; then
   dockerIP=$(${DOCKER_CMD} inspect ${CLUSTER_NAME}-control-plane | jq -r '.[].NetworkSettings.Networks[].IPAddress')
