@@ -70,7 +70,7 @@ func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Res
 func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := h.BaseHandler.Config.HelmInfo.HelmRelease
-	helmOverrides, err := helm2.LoadOverrideFiles(ctx.Log, ctx.Client, helmRelease.Name, h.BaseHandler.ModuleCR.Namespace, helmRelease.Overrides)
+	helmOverrides, err := helm2.LoadOverrideFiles(ctx.Log, ctx.Client, helmRelease.Name, h.ModuleCR.Namespace, h.ModuleCR.Spec.Overrides)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
