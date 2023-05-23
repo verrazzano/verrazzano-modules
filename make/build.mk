@@ -82,6 +82,11 @@ docker-push-debug: docker-build-debug docker-push-common
 .PHONY: docker-push-common
 docker-push-common:
 	${DOCKER_CMD} tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
+ifdef DOCKER_CREDS_USR
+ifdef DOCKER_CREDS_PSW
+	@${DOCKER_CMD} login ${DOCKER_REPO} --username ${DOCKER_CREDS_USR} --password ${DOCKER_CREDS_PSW}
+endif
+endif
 	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG})
 ifeq ($(CREATE_LATEST_TAG), "1")
 	${DOCKER_CMD} tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:latest;

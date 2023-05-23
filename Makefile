@@ -9,6 +9,8 @@ help: ## Display this help.
 include make/quality.mk
 include make/global-env.mk
 include make/acceptance-tests.mk
+include make/kind.mk
+include make/install.mk
 
 SCRIPT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))/tools/scripts
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -130,9 +132,38 @@ check-tests: check-eventually ## check test code for known quality issues
 check-eventually: ## check for correct use of Gomega Eventually func
 	#go run github.com/verrazzano/verrazzano-modules/tools/eventually-checker tests/e2e
 
-test: export TEST_SUITES ?= verify-operator/...
+.PHONY: check-repo-clean
+check-repo-clean:
+	(cd module-operator; make check-repo-clean)
+
+# Create a kind cluster
+.PHONY: setup
+setup:
+	@echo "Creating kind cluster."
+	make setup-kind
+
+# Peforms an install of module-operator to the target system
+.PHONY: install
+install:
+	@echo "Installing verrazzano-modules-operator."
+	make install-verrazzano-modules-operator
+
+# Run tests
+test: export TEST_SUITES ?= module-operator/verify-install/...
 .PHONY: test
 test:
 	@echo "Running tests ${TEST_SUITES}"
 	make run-test
+
+# Remove the kind cluster
+.PHONY: cleanup
+cleanup:
+	@echo "Removing kind cluster."
+	make delete-kind
+
+# Remove all the kind clusters
+.PHONY: cleanup-all
+cleanup-all:
+	@echo "Removing all kind clusters."
+	make delete-kind-all
 

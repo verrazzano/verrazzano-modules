@@ -1,6 +1,5 @@
-# Copyright (C) 2022, Oracle and/or its affiliates.
+# Copyright (C) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-export DUMP_ROOT_DIRECTORY ?= ${WORKSPACE}/cluster-snapshots
 export GO_TEST_ARGS ?= -v
 
 run-test: export RANDOMIZE_TESTS ?= true
