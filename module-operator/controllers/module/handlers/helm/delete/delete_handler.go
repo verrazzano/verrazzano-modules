@@ -96,5 +96,5 @@ func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 
 // CompletedWorkUpdateStatus does the lifecycle completed Work status update
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondInstallComplete, moduleapi.ModuleStateReady)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUninstallComplete, moduleapi.ModuleStateReady)
 }

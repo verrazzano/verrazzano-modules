@@ -28,15 +28,14 @@ func loadHelmInfo(cr *moduleapi.Module) (handlerspi.HelmInfo, error) {
 	}
 
 	helmInfo := handlerspi.HelmInfo{
-		HelmRelease: &moduleapi.HelmRelease{
+		HelmRelease: &handlerspi.HelmRelease{
 			Name:      cr.Name,
 			Namespace: cr.Spec.TargetNamespace,
-			ChartInfo: moduleapi.HelmChart{
+			ChartInfo: handlerspi.HelmChart{
 				Name:    chartInfo.Name,
 				Version: chartInfo.Version,
 				Path:    lookupChartDir(cr),
 			},
-			Overrides: nil,
 		},
 	}
 	return helmInfo, nil

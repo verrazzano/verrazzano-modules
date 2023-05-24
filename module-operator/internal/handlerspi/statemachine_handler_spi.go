@@ -4,19 +4,9 @@
 package handlerspi
 
 import (
-	modulesv1alpha1 "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
-
-// HelmInfo contains all the information need to manage the  of Helm releases
-type HelmInfo struct {
-	// HelmRelease contains Helm release information
-	*modulesv1alpha1.HelmRelease
-
-	// CharDir is the local file system chart directory
-	ChartDir string
-}
 
 // StateMachineHandlerConfig contains configuration data needed by the handlers
 type StateMachineHandlerConfig struct {
