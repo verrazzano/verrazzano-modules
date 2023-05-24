@@ -75,11 +75,11 @@ func TestEnsureTracker(t *testing.T) {
 	asserts.Equal(threadCount+startingMapSize, len(trackerMap))
 }
 
-// TestRemoveTracker tests that old trackers are deleted
+// TestNewGeneration tests that old trackers are deleted when the generation changes
 // GIVEN a trackerContext
 // WHEN multiple CRs are tracked concurrently and the generation changes
 // THEN ensure that trackers tracking old generations of CRs are deleted
-func TestRemoveTracker(t *testing.T) {
+func TestNewGeneration(t *testing.T) {
 	asserts := assert.New(t)
 	startingMapSize := len(trackerMap)
 
@@ -118,8 +118,64 @@ func TestRemoveTracker(t *testing.T) {
 	asserts.Equal(threadCount+startingMapSize, len(trackerMap))
 }
 
+// TestDeleteTracker tests that old trackers are deleted when DeleteTracker is called
+// GIVEN a trackerContext
+// WHEN multiple CRs are tracked concurrently and a tracker is deleted
+// THEN ensure that only the tracker for the CR is deleted.
+func TestDeleteTracker(t *testing.T) {
+	asserts := assert.New(t)
+
+	const threadCount = 1000
+	var wg sync.WaitGroup
+	for i := 1; i <= threadCount; i++ {
+		wg.Add(1)
+		go func(y int) {
+			defer wg.Done()
+
+			// Ensure tracker starts at state
+			startstate := getRandomState()
+			cr := buildCR(y)
+			tracker := ensureTracker(cr, startstate)
+			asserts.NotNil(tracker)
+			asserts.Equal(startstate, tracker.state)
+
+			// Delete the tracker if suffix is even
+			if y%2 == 0 {
+				DeleteTracker(cr)
+			}
+		}(i)
+	}
+	wg.Wait()
+
+	// Make sure correct trackers were deleted
+	trackerMutex.Lock()
+	defer trackerMutex.Unlock()
+	for i := 1; i <= threadCount; i++ {
+		cr := buildCR(i)
+		key := getTrackerKey(cr)
+		_, ok := trackerMap[key]
+		if i%2 == 0 {
+			asserts.False(ok)
+		} else {
+			asserts.True(ok)
+		}
+	}
+}
+
 // get a random state
 func getRandomState() state {
 	states := []state{stateInit, stateWork, statePostWork, statePreWork, stateWorkUpdateStatus, stateEnd}
 	return states[rand.IntnRange(0, len(states)-1)]
+}
+
+func buildCR(suffix int) *v1alpha1.Module {
+	cr := &v1alpha1.Module{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       fmt.Sprintf("%s-%d", "fakeName2", suffix),
+			Namespace:  "TestDeleteTracker",
+			UID:        "uid-12345",
+			Generation: 1,
+		},
+	}
+	return cr
 }
