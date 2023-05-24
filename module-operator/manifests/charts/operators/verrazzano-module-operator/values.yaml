@@ -7,7 +7,7 @@
 
 replicaCount: 1
 
-createNamespace: true
+createNamespace: false
 namespaceLabelKey: verrazzano.io/namespace
 
 image:
