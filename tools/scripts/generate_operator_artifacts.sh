@@ -42,6 +42,7 @@ if [ -n "${IMAGE_PULL_SECRETS}" ] ; then
 fi
 yq -i eval '.image.repository = env(DOCKER_IMAGE_FULLNAME)'  ${TARGET_VALUES}
 yq -i eval '.image.tag = env(DOCKER_IMAGE_TAG)' ${TARGET_VALUES}
+yq -i eval '.createNamespace = true' ${TARGET_VALUES}
 helm package ${TARGET_CHART} -d ${BUILD_OUT}
 
 helm template --include-crds ${TARGET_CHART} -n "verrazzano-install" > ${OPERATOR_YAML}
