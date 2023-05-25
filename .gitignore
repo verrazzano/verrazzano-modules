@@ -24,7 +24,6 @@ out/
 **/*test-result.xml
 **/*-cluster-dump
 **/*.log
-module-operator/THIRD_PARTY_LICENSES.txt
 build
 .txt
 **/.DS_Store
