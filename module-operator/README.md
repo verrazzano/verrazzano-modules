@@ -54,7 +54,7 @@ Instructions for building and testing the Verrazzano module operator.
 
     ```sh
     $ kubectl apply -f manifests/charts/operators/verrazzano-module-operator/crds/*
-    make run
+    $ make run
     ```
 
 ## Testing
