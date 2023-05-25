@@ -107,5 +107,6 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 	}
 
 	// TODO check if release is ready (check deployments)
-	return true, ctrl.Result{}, err
+	ready, err := CheckWorkLoadsReady(ctx.Log, h.HelmRelease.Name, h.HelmRelease.Namespace)
+	return ready, ctrl.Result{}, err
 }
