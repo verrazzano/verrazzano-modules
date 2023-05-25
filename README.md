@@ -1,6 +1,6 @@
 # Verrazzano Modules
 
-Verrazzano Modules is an add-on to the Verrazzano Container Platform that allows managing the lifecycle of modules. Modules are components that extend the platform with specific capabilities and features.
+Verrazzano Modules is an add-on to the Verrazzano Container Platform that allows managing the life cycle of modules. Modules are components that extend the platform with specific capabilities and features.
 
 This repository contains the following content:
 

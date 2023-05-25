@@ -38,7 +38,7 @@ Instructions for building and testing the Verrazzano module operator.
 
 ## Running on a cluster
 
-1. After building and pushing the Docker image and generating the operator artifacts, apply the operator YAML:
+1. After building and pushing the Docker image and generating the operator artifacts, apply the operator YAML file:
 
     ```sh
     kubectl apply -f build/deploy/verrazzano-module-operator.yaml
@@ -73,14 +73,14 @@ Instructions for building and testing the Verrazzano module operator.
     EOF
     ```
 
-2. Verify the Helm chart was installed:
+2. Verify that the Helm chart was installed:
 
     ```sh
     helm ls
     ```
 
 ## Modifying the API definitions
-If you update the API definitions, you must regenerate CRDs and code.
+If you update the API definitions, then you must regenerate CRDs and code.
 
 * To generate manifests (for example, CRDs):
 
