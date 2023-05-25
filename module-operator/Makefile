@@ -12,7 +12,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-GO ?= CGO_ENABLED=0 GO111MODULE=on GOPRIVATE=github.com/verrazzano go
+GO ?= GO111MODULE=on GOPRIVATE=github.com/verrazzano go
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
