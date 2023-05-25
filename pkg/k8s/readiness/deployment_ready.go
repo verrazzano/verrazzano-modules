@@ -1,7 +1,7 @@
 // Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package ready
+package readiness
 
 import (
 	"context"
@@ -103,7 +103,6 @@ func deploymentFullyReady(log vzlog.VerrazzanoLogger, client clipkg.Client, depl
 	if !PodsReadyDeployment(log, client, namespacedName, podSelector, expectedReplicas, prefix) {
 		return false
 	}
-	logOncef(log, "%s has enough replicas for deployment %v", prefix, namespacedName)
 	return true
 }
 

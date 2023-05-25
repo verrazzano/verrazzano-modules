@@ -1,7 +1,7 @@
 // Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package ready
+package readiness
 
 import (
 	"context"
@@ -43,7 +43,6 @@ func DaemonSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, namesp
 		if !podsReadyDaemonSet(log, client, namespacedName, podSelector, expectedNodes, prefix) {
 			return false
 		}
-		log.Oncef("%s has enough nodes for daemonsets %v", prefix, namespacedName)
 	}
 	return true
 }
