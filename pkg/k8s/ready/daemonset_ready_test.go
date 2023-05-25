@@ -4,7 +4,7 @@
 package ready
 
 import (
-	"testing"
+"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
