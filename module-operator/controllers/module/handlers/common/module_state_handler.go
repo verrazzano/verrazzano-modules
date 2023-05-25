@@ -56,7 +56,7 @@ func (m ModuleState) IsUpgradeNeeded(context handlerspi.HandlerContext, cr *modu
 		return false, util.NewRequeueWithShortDelay(), err
 	}
 
-	// return UpgradeAction only when the desired version is different from current
+	// upgrade is needed when the desired version is different from current
 	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, installedVersion)
 	if err != nil {
 		context.Log.ErrorfThrottled("Failed checking if upgrade needed for Helm release %s/%s failed with error: %v\n", releaseNamespace, releaseName, err)

@@ -76,58 +76,12 @@ func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Res
 
 // DoWork installs the module using Helm
 func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	installed, err := helm2.IsReleaseInstalled(h.HelmRelease.Name, h.HelmRelease.Namespace)
-	if err != nil {
-		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.HelmRelease.Namespace, h.HelmRelease.Name)
-		return ctrl.Result{}, err
-	}
-	if installed {
-		return ctrl.Result{}, nil
-	}
-
-	// Perform a Helm install using the helm upgrade --install command
-	helmRelease := h.BaseHandler.Config.HelmInfo.HelmRelease
-	helmOverrides, err := helm2.LoadOverrideFiles(ctx.Log, ctx.Client, helmRelease.Name, h.ModuleCR.Namespace, h.ModuleCR.Spec.Overrides)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	var opts = &helm2.HelmReleaseOpts{
-		RepoURL:      helmRelease.Repository.URI,
-		ReleaseName:  h.BaseHandler.Name,
-		Namespace:    h.BaseHandler.Namespace,
-		ChartPath:    helmRelease.ChartInfo.Path,
-		ChartVersion: helmRelease.ChartInfo.Version,
-		Overrides:    helmOverrides,
-		// TODO -- pull from a secret ref?
-		//Username:     "",
-		//Password:     "",
-	}
-	_, err = upgradeFunc(ctx.Log, opts, false, ctx.DryRun)
-	return ctrl.Result{}, err
+	return h.HelmUpgradeOrInstall(ctx)
 }
 
 // IsWorkDone Indicates whether a module is installed and ready
 func (h HelmHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	if ctx.DryRun {
-		ctx.Log.Debugf("IsReady() dry run for %s", h.BaseHandler.Name)
-		return true, ctrl.Result{}, nil
-	}
-
-	deployed, err := helm2.IsReleaseDeployed(h.BaseHandler.Name, h.BaseHandler.Namespace)
-	if err != nil {
-		ctx.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
-		return false, ctrl.Result{}, err
-	}
-	if !deployed {
-		return false, util.NewRequeueWithShortDelay(), nil
-	}
-	// check if helm release at the correct version
-	if !h.releaseVersionMatches(ctx.Log) {
-		return false, util.NewRequeueWithShortDelay(), nil
-	}
-
-	// TODO check if release is ready (check deployments)
-	return true, ctrl.Result{}, err
+	return h.CheckReleaseDeployedAndReady(ctx)
 }
 
 // PostWorkUpdateStatus does the post-work status update
