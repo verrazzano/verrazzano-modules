@@ -1,6 +1,7 @@
 # Copyright (C) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+export DOCKER_CMD ?= docker
 ##@ Development
 
 .PHONY: fmt
@@ -57,7 +58,7 @@ run: ## Run a controller from your host.
 	$(GO) run ./main.go
 
 # If you wish built the manager image targeting other platforms you can use the --platform flag.
-# (i.e. docker build --platform linux/arm64 ). However, you must enable docker buildKit for it.
+# (i.e. ${DOCKER_CMD} build --platform linux/arm64 ). However, you must enable ${DOCKER_CMD} buildKit for it.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
 docker-build: go-build-linux docker-build-common
@@ -66,9 +67,9 @@ docker-build-common: BASE_IMAGE ?= ghcr.io/verrazzano/verrazzano-base:v1.0.0-202
 .PHONY: docker-build-common
 docker-build-common:
 	@echo Building ${NAME} image ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
-	# the TPL file needs to be copied into this dir so it is in the docker build context
+	# the TPL file needs to be copied into this dir so it is in the ${DOCKER_CMD} build context
 	#cp ../THIRD_PARTY_LICENSES.txt .
-	docker build --pull -f Dockerfile \
+	${DOCKER_CMD} build --pull -f Dockerfile \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
 
@@ -80,10 +81,15 @@ docker-push-debug: docker-build-debug docker-push-common
 
 .PHONY: docker-push-common
 docker-push-common:
-	docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
+	${DOCKER_CMD} tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
+ifdef DOCKER_CREDS_USR
+ifdef DOCKER_CREDS_PSW
+	@${DOCKER_CMD} login ${DOCKER_REPO} --username ${DOCKER_CREDS_USR} --password ${DOCKER_CREDS_PSW}
+endif
+endif
 	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG})
 ifeq ($(CREATE_LATEST_TAG), "1")
-	docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:latest;
+	${DOCKER_CMD} tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:latest;
 	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:latest);
 endif
 

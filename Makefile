@@ -7,6 +7,10 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 include make/quality.mk
+include make/global-env.mk
+include make/acceptance-tests.mk
+include make/kind.mk
+include make/install.mk
 
 SCRIPT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))/tools/scripts
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -127,4 +131,39 @@ check-tests: check-eventually ## check test code for known quality issues
 .PHONY: check-eventually
 check-eventually: ## check for correct use of Gomega Eventually func
 	#go run github.com/verrazzano/verrazzano-modules/tools/eventually-checker tests/e2e
+
+.PHONY: check-repo-clean
+check-repo-clean:
+	(cd module-operator; make check-repo-clean)
+
+# Create a kind cluster
+.PHONY: setup
+setup:
+	@echo "Creating kind cluster."
+	make setup-kind
+
+# Peforms an install of module-operator to the target system
+.PHONY: install
+install:
+	@echo "Installing verrazzano-modules-operator."
+	make install-verrazzano-modules-operator
+
+# Run tests
+test: export TEST_SUITES ?= module-operator/verify-install/...
+.PHONY: test
+test:
+	@echo "Running tests ${TEST_SUITES}"
+	make run-test
+
+# Remove the kind cluster
+.PHONY: cleanup
+cleanup:
+	@echo "Removing kind cluster."
+	make delete-kind
+
+# Remove all the kind clusters
+.PHONY: cleanup-all
+cleanup-all:
+	@echo "Removing all kind clusters."
+	make delete-kind-all
 

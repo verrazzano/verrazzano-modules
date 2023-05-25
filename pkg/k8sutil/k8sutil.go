@@ -8,14 +8,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
-	k8sversionutil "k8s.io/apimachinery/pkg/util/version"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
+	k8sversionutil "k8s.io/apimachinery/pkg/util/version"
+
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	apiextv1Client "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1"
 	kerrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -473,4 +476,51 @@ func IsMinimumk8sVersion(expectedK8sVersion string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+// GetAPIExtV1ClientFunc is the function to return the ApiextensionsV1Interface
+var GetAPIExtV1ClientFunc = GetAPIExtV1Client
+
+// ResetGetAPIExtV1ClientFunc for unit testing, to reset any overrides to GetAPIExtV1ClientFunc
+func ResetGetAPIExtV1ClientFunc() {
+	GetAPIExtV1ClientFunc = GetAPIExtV1Client
+}
+
+// GetAPIExtV1Client returns the ApiextensionsV1Interface
+func GetAPIExtV1Client() (apiextv1.ApiextensionsV1Interface, error) {
+	goClient, err := GetAPIExtGoClient()
+	if err != nil {
+		return nil, err
+	}
+	return goClient.ApiextensionsV1(), nil
+}
+
+// GetAPIExtGoClient returns an API Extensions go-client
+func GetAPIExtGoClient() (apiextv1Client.Interface, error) {
+	config, err := buildRESTConfig(nil)
+	if err != nil {
+		return nil, err
+	}
+	apiextClient, err := apiextv1Client.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return apiextClient, err
+}
+
+func CheckCRDsExist(crdNames []string) (bool, error) {
+	clientFunc, err := GetAPIExtV1ClientFunc()
+	if err != nil {
+		return false, err
+	}
+	for _, crdName := range crdNames {
+		_, err := clientFunc.CustomResourceDefinitions().Get(context.TODO(), crdName, metav1.GetOptions{})
+		if err != nil {
+			if kerrs.IsNotFound(err) {
+				return false, nil
+			}
+			return false, err
+		}
+	}
+	return true, nil
 }
