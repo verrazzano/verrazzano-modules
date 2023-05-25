@@ -149,7 +149,7 @@ install:
 	make install-verrazzano-modules-operator
 
 # Run tests
-test: export TEST_SUITES ?= module-operator/verify-install/...
+test: export TEST_SUITES ?= ./...
 .PHONY: test
 test:
 	@echo "Running tests ${TEST_SUITES}"

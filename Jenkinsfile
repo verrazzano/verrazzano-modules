@@ -54,10 +54,12 @@ pipeline {
 
         POST_DUMP_FAILED_FILE = "${WORKSPACE}/post_dump_failed_file.tmp"
         TESTS_EXECUTED_FILE = "${WORKSPACE}/tests_executed_file.tmp"
-        //KUBECONFIG = "${WORKSPACE}/test_kubeconfig"
+        KUBECONFIG = "${WORKSPACE}/test_kubeconfig"
         OCR_CREDS = credentials('ocr-pull-and-push-account')
         OCR_REPO = 'container-registry.oracle.com'
         IMAGE_PULL_SECRET = 'verrazzano-container-registry'
+        BUILD_DEPLOY="${WORKSPACE}/generated"
+        OPERATOR_YAML="${BUILD_DEPLOY}/verrazzano-module-operator.yaml"
 
         // used for console artifact capture on failure
         JENKINS_READ = credentials('jenkins-auditor')
@@ -198,6 +200,48 @@ pipeline {
                 }
             }
         }
+
+        stage('Setup cluster') {
+            when { not { buildingTag() } }
+            steps {
+                sh """
+                    echo "Create kind cluster"
+                    cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                    make setup
+                """
+            }
+        }
+
+        stage('Install verrazzano-modules-operator') {
+            when { not { buildingTag() } }
+            steps {
+                sh """
+                    echo "Install verrazzano-modules-operator"
+                    cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                    make install
+                """
+            }
+        }
+
+        stage('Execute e2e tests') {
+            when { not { buildingTag() } }
+            steps {
+                sh """
+                    echo "Executing e2e tests"
+                    cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                    make test
+                """
+            }
+            post {
+                always {
+                    sh """
+                        echo "cleanup kind cluster"
+                        cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                        make cleanup
+                    """
+                }
+            }
+        }
     }
 
     post {
@@ -287,7 +331,7 @@ def generateOperatorYaml(dockerImageTag) {
 
         echo "Generating operator manifests and versioned Charts"
         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-        make generate-operator-artifacts BUILD_DEPLOY=${WORKSPACE}/generated \
+        make generate-operator-artifacts \
             DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} \
             VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME}
     """

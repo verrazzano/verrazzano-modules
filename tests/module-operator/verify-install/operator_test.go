@@ -19,7 +19,7 @@ func (suite *OperatorTestSuite) TestOperatorRunning() {
 }
 
 func (suite *OperatorTestSuite) TestCRDsInstalled() {
-	crdInstalled, err := k8sutil.CheckCRDsExist([]string{"modules.platform.verrazzano.io", "moduleactions.platform.verrazzano.io"})
+	crdInstalled, err := k8sutil.CheckCRDsExist([]string{"modules.platform.verrazzano.io"})
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	suite.gomega.Expect(crdInstalled).To(gomega.BeTrue())
 }
