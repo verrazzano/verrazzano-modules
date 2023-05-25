@@ -196,6 +196,49 @@ pipeline {
                        }
                    }
                 }
+
+                stage('Setup cluster') {
+                   when { not { buildingTag() } }
+                   steps {
+                       sh """
+                           echo "Create kind cluster"
+                           cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                           make setup
+                       """
+                   }
+                }
+
+                stage('Install verrazzano-modules-operator') {
+                   when { not { buildingTag() } }
+                   steps {
+                       sh """
+                           echo "Install verrazzano-modules-operator"
+                           cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                           make install
+                       """
+                   }
+                }
+
+                stage('Execute e2e tests') {
+                   when { not { buildingTag() } }
+                   steps {
+                       sh """
+                           echo "Executing e2e tests"
+                           cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                           make test
+                       """
+                   }
+                   post {
+                       always {
+                           sh """
+                              echo "cleanup clusters"
+                              cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                              make cleanup-all
+                           """
+                       }
+                   }
+                }
+
             }
         }
     }
