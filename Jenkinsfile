@@ -58,6 +58,8 @@ pipeline {
         OCR_CREDS = credentials('ocr-pull-and-push-account')
         OCR_REPO = 'container-registry.oracle.com'
         IMAGE_PULL_SECRET = 'verrazzano-container-registry'
+        BUILD_DEPLOY="${WORKSPACE}/generated"
+        OPERATOR_YAML="${BUILD_DEPLOY}/verrazzano-module-operator.yaml"
 
         // used for console artifact capture on failure
         JENKINS_READ = credentials('jenkins-auditor')
@@ -233,9 +235,9 @@ pipeline {
             post {
                 always {
                     sh """
-                        echo "cleanup clusters"
+                        echo "cleanup kind cluster"
                         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-                        make cleanup-all
+                        make cleanup
                     """
                 }
             }
@@ -329,7 +331,7 @@ def generateOperatorYaml(dockerImageTag) {
 
         echo "Generating operator manifests and versioned Charts"
         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-        make generate-operator-artifacts BUILD_DEPLOY=${WORKSPACE}/generated \
+        make generate-operator-artifacts \
             DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} DOCKER_IMAGE_TAG=${dockerImageTag} \
             VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME}
     """

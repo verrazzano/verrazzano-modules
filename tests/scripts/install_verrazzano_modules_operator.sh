@@ -39,9 +39,9 @@ fi
 TARGET_OPERATOR_FILE=${TARGET_OPERATOR_FILE:-"${WORKSPACE}/verrazzano-modules-operator.yaml"}
 if [ -z "$VZ_MODULES_OPERATOR_YAML" ]; then
   # copy the file, then install else ask to generate
-  if [ -f "${VMO_ROOT}/build/deploy/verrazzano-module-operator.yaml" ]; then
+  if [ -f "${OPERATOR_YAML}" ]; then
     echo "Using pre-generated verrazzano-modules-operator.yaml"
-    cp "${VMO_ROOT}/build/deploy/verrazzano-module-operator.yaml" ${TARGET_OPERATOR_FILE}
+    cp "${OPERATOR_YAML}" ${TARGET_OPERATOR_FILE}
   else
     echo "verrazzano-module-operator.yaml does not exists, please generate one using make  generate-operator-artifacts"
     exit 1

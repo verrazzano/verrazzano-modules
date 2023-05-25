@@ -41,7 +41,7 @@ $ DOCKER_REPO=<Target Docker repo e.g ghcr.io> \
  DOCKER_CMD=<podman or leave empty for docker command> \
  DOCKER_CREDS_USR=<username for docker repo or empty> \
  DOCKER_CREDS_PSW=<password for docker repo or empty> \
- makIMAGE_PULL_SECRETS=verrazzano-container-registry \
+ IMAGE_PULL_SECRETS=verrazzano-container-registry \
  make docker-push generate-operator-artifacts
 
 To create a single KIND cluster:
