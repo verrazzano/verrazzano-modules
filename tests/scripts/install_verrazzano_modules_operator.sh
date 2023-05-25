@@ -55,6 +55,7 @@ fi
 echo "Installing Verrazzano Modules Operator on Kind"
 if [ -f "${TARGET_OPERATOR_FILE}" ]; then
   kubectl apply -f ${TARGET_OPERATOR_FILE}
+  kubectl -n verrazzano-install rollout status deployment/verrazzano-module-operator
 else
   echo "${TARGET_OPERATOR_FILE} does not exist"
 fi
