@@ -22,7 +22,7 @@ COPY --from=build_base --chown=1000 /usr/local/bin/verrazzano-module-operator /u
 WORKDIR /home/verrazzano
 COPY --from=build_base --chown=1000 /root/go/src/github.com/verrazzano/verrazzano-modules/module-operator/manifests ./manifests
 COPY --from=build_base --chown=1000 /tmp /tmp
-#COPY --from=build_base /root/go/src/github.com/verrazzano/verrazzano-modules/module-operator/THIRD_PARTY_LICENSES.txt /licenses/
+COPY --from=build_base /root/go/src/github.com/verrazzano/verrazzano-modules/THIRD_PARTY_LICENSES.txt /licenses/
 
 USER 1000
 
