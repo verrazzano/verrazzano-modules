@@ -16,24 +16,24 @@ Instructions for building and testing the Verrazzano module operator.
 * To build the operator:
 
     ```
-    $ make go-build
+    make go-build
     ```
 
 ## Build and push Docker image
 
 * To build the Docker image:
     ```
-    $ DOCKER_REPO=<repo> DOCKER_NAMESPACE=<namespace> make docker-build
+    DOCKER_REPO=<repo> DOCKER_NAMESPACE=<namespace> make docker-build
     ```
 
 * To build and push the Docker image:
     ```
-    $ DOCKER_REPO=<repo> DOCKER_NAMESPACE=<namespace> make docker-push
+    DOCKER_REPO=<repo> DOCKER_NAMESPACE=<namespace> make docker-push
     ```
 
 * To build and push the Docker image and generate artifacts:
     ```
-    $ IMAGE_PULL_SECRETS=<secret name> DOCKER_REPO=<repo> DOCKER_NAMESPACE=<namespace> make generate-operator-artifacts docker-push
+    IMAGE_PULL_SECRETS=<secret name> DOCKER_REPO=<repo> DOCKER_NAMESPACE=<namespace> make generate-operator-artifacts docker-push
     ```
 
 ## Running on a cluster
@@ -41,20 +41,20 @@ Instructions for building and testing the Verrazzano module operator.
 1. After building and pushing the Docker image and generating the operator artifacts, apply the operator YAML:
 
     ```sh
-    $ kubectl apply -f build/deploy/verrazzano-module-operator.yaml
+    kubectl apply -f build/deploy/verrazzano-module-operator.yaml
     ```
 
 2. Wait for the operator:
 
     ```sh
-    $ kubectl -n verrazzano-install rollout status deployment/verrazzano-module-operator
+    kubectl -n verrazzano-install rollout status deployment/verrazzano-module-operator
     ```
 
 3. Alternatively, apply the CRDs and use `make` to run the operator:
 
     ```sh
-    $ kubectl apply -f manifests/charts/operators/verrazzano-module-operator/crds/*
-    $ make run
+    kubectl apply -f manifests/charts/operators/verrazzano-module-operator/crds/*
+    make run
     ```
 
 ## Testing
@@ -62,7 +62,7 @@ Instructions for building and testing the Verrazzano module operator.
 1. After installing the operator, apply a Module CR:
 
     ```sh
-    $ kubectl apply -f - <<EOF
+    kubectl apply -f - <<EOF
     apiVersion: platform.verrazzano.io/v1alpha1
     kind: Module
     metadata:
@@ -76,7 +76,7 @@ Instructions for building and testing the Verrazzano module operator.
 2. Verify the Helm chart was installed:
 
     ```sh
-    $ helm ls
+    helm ls
     ```
 
 ## Modifying the API definitions
@@ -85,11 +85,11 @@ If you update the API definitions, you must regenerate CRDs and code.
 * To generate manifests (for example, CRDs):
 
     ```
-    $ make manifests
+    make manifests
     ```
 
 * To generate code (for example, `zz_generated.deepcopy.go`):
 
     ```
-    $ make generate
+    make generate
     ```
