@@ -9,9 +9,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
-	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
-	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
-	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 )
@@ -20,13 +17,8 @@ type HelmHandler struct {
 	common.BaseHandler
 }
 
-// upgradeFuncSig is a function needed for unit test override
-type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm2.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
-
 var (
 	_ handlerspi.StateMachineHandler = &HelmHandler{}
-
-	upgradeFunc upgradeFuncSig = helm2.UpgradeRelease
 )
 
 func NewHandler() handlerspi.StateMachineHandler {
