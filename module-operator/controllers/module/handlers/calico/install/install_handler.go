@@ -21,7 +21,7 @@ func NewHandler() handlerspi.StateMachineHandler {
 	return &CalicoHandler{}
 }
 
-// PreAction does installation pre-action
+// PreWork does installation pre-work
 func (h CalicoHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 
 	// TODO - Do Calico specific work here
