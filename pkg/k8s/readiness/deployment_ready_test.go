@@ -469,6 +469,7 @@ func TestMultipleReplicasReadyBelowThreshold(t *testing.T) {
 			},
 			Spec: appsv1.DeploymentSpec{
 				Selector: selector,
+				Replicas: int32val(3),
 			},
 			Status: appsv1.DeploymentStatus{
 				AvailableReplicas: 3,

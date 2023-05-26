@@ -31,7 +31,10 @@ func StatefulSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, name
 			log.Errorf("Failed getting statefulset %v: %v", namespacedName, err)
 			return false
 		}
-		expectedReplicas := *statefulset.Spec.Replicas
+		var expectedReplicas int32
+		if statefulset.Spec.Replicas != nil {
+			expectedReplicas = *statefulset.Spec.Replicas
+		}
 		if expectedReplicas == 0 {
 			expectedReplicas = 1
 		}

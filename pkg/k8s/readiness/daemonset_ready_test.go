@@ -33,7 +33,7 @@ func TestDaemonSetsReady(t *testing.T) {
 			Selector: selector,
 		},
 		Status: appsv1.DaemonSetStatus{
-			NumberAvailable:        1,
+			DesiredNumberScheduled: 1,
 			UpdatedNumberScheduled: 1,
 		},
 	}
@@ -46,7 +46,7 @@ func TestDaemonSetsReady(t *testing.T) {
 			Selector: selector,
 		},
 		Status: appsv1.DaemonSetStatus{
-			NumberAvailable:        2,
+			DesiredNumberScheduled: 2,
 			UpdatedNumberScheduled: 2,
 		},
 	}
@@ -59,7 +59,7 @@ func TestDaemonSetsReady(t *testing.T) {
 			Selector: selector,
 		},
 		Status: appsv1.DaemonSetStatus{
-			NumberAvailable:        0,
+			DesiredNumberScheduled: 0,
 			UpdatedNumberScheduled: 1,
 		},
 	}
@@ -72,7 +72,7 @@ func TestDaemonSetsReady(t *testing.T) {
 			Selector: selector,
 		},
 		Status: appsv1.DaemonSetStatus{
-			NumberAvailable:        1,
+			DesiredNumberScheduled: 1,
 			UpdatedNumberScheduled: 0,
 		},
 	}
@@ -175,10 +175,10 @@ func TestDaemonSetsReady(t *testing.T) {
 			1,
 		},
 		{
-			"should be ready when daemonset has enough replicas and one pod of two pods is ready",
+			"should not be ready when daemonset has enough replicas and one pod of two pods is not ready",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(enoughReplicasMultiple, notReadyContainerPod, readyPod, controllerRevision).Build(),
 			namespacedName,
-			true,
+			false,
 			1,
 		},
 		{

@@ -44,6 +44,7 @@ func TestStatefulsetReady(t *testing.T) {
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: selector,
+			Replicas: int32val(2),
 		},
 		Status: appsv1.StatefulSetStatus{
 			ReadyReplicas:   2,
@@ -175,10 +176,10 @@ func TestStatefulsetReady(t *testing.T) {
 			1,
 		},
 		{
-			"should be ready when statefulset has enough replicas and one pod of two pods is ready",
+			"should not be ready when statefulset has enough replicas and one pod of two pods is ready",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(enoughReplicasMultiple, notReadyContainerPod, readyPod, controllerRevision).Build(),
 			namespacedName,
-			true,
+			false,
 			1,
 		},
 		{
@@ -306,4 +307,9 @@ func TestDoStatefulsetsExist(t *testing.T) {
 			assert.Equalf(t, tt.want, DoStatefulSetsExist(log, fakeClient, tt.stsNames, 1, tt.name), "Expected %v for %s", tt.want, tt.name)
 		})
 	}
+}
+
+func int32val(i int) *int32 {
+	var v int32 = int32(i)
+	return &v
 }

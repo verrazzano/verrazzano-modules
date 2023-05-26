@@ -28,7 +28,7 @@ func DaemonSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, namesp
 			return false
 		}
 		desiredNumberOfNodesReady := daemonset.Status.DesiredNumberScheduled
-		if daemonset.Status.NumberReady < desiredNumberOfNodesReady {
+		if daemonset.Status.UpdatedNumberScheduled < desiredNumberOfNodesReady {
 			log.Progressf("%s is waiting for daemonset %s nodes to have ready pods be %v. Current ready nodes is %v", prefix, namespacedName,
 				desiredNumberOfNodesReady, daemonset.Status.NumberReady)
 			return false
