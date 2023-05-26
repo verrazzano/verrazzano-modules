@@ -45,15 +45,15 @@ func CheckWorkLoadsReady(ctx handlerspi.HandlerContext, releaseName string, name
 		nsns := []types.NamespacedName{{Namespace: res.Metadata.Namespace, Name: res.Metadata.Name}}
 		switch strings.ToLower(res.Kind) {
 		case "deployment":
-			if err := readiness.DeploymentsAreAvailable(ctx.Client, nsns); err != nil {
+			if ready := readiness.DeploymentsAreReady(ctx.Log, ctx.Client, nsns, releaseName); !ready {
 				return false, nil
 			}
 		case "statefuleset":
-			if err := readiness.StatefulSetsAreAvailable(ctx.Client, nsns); err != nil {
+			if ready := readiness.StatefulSetsAreReady(ctx.Log, ctx.Client, nsns, releaseName); !ready {
 				return false, nil
 			}
 		case "daemonset":
-			if err := readiness.DaemonsetsAreAvailable(ctx.Client, nsns); err != nil {
+			if ready := readiness.DaemonSetsAreReady(ctx.Log, ctx.Client, nsns, releaseName); !ready {
 				return false, nil
 			}
 		}
