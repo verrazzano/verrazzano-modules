@@ -18,15 +18,11 @@ import (
 )
 
 const (
-	deployment   = "Deployment"
-	daemonset    = "Daemonset"
-	statefuleset = "StatefulSet"
-
 	name = "res1"
 	ns   = "ns1"
 
-	ccmFile    = "ccm.yaml"
-	calicoFile = "calico.yaml"
+	ccmFile = "ccm.yaml"
+	//	calicoFile = "calico.yaml"
 )
 
 // TestCCM tests that the CCM workload readiness
@@ -51,7 +47,7 @@ func TestCCM(t *testing.T) {
 					UpdatedReplicas: 1,
 				},
 			},
-			expectedReady: true,
+			expectedReady: false,
 		},
 	}
 	for _, test := range tests {
@@ -63,9 +59,9 @@ func TestCCM(t *testing.T) {
 			}
 			yam, err := os.ReadFile(filepath.Join("testdata", test.manifestFile))
 			asserts.NoError(err)
-			//ready, err := checkWorkloadsReadyUsingManifest(rctx, "ccm", string(yam))
-			//asserts.NoError(err)
-			//asserts.Equal(test.expectedReady, ready)
+			ready, err := checkWorkloadsReadyUsingManifest(rctx, "ccm", string(yam))
+			asserts.NoError(err)
+			asserts.Equal(test.expectedReady, ready)
 		})
 	}
 }
