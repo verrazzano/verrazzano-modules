@@ -18,3 +18,4 @@ export DOCKER_NAMESPACE ?= 'verrazzano'
 export TEST_ROOT ?= ${VM_ROOT}/tests
 export TEST_SCRIPTS_DIR ?= ${TEST_ROOT}/scripts
 export OPERATOR_YAML ?= ${VMO_ROOT}/build/deploy/verrazzano-module-operator.yaml
+export TESTDATA_DIR ?= ${TEST_ROOT}/testdata
