@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,15 +17,21 @@ import (
 )
 
 const (
-	name = "res1"
-	ns   = "ns1"
+	name     = "res1"
+	ns       = "ns1"
+	matchKey = "app.kubernetes.io/name"
+
+	// pod label used to identify the controllerRevision resource for daemonsets and statefulsets
+	controllerRevisionHashLabel = "controller-revision-hash"
 )
 
-// TestCCM tests that the CCM workload readiness
-// GIVEN a controller that implements the controllers spi interfaces
-// WHEN Reconcile is called
-// THEN ensure that the controller returns success and that the interface methods are all called
-func TestCCM(t *testing.T) {
+// TestReady tests the workload readiness
+// GIVEN a set of resources for a Helm release
+// WHEN CheckWorkLoadsReady is called
+// THEN ensure that correct readiness bool is returned.
+func TestReady(t *testing.T) {
+	const stsRevision = "foo-95d8c5d96"
+
 	asserts := assert.New(t)
 	tests := []struct {
 		name        string
@@ -34,21 +41,44 @@ func TestCCM(t *testing.T) {
 		expectedReady bool
 	}{
 		{
-			name:        "test1",
-			releaseName: "rel1",
-			StatefulSet: &v1.StatefulSet{
-				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name, Annotations: map[string]string{helmKey: "rel1"}},
-				Status: v1.StatefulSetStatus{
-					ReadyReplicas:   1,
-					UpdatedReplicas: 1,
-				},
-			},
-			expectedReady: false,
+			name:          "test1",
+			releaseName:   "rel1",
+			expectedReady: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cli := fakes.NewClientBuilder().WithScheme(newScheme()).WithObjects(test.StatefulSet).Build()
+			sts := v1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name, Annotations: map[string]string{helmKey: test.releaseName}},
+				Spec: v1.StatefulSetSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels:      map[string]string{matchKey: test.name},
+						MatchExpressions: nil,
+					},
+				},
+				Status: v1.StatefulSetStatus{
+					ReadyReplicas:   1,
+					UpdatedReplicas: 1,
+				},
+			}
+			pod := corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name,
+					Labels: map[string]string{matchKey: test.releaseName,
+						controllerRevisionHashLabel: stsRevision}},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{{Ready: true}},
+				},
+			}
+
+			crev := appsv1.ControllerRevision{
+				TypeMeta: metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      stsRevision,
+					Namespace: test.Namespace,
+				},
+			}
+
+			cli := fakes.NewClientBuilder().WithScheme(newScheme()).WithObjects(&sts, &pod, &crev).Build()
 			rctx := handlerspi.HandlerContext{
 				Log:    vzlog.DefaultLogger(),
 				Client: cli,
@@ -65,5 +95,6 @@ func newScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
 	_ = corev1.AddToScheme(scheme)
 	_ = v1.AddToScheme(scheme)
+	_ = appsv1.AddToScheme(scheme)
 	return scheme
 }
