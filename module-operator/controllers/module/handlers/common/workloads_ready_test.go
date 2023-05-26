@@ -36,7 +36,6 @@ func TestReady(t *testing.T) {
 	tests := []struct {
 		name        string
 		releaseName string
-		namespace   string
 		*v1.StatefulSet
 		expectedReady bool
 	}{
@@ -74,7 +73,7 @@ func TestReady(t *testing.T) {
 				TypeMeta: metav1.TypeMeta{},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      stsRevision,
-					Namespace: test.Namespace,
+					Namespace: ns,
 				},
 			}
 
@@ -83,7 +82,7 @@ func TestReady(t *testing.T) {
 				Log:    vzlog.DefaultLogger(),
 				Client: cli,
 			}
-			ready, err := CheckWorkLoadsReady(rctx, test.releaseName, test.namespace)
+			ready, err := CheckWorkLoadsReady(rctx, test.releaseName, ns)
 			asserts.NoError(err)
 			asserts.Equal(test.expectedReady, ready)
 		})
