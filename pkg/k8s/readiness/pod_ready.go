@@ -66,12 +66,6 @@ func EnsurePodsAreReady(log vzlog.VerrazzanoLogger, podsToCheck []corev1.Pod, ex
 	return podsReady, true
 }
 
-func logOncef(log vzlog.VerrazzanoLogger, template string, args ...interface{}) {
-	if log != nil {
-		log.Oncef(template, args...)
-	}
-}
-
 func logErrorf(log vzlog.VerrazzanoLogger, template string, args ...interface{}) {
 	if log != nil {
 		log.Errorf(template, args...)

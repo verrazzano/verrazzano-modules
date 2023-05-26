@@ -49,10 +49,7 @@ func StatefulSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, name
 			return false
 		}
 
-		if !podsReadyStatefulSet(log, client, namespacedName, statefulset.Spec.Selector, expectedReplicas, prefix) {
-			return false
-		}
-		log.Oncef("%s has enough replicas for statefulsets %v", prefix, namespacedName)
+		return podsReadyStatefulSet(log, client, namespacedName, statefulset.Spec.Selector, expectedReplicas, prefix)
 	}
 	return true
 }

@@ -13,6 +13,20 @@ import (
 )
 
 func CheckWorkLoadsReady(ctx handlerspi.HandlerContext, releaseName string, namespace string) (bool, error) {
+	// Get all the deployments, statefulsets, and daemonsets for this Helm release
+	rel, err := helm.GetRelease(ctx.Log, releaseName, namespace)
+	if err != nil {
+		return false, err
+	}
+	if rel.Manifest == "" {
+		return false, err
+	}
+
+	// check if all the workload resources in the manfiests are ready
+	return checkWorkloadsReadyUsingManifest(ctx, releaseName, rel.Manifest)
+}
+
+func checkWorkloadsReadyUsingManifest(ctx handlerspi.HandlerContext, releaseName string, manifest string) (bool, error) {
 	const yamlSep = "---"
 
 	type Resource struct {
@@ -23,17 +37,8 @@ func CheckWorkLoadsReady(ctx handlerspi.HandlerContext, releaseName string, name
 		}
 	}
 
-	// Get all the deployments, statefulsets, and daemonsets for this Helm release
-	rel, err := helm.GetRelease(ctx.Log, releaseName, namespace)
-	if err != nil {
-		return false, err
-	}
-	if rel.Manifest == "" {
-		return false, err
-	}
-
 	// Get the manifests objects
-	resYamls := strings.Split(rel.Manifest, yamlSep)
+	resYamls := strings.Split(manifest, yamlSep)
 	for _, yam := range resYamls {
 		if strings.TrimSpace(yam) == "" {
 			continue
@@ -56,7 +61,8 @@ func CheckWorkLoadsReady(ctx handlerspi.HandlerContext, releaseName string, name
 			if ready := readiness.DaemonSetsAreReady(ctx.Log, ctx.Client, nsns, releaseName); !ready {
 				return false, nil
 			}
+		default:
 		}
 	}
-	return true, err
+	return true, nil
 }

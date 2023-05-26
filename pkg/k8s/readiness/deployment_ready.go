@@ -117,10 +117,7 @@ func deploymentFullyReady(log vzlog.VerrazzanoLogger, client clipkg.Client, depl
 	}
 
 	podSelector := deployment.Spec.Selector
-	if !PodsReadyDeployment(log, client, namespacedName, podSelector, expectedReplicas, prefix) {
-		return false
-	}
-	return true
+	return PodsReadyDeployment(log, client, namespacedName, podSelector, expectedReplicas, prefix)
 }
 
 // PodsReadyDeployment checks for an expected number of pods to be using the latest replicaset revision and are
