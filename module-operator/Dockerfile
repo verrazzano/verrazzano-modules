@@ -14,16 +14,21 @@ COPY bin/linux_amd64/verrazzano-module-operator /usr/local/bin/verrazzano-module
 RUN chmod 500 /usr/local/bin/verrazzano-module-operator
 
 # Create the verrazzano-module-operator image
-FROM scratch AS final
+FROM $BASE_IMAGE AS final
+
+RUN groupadd -r verrazzano \
+    && useradd --no-log-init -r -m -d /verrazzano -g verrazzano -u 1000 verrazzano \
+    && mkdir /home/verrazzano \
+    && chown -R 1000:verrazzano /home/verrazzano
 
 # Copy the operator binary
-COPY --from=build_base --chown=1000 /usr/local/bin/verrazzano-module-operator /usr/local/bin/verrazzano-module-operator
+COPY --from=build_base --chown=verrazzano:verrazzano /usr/local/bin/verrazzano-module-operator /usr/local/bin/verrazzano-module-operator
 
 WORKDIR /home/verrazzano
-COPY --from=build_base --chown=1000 /root/go/src/github.com/verrazzano/verrazzano-modules/module-operator/manifests ./manifests
-COPY --from=build_base --chown=1000 /tmp /tmp
-COPY --from=build_base --chown=1000 /root/go/src/github.com/verrazzano/verrazzano-modules/module-operator/THIRD_PARTY_LICENSES.txt /licenses/
+COPY --from=build_base --chown=verrazzano:verrazzano /root/go/src/github.com/verrazzano/verrazzano-modules/module-operator/manifests/config/scripts/run.sh .
+COPY --from=build_base --chown=verrazzano:verrazzano /root/go/src/github.com/verrazzano/verrazzano-modules/module-operator/manifests ./manifests
+COPY --from=build_base --chown=verrazzano:verrazzano /root/go/src/github.com/verrazzano/verrazzano-modules/module-operator/THIRD_PARTY_LICENSES.txt /licenses/
 
 USER 1000
 
-ENTRYPOINT ["/usr/local/bin/verrazzano-module-operator"]
+ENTRYPOINT ["/home/verrazzano/run.sh"]
