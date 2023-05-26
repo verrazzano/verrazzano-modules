@@ -9,6 +9,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
+	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 )
@@ -68,6 +69,14 @@ func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Res
 
 // DoWork installs the module using Helm
 func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	installed, err := helm2.IsReleaseInstalled(h.HelmRelease.Name, h.HelmRelease.Namespace)
+	if err != nil {
+		ctx.Log.ErrorfThrottled("Failed checking if Helm release installed for %s/%s: %v", h.HelmRelease.Namespace, h.HelmRelease.Name, err)
+		return ctrl.Result{}, err
+	}
+	if installed {
+		return ctrl.Result{}, nil
+	}
 	return h.HelmUpgradeOrInstall(ctx)
 }
 
