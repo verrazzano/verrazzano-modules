@@ -30,7 +30,8 @@ const (
 // WHEN CheckWorkLoadsReady is called
 // THEN ensure that correct readiness bool is returned.
 func TestReady(t *testing.T) {
-	const stsRevision = "foo-95d8c5d96"
+	const stsRevision = "9"
+	const stsRevisionNum = 9
 
 	asserts := assert.New(t)
 	tests := []struct {
@@ -51,7 +52,7 @@ func TestReady(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name, Annotations: map[string]string{helmKey: test.releaseName}},
 				Spec: v1.StatefulSetSpec{
 					Selector: &metav1.LabelSelector{
-						MatchLabels:      map[string]string{matchKey: test.name},
+						MatchLabels:      map[string]string{matchKey: test.releaseName},
 						MatchExpressions: nil,
 					},
 				},
@@ -75,6 +76,7 @@ func TestReady(t *testing.T) {
 					Name:      stsRevision,
 					Namespace: ns,
 				},
+				Revision: stsRevisionNum,
 			}
 
 			cli := fakes.NewClientBuilder().WithScheme(newScheme()).WithObjects(&sts, &pod, &crev).Build()
