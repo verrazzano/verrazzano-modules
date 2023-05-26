@@ -36,8 +36,8 @@ pipeline {
         TEST_ENV = "JENKINS"
         CLEAN_BRANCH_NAME = "${env.BRANCH_NAME.replace("/", "%2F")}"
 
-        DOCKER_MODULE_CI_IMAGE_NAME = 'module-operator-jenkins'
-        DOCKER_MODULE_PUBLISH_IMAGE_NAME = 'module-operator'
+        DOCKER_MODULE_CI_IMAGE_NAME = 'verrazzano-module-operator-jenkins'
+        DOCKER_MODULE_PUBLISH_IMAGE_NAME = 'verrazzano-module-operator'
         DOCKER_MODULE_IMAGE_NAME = "${env.BRANCH_NAME ==~ /^release-.*/ || env.BRANCH_NAME == 'main' ? env.DOCKER_MODULE_PUBLISH_IMAGE_NAME : env.DOCKER_MODULE_CI_IMAGE_NAME}"
 
         CREATE_LATEST_TAG = "${env.BRANCH_NAME == 'main' ? '1' : '0'}"

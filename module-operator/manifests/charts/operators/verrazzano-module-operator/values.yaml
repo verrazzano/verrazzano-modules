@@ -11,7 +11,7 @@ createNamespace: false
 namespaceLabelKey: verrazzano.io/namespace
 
 image:
-  repository: verrazzano/module-operator
+  repository: verrazzano/verrazzano-module-operator
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
