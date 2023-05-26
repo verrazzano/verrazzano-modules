@@ -48,6 +48,7 @@ func StatefulSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, name
 				expectedReplicas, statefulset.Status.ReadyReplicas)
 			return false
 		}
+
 		if !podsReadyStatefulSet(log, client, namespacedName, statefulset.Spec.Selector, expectedReplicas, prefix) {
 			return false
 		}

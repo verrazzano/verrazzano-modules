@@ -110,6 +110,12 @@ func deploymentFullyReady(log vzlog.VerrazzanoLogger, client clipkg.Client, depl
 		return false
 	}
 
+	if deployment.Status.UnavailableReplicas > 0 {
+		logProgressf(log, "%s is waiting for deployment %s replicas to be %v. Current unavailable replicas is %v", prefix, namespacedName,
+			expectedReplicas, deployment.Status.UnavailableReplicas)
+		return false
+	}
+
 	podSelector := deployment.Spec.Selector
 	if !PodsReadyDeployment(log, client, namespacedName, podSelector, expectedReplicas, prefix) {
 		return false

@@ -34,6 +34,12 @@ func DaemonSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, namesp
 			return false
 		}
 
+		if daemonset.Status.NumberUnavailable > 0 {
+			log.Progressf("%s is waiting for daemonset %s, which has %v unavailable pod(s)", prefix, namespacedName,
+				daemonset.Status.NumberUnavailable)
+			return false
+		}
+
 		podSelector := daemonset.Spec.Selector
 		if !podsReadyDaemonSet(log, client, namespacedName, podSelector, desiredNumberOfNodesReady, prefix) {
 			return false

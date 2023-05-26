@@ -50,6 +50,20 @@ func TestDaemonSetsReady(t *testing.T) {
 			UpdatedNumberScheduled: 2,
 		},
 	}
+	unavalableNodes := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: "bar",
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Selector: selector,
+		},
+		Status: appsv1.DaemonSetStatus{
+			DesiredNumberScheduled: 2,
+			UpdatedNumberScheduled: 2,
+			NumberUnavailable:      1,
+		},
+	}
 	notEnoughReadyReplicas := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
@@ -161,95 +175,88 @@ func TestDaemonSetsReady(t *testing.T) {
 	}
 
 	var tests = []struct {
-		name     string
-		c        client.Client
-		n        []types.NamespacedName
-		ready    bool
-		expected int32
+		name  string
+		c     client.Client
+		n     []types.NamespacedName
+		ready bool
 	}{
 		{
 			"should be ready when daemonset has enough replicas and pod is ready",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(enoughReplicas, readyPod, controllerRevision).Build(),
 			namespacedName,
 			true,
-			1,
 		},
 		{
 			"should not be ready when daemonset has enough replicas and one pod of two pods is not ready",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(enoughReplicasMultiple, notReadyContainerPod, readyPod, controllerRevision).Build(),
 			namespacedName,
 			false,
-			1,
 		},
 		{
 			"should be not ready when expected pods ready not reached",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(enoughReplicasMultiple, readyPod, controllerRevision).Build(),
 			namespacedName,
 			false,
-			2,
 		},
 		{
 			"should be not ready when daemonset has enough replicas but pod init container pods is not ready",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(enoughReplicas, notReadyInitContainerPod, controllerRevision).Build(),
 			namespacedName,
 			false,
-			1,
 		},
 		{
 			"should be not ready when daemonset has enough replicas but pod container pods is not ready",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(enoughReplicas, notReadyContainerPod, controllerRevision).Build(),
 			namespacedName,
 			false,
-			1,
+		},
+		{
+			"should be not ready when daemonset has enough replicas but some nodes don't have pods ready",
+			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(unavalableNodes, readyPod, controllerRevision).Build(),
+			namespacedName,
+			false,
 		},
 		{
 			"should be not ready when pod not found for daemonset",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(enoughReplicas).Build(),
 			namespacedName,
 			false,
-			1,
 		},
 		{
 			"should be not ready when daemonset not found",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).Build(),
 			namespacedName,
 			false,
-			1,
 		},
 		{
 			"should be not ready when controller-revision-hash label not found",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(enoughReplicas, noPodHashLabel).Build(),
 			namespacedName,
 			false,
-			1,
 		},
 		{
 			"should be not ready when controllerrevision resource not found",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(enoughReplicas, readyPod).Build(),
 			namespacedName,
 			false,
-			1,
 		},
 		{
 			"should be not ready when daemonset doesn't have enough ready replicas",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(notEnoughReadyReplicas).Build(),
 			namespacedName,
 			false,
-			1,
 		},
 		{
 			"should be not ready when daemonset doesn't have enough updated replicas",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(notEnoughUpdatedReplicas).Build(),
 			namespacedName,
 			false,
-			1,
 		},
 		{
 			"should be ready when no PodReadyCheck provided",
 			fake.NewClientBuilder().WithScheme(k8scheme.Scheme).Build(),
 			[]types.NamespacedName{},
 			true,
-			1,
 		},
 	}
 
