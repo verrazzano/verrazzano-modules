@@ -17,7 +17,7 @@ import (
 	clipkg "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func DeploymentsReadyBySelectors(log vzlog.VerrazzanoLogger, client clipkg.Client, expectedReplicas int32, prefix string, opts ...clipkg.ListOption) bool {
+func DeploymentsReadyBySelectors(log vzlog.VerrazzanoLogger, client clipkg.Client, prefix string, opts ...clipkg.ListOption) bool {
 	deploymentList := &appsv1.DeploymentList{}
 	if err := client.List(context.TODO(), deploymentList, opts...); err != nil {
 		logErrorf(log, "%s failed listing deployments for selectors %v: %v", prefix, opts, err)
@@ -33,6 +33,10 @@ func DeploymentsReadyBySelectors(log vzlog.VerrazzanoLogger, client clipkg.Clien
 			Namespace: deployment.Namespace,
 			Name:      deployment.Name,
 		}
+		expectedReplicas := deployment.Status.Replicas
+		if expectedReplicas == 0 {
+			expectedReplicas = 1
+		}
 		if !deploymentFullyReady(log, client, deployment, namespacedName, expectedReplicas, prefix) {
 			return false
 		}
@@ -41,7 +45,7 @@ func DeploymentsReadyBySelectors(log vzlog.VerrazzanoLogger, client clipkg.Clien
 }
 
 // DeploymentsAreReady check that the named deployments have the minimum number of specified replicas ready and available
-func DeploymentsAreReady(log vzlog.VerrazzanoLogger, client clipkg.Client, namespacedNames []types.NamespacedName, expectedReplicas int32, prefix string) bool {
+func DeploymentsAreReady(log vzlog.VerrazzanoLogger, client clipkg.Client, namespacedNames []types.NamespacedName, prefix string) bool {
 	for _, namespacedName := range namespacedNames {
 		deployment := appsv1.Deployment{}
 		if err := client.Get(context.TODO(), namespacedName, &deployment); err != nil {
@@ -51,6 +55,13 @@ func DeploymentsAreReady(log vzlog.VerrazzanoLogger, client clipkg.Client, names
 			}
 			logErrorf(log, "%s failed getting deployment %v: %v", prefix, namespacedName, err)
 			return false
+		}
+		var expectedReplicas int32
+		if deployment.Spec.Replicas != nil {
+			expectedReplicas = *deployment.Spec.Replicas
+		}
+		if expectedReplicas == 0 {
+			expectedReplicas = 1
 		}
 		if !deploymentFullyReady(log, client, &deployment, namespacedName, expectedReplicas, prefix) {
 			return false

@@ -16,7 +16,7 @@ import (
 )
 
 // DaemonSetsAreReady Check that the named daemonsets have the minimum number of specified nodes ready and available
-func DaemonSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, namespacedNames []types.NamespacedName, expectedNodes int32, prefix string) bool {
+func DaemonSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, namespacedNames []types.NamespacedName, prefix string) bool {
 	for _, namespacedName := range namespacedNames {
 		daemonset := appsv1.DaemonSet{}
 		if err := client.Get(context.TODO(), namespacedName, &daemonset); err != nil {
@@ -27,20 +27,15 @@ func DaemonSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, namesp
 			log.Errorf("Failed getting daemonset %v: %v", namespacedName, err)
 			return false
 		}
-		if daemonset.Status.UpdatedNumberScheduled < expectedNodes {
-			log.Progressf("%s is waiting for daemonset %s nodes to be %v. Current updated nodes is %v", prefix, namespacedName,
-				expectedNodes, daemonset.Status.NumberAvailable)
-			return false
-		}
-
-		if daemonset.Status.NumberAvailable < expectedNodes {
-			log.Progressf("%s is waiting for daemonset %s nodes to be %v. Current available nodes is %v", prefix, namespacedName,
-				expectedNodes, daemonset.Status.NumberAvailable)
+		desiredNumberOfNodesReady := daemonset.Status.DesiredNumberScheduled
+		if daemonset.Status.NumberReady < desiredNumberOfNodesReady {
+			log.Progressf("%s is waiting for daemonset %s nodes to have ready pods be %v. Current ready nodes is %v", prefix, namespacedName,
+				desiredNumberOfNodesReady, daemonset.Status.NumberReady)
 			return false
 		}
 
 		podSelector := daemonset.Spec.Selector
-		if !podsReadyDaemonSet(log, client, namespacedName, podSelector, expectedNodes, prefix) {
+		if !podsReadyDaemonSet(log, client, namespacedName, podSelector, desiredNumberOfNodesReady, prefix) {
 			return false
 		}
 	}

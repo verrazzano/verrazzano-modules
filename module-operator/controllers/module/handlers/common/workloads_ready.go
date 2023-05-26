@@ -49,11 +49,11 @@ func CheckWorkLoadsReady(ctx handlerspi.HandlerContext, releaseName string, name
 				return false, nil
 			}
 		case "statefuleset":
-			if err := readiness.DeploymentsAreAvailable(ctx.Client, nsns); err != nil {
+			if err := readiness.StatefulSetsAreAvailable(ctx.Client, nsns); err != nil {
 				return false, nil
 			}
 		case "daemonset":
-			if err := readiness.DeploymentsAreAvailable(ctx.Client, nsns); err != nil {
+			if err := readiness.DaemonsetsAreAvailable(ctx.Client, nsns); err != nil {
 				return false, nil
 			}
 		}

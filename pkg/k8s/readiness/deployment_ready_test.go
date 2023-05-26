@@ -104,7 +104,7 @@ func TestDeploymentsReadyBySelectors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ready := DeploymentsReadyBySelectors(log, tt.c, 1, "foo", tt.opts...)
+			ready := DeploymentsReadyBySelectors(log, tt.c, "foo", tt.opts...)
 			assert.Equal(t, tt.ready, ready)
 		})
 	}
@@ -126,7 +126,7 @@ func TestDeploymentsReady(t *testing.T) {
 		testReadyPod,
 		testReadyReplicaSet,
 	).Build()
-	assert.True(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 1, ""))
+	assert.True(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 // TestDeploymentsContainerNotReady tests a deployment ready status check
@@ -185,7 +185,7 @@ func TestDeploymentsContainerNotReady(t *testing.T) {
 			},
 		},
 	).Build()
-	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 1, ""))
+	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 // TestDeploymentsInitContainerNotReady tests a deployment ready status check
@@ -244,7 +244,7 @@ func TestDeploymentsInitContainerNotReady(t *testing.T) {
 			},
 		},
 	).Build()
-	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 1, ""))
+	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 // TestMultipleReplicasReady tests a deployment ready status check
@@ -318,7 +318,7 @@ func TestMultipleReplicasReady(t *testing.T) {
 			},
 		},
 	).Build()
-	assert.True(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 2, ""))
+	assert.True(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 // TestMultipleReplicasReadyAboveThreshold tests a deployment ready status check
@@ -392,7 +392,7 @@ func TestMultipleReplicasReadyAboveThreshold(t *testing.T) {
 			},
 		},
 	).Build()
-	assert.True(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 1, ""))
+	assert.True(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 // TestDeploymentsNoneAvailable tests a deployment ready status check
@@ -417,7 +417,7 @@ func TestDeploymentsNoneAvailable(t *testing.T) {
 			UpdatedReplicas:   1,
 		},
 	}).Build()
-	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 1, ""))
+	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 // TestDeploymentsNoneUpdated tests a deployment ready status check
@@ -442,7 +442,7 @@ func TestDeploymentsNoneUpdated(t *testing.T) {
 			UpdatedReplicas:   0,
 		},
 	}).Build()
-	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 1, ""))
+	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 // TestMultipleReplicasReadyBelowThreshold tests a deployment ready status check
@@ -501,7 +501,7 @@ func TestMultipleReplicasReadyBelowThreshold(t *testing.T) {
 			},
 		},
 	).Build()
-	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 3, ""))
+	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 // TestDeploymentsReadyDeploymentNotFound tests a deployment ready status check
@@ -516,7 +516,7 @@ func TestDeploymentsReadyDeploymentNotFound(t *testing.T) {
 		},
 	}
 	fakeClient := fake.NewClientBuilder().WithScheme(k8scheme.Scheme).Build()
-	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 1, ""))
+	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 // TestDeploymentsReadyReplicaSetNotFound tests a deployment ready status check
@@ -568,7 +568,7 @@ func TestDeploymentsReadyReplicaSetNotFound(t *testing.T) {
 			},
 		},
 	).Build()
-	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 1, ""))
+	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 // TestDeploymentsReadyPodNotFound tests a deployment ready status check
@@ -603,7 +603,7 @@ func TestDeploymentsReadyPodNotFound(t *testing.T) {
 			},
 		}).Build()
 
-	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, 1, ""))
+	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
 }
 
 func TestDoDeploymentsExist(t *testing.T) {
