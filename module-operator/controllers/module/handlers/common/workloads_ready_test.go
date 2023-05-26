@@ -11,8 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os"
-	"path/filepath"
 	fakes "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
 )
@@ -20,9 +18,6 @@ import (
 const (
 	name = "res1"
 	ns   = "ns1"
-
-	ccmFile = "ccm.yaml"
-	//	calicoFile = "calico.yaml"
 )
 
 // TestCCM tests that the CCM workload readiness
@@ -32,16 +27,17 @@ const (
 func TestCCM(t *testing.T) {
 	asserts := assert.New(t)
 	tests := []struct {
-		name         string
-		manifestFile string
+		name        string
+		releaseName string
+		namespace   string
 		*v1.StatefulSet
 		expectedReady bool
 	}{
 		{
-			name:         "test1",
-			manifestFile: ccmFile,
+			name:        "test1",
+			releaseName: "rel1",
 			StatefulSet: &v1.StatefulSet{
-				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name},
+				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name, Annotations: map[string]string{helmKey: "rel1"}},
 				Status: v1.StatefulSetStatus{
 					ReadyReplicas:   1,
 					UpdatedReplicas: 1,
@@ -57,9 +53,7 @@ func TestCCM(t *testing.T) {
 				Log:    vzlog.DefaultLogger(),
 				Client: cli,
 			}
-			yam, err := os.ReadFile(filepath.Join("testdata", test.manifestFile))
-			asserts.NoError(err)
-			ready, err := checkWorkloadsReadyUsingManifest(rctx, "ccm", string(yam))
+			ready, err := CheckWorkLoadsReady(rctx, test.releaseName, test.namespace)
 			asserts.NoError(err)
 			asserts.Equal(test.expectedReady, ready)
 		})

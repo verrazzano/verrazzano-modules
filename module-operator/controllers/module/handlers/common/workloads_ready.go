@@ -6,7 +6,6 @@ package common
 import (
 	"context"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/k8s/readiness"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,16 +15,9 @@ import (
 const helmKey = " meta.helm.sh/release-name"
 
 func CheckWorkLoadsReady(ctx handlerspi.HandlerContext, releaseName string, namespace string) (bool, error) {
-	// Get all the deployments, statefulsets, and daemonsets for this Helm release
-	rel, err := helm.GetRelease(ctx.Log, releaseName, namespace)
-	if err != nil {
-		return false, err
-	}
-	if rel.Manifest == "" {
-		return false, err
-	}
-	ready := checkDeploymentsReady(ctx, releaseName, namespace) && checkStatefulSetsReady(ctx, releaseName, namespace)
-	checkDaemonSetsReady(ctx, releaseName, namespace)
+	// return true ifall the workloads are ready
+	ready := checkDeploymentsReady(ctx, releaseName, namespace) && checkStatefulSetsReady(ctx, releaseName, namespace) &&
+		checkDaemonSetsReady(ctx, releaseName, namespace)
 
 	return ready, nil
 }
@@ -48,7 +40,7 @@ func checkDeploymentsReady(ctx handlerspi.HandlerContext, releaseName string, na
 				Namespace: dep.Namespace,
 				Name:      dep.Name,
 			}}
-			if ready := readiness.DeploymentsAreReady(ctx.Log, ctx.Client, nsns, releaseName); !ready {
+			if !readiness.DeploymentsAreReady(ctx.Log, ctx.Client, nsns, releaseName) {
 				return false
 			}
 		}
@@ -74,7 +66,7 @@ func checkStatefulSetsReady(ctx handlerspi.HandlerContext, releaseName string, n
 				Namespace: sts.Namespace,
 				Name:      sts.Name,
 			}}
-			if ready := readiness.StatefulSetsAreReady(ctx.Log, ctx.Client, nsns, releaseName); !ready {
+			if !readiness.StatefulSetsAreReady(ctx.Log, ctx.Client, nsns, releaseName) {
 				return false
 			}
 		}
@@ -100,7 +92,7 @@ func checkDaemonSetsReady(ctx handlerspi.HandlerContext, releaseName string, nam
 				Namespace: dem.Namespace,
 				Name:      dem.Name,
 			}}
-			if ready := readiness.DeploymentsAreReady(ctx.Log, ctx.Client, nsns, releaseName); !ready {
+			if !readiness.DeploymentsAreReady(ctx.Log, ctx.Client, nsns, releaseName) {
 				return false
 			}
 		}
