@@ -43,7 +43,7 @@ func TestHelmModuleLifecycleTestSuite(t *testing.T) {
 func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(namespace string) {
 	err := common.WaitForNamespaceCreated(namespace)
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	testNamespaces[namespace] = []string{""}
+	testNamespaces[namespace] = []string{}
 	module := &api.Module{}
 	err = common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -68,6 +68,13 @@ func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(name
 	err = c.Modules(module.GetNamespace()).Delete(context.TODO(), module.GetName(), v1.DeleteOptions{})
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	suite.verifyModuleDeleted(c, module)
+	if suite.deleteNamespace(namespace) {
+		corev1client, err := k8sutil.GetCoreV1Client()
+		suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		err = corev1client.Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
+		suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	}
+
 }
 
 func (suite *HelmModuleLifecycleTestSuite) cleanup() {
