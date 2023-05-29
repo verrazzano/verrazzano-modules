@@ -64,11 +64,13 @@ func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(name
 	module = suite.verifyModule(c, module, overrides)
 
 	suite.log.Infof("\ndelete module %s, version %s, namespace %s\n", module.GetName(), module.Spec.Version, module.GetNamespace())
-	c.Modules(module.GetNamespace()).Delete(context.TODO(), module.GetName(), v1.DeleteOptions{})
+	err = c.Modules(module.GetNamespace()).Delete(context.TODO(), module.GetName(), v1.DeleteOptions{})
+	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	suite.verifyModuleDeleted(c, module)
 	corev1client, err := k8sutil.GetCoreV1Client()
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	corev1client.Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
+	err = corev1client.Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
+	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 }
 
 func (suite *HelmModuleLifecycleTestSuite) cleanup() {
@@ -77,12 +79,16 @@ func (suite *HelmModuleLifecycleTestSuite) cleanup() {
 	c := suite.getModuleClient()
 	for namespace, modules := range testNamespaces {
 		if suite.deleteNamespace(namespace) {
-			corev1client.Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
-			common.WaitForNamespaceDeleted(namespace)
+			err = corev1client.Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
+			suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			err = common.WaitForNamespaceDeleted(namespace)
+			suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		} else {
 			for _, moduleName := range modules {
-				c.Modules(namespace).Delete(context.TODO(), moduleName, v1.DeleteOptions{})
-				common.WaitForModuleToBeDeleted(c, namespace, moduleName)
+				err = c.Modules(namespace).Delete(context.TODO(), moduleName, v1.DeleteOptions{})
+				suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				err = common.WaitForModuleToBeDeleted(c, namespace, moduleName)
+				suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			}
 		}
 
