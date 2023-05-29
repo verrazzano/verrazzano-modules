@@ -22,6 +22,7 @@ import (
 	api "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kerrs "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type HelmModuleLifecycleTestSuite struct {
@@ -67,10 +68,6 @@ func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(name
 	err = c.Modules(module.GetNamespace()).Delete(context.TODO(), module.GetName(), v1.DeleteOptions{})
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	suite.verifyModuleDeleted(c, module)
-	corev1client, err := k8sutil.GetCoreV1Client()
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	err = corev1client.Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 }
 
 func (suite *HelmModuleLifecycleTestSuite) cleanup() {
@@ -80,12 +77,20 @@ func (suite *HelmModuleLifecycleTestSuite) cleanup() {
 	for namespace, modules := range testNamespaces {
 		if suite.deleteNamespace(namespace) {
 			err = corev1client.Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
+			if kerrs.IsNotFound(err) {
+				continue
+			}
+
 			suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			err = common.WaitForNamespaceDeleted(namespace)
 			suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		} else {
 			for _, moduleName := range modules {
 				err = c.Modules(namespace).Delete(context.TODO(), moduleName, v1.DeleteOptions{})
+				if kerrs.IsNotFound(err) {
+					continue
+				}
+
 				suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 				err = common.WaitForModuleToBeDeleted(c, namespace, moduleName)
 				suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
