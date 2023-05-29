@@ -4,7 +4,10 @@
 package common
 
 const (
-	TEST_HELM_MODULE_FILE         = "vz_test_module.yaml"
-	TEST_HELM_MODULE_OVERRIDE_010 = "vz_test_module_overrides_010.yaml"
-	DEFAULT_NS                    = "default"
+	TEST_HELM_MODULE_FILE           = "vz_test_module.yaml"
+	TEST_HELM_MODULE_OVERRIDE_010   = "vz_test_module_overrides_010.yaml"
+	TEST_HELM_MODULE_OVERRIDE_010_1 = "vz_test_module_overrides_010_1.yaml"
+	TEST_HELM_MODULE_OVERRIDE_011   = "vz_test_module_overrides_011.yaml"
+	TEST_HELM_MODULE_VERSION_011    = "0.1.1"
+	DEFAULT_NS                      = "default"
 )

@@ -16,7 +16,7 @@ SEQUENTIAL_SUITES=${SEQUENTIAL_SUITES:-false}
 
 GO_TEST_ARGS=${GO_TEST_ARGS:-"-v"}
 if [ "${RUN_PARALLEL}" == "true" ]; then
-  GO_TEST_ARGS="${GO_TEST_ARGS} -p=1"
+  GO_TEST_ARGS="${GO_TEST_ARGS} -p 10"
 fi
 if [ "${RANDOMIZE_TESTS}" == "true" ]; then
   GO_TEST_ARGS="${GO_TEST_ARGS} --shuffle=on"
