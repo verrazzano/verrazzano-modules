@@ -86,7 +86,7 @@ func (h BaseHandler) HelmUpgradeOrInstall(ctx handlerspi.HandlerContext) (ctrl.R
 		//Username:     "",
 		//Password:     "",
 	}
-	_, err = upgradeFunc(ctx.Log, opts, true, ctx.DryRun)
+	_, err = upgradeFunc(ctx.Log, opts, false, ctx.DryRun)
 	return ctrl.Result{}, err
 }
 
