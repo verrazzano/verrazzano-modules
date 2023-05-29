@@ -76,14 +76,16 @@ func (suite *HelmModuleLifecycleTestSuite) cleanup() {
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	c := suite.getModuleClient()
 	for namespace, modules := range testNamespaces {
-		for _, moduleName := range modules {
-			c.Modules(namespace).Delete(context.TODO(), moduleName, v1.DeleteOptions{})
-			common.WaitForModuleToBeDeleted(c, namespace, moduleName)
-		}
 		if suite.deleteNamespace(namespace) {
 			corev1client.Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
 			common.WaitForNamespaceDeleted(namespace)
+		} else {
+			for _, moduleName := range modules {
+				c.Modules(namespace).Delete(context.TODO(), moduleName, v1.DeleteOptions{})
+				common.WaitForModuleToBeDeleted(c, namespace, moduleName)
+			}
 		}
+
 	}
 }
 

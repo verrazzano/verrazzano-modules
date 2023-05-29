@@ -34,6 +34,7 @@ fi
 #if [ -n "${DRY_RUN}" ]; then
 #  GO_TEST_ARGS="${GO_TEST_ARGS} --dry-run"
 #fi
+GO_TEST_ARGS="${GO_TEST_ARGS} -count=1"
 if [ -n "${SKIP_DEPLOY}" ]; then
   TEST_ARGS="${TEST_ARGS} --skip-deploy=${SKIP_DEPLOY}"
 fi

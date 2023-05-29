@@ -43,7 +43,7 @@ func UnmarshalTestFile(filePath string, element interface{}) error {
 }
 
 var DefaultRetry = wait.Backoff{
-	Steps:    10,
+	Steps:    5,
 	Duration: 1 * time.Second,
 	Factor:   2.0,
 	Jitter:   0.1,
