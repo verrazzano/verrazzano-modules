@@ -92,7 +92,7 @@ func checkDaemonSetsReady(ctx handlerspi.HandlerContext, releaseName string, nam
 				Namespace: dem.Namespace,
 				Name:      dem.Name,
 			}}
-			if !readiness.DeploymentsAreReady(ctx.Log, ctx.Client, nsns, releaseName) {
+			if !readiness.DaemonSetsAreReady(ctx.Log, ctx.Client, nsns, releaseName) {
 				return false
 			}
 		}

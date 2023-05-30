@@ -4,6 +4,7 @@
 package common
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
@@ -23,6 +24,12 @@ const (
 
 	// pod label used to identify the controllerRevision resource for daemonsets and statefulsets
 	controllerRevisionHashLabel = "controller-revision-hash"
+
+	// pod label used to identify the replicaset resource for deployments
+	podTemplateHashLabel = "pod-template-hash"
+
+	// annotation used to identify the revision of a replicaset
+	deploymentRevisionAnnotation = "deployment.kubernetes.io/revision"
 )
 
 // TestDeploymentReady tests the deployment readiness
@@ -30,6 +37,8 @@ const (
 // WHEN CheckWorkLoadsReady is called
 // THEN ensure that correct readiness bool is returned.
 func TestDeploymentReady(t *testing.T) {
+	const revision = "1"
+
 	asserts := assert.New(t)
 	tests := []struct {
 		name          string
@@ -68,7 +77,7 @@ func TestDeploymentReady(t *testing.T) {
 			if test.hemlLabelVal != "" {
 				hemlLabelVal = test.hemlLabelVal
 			}
-			sts := v1.Deployment{
+			dep := v1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name, Annotations: map[string]string{helmKey: hemlLabelVal}},
 				Spec: v1.DeploymentSpec{
 					Replicas: &test.replicas,
@@ -78,18 +87,29 @@ func TestDeploymentReady(t *testing.T) {
 					},
 				},
 				Status: v1.DeploymentStatus{
-					ReadyReplicas: test.readyReplicas,
+					ReadyReplicas:     test.readyReplicas,
+					UpdatedReplicas:   test.readyReplicas,
+					AvailableReplicas: test.readyReplicas,
+				},
+			}
+			rsName := fmt.Sprintf("%s-%s", name, revision)
+			rs := appsv1.ReplicaSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:   ns,
+					Name:        rsName,
+					Annotations: map[string]string{deploymentRevisionAnnotation: revision},
 				},
 			}
 			pod := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name,
-					Labels: map[string]string{matchKey: test.releaseName}},
+					Labels: map[string]string{matchKey: test.releaseName,
+						podTemplateHashLabel: revision}},
 				Status: corev1.PodStatus{
 					ContainerStatuses: []corev1.ContainerStatus{{Ready: true}},
 				},
 			}
 
-			cli := fakes.NewClientBuilder().WithScheme(newScheme()).WithObjects(&sts, &pod).Build()
+			cli := fakes.NewClientBuilder().WithScheme(newScheme()).WithObjects(&dep, &rs, &pod).Build()
 			rctx := handlerspi.HandlerContext{
 				Log:    vzlog.DefaultLogger(),
 				Client: cli,
@@ -144,7 +164,8 @@ func TestStatefulSetReady(t *testing.T) {
 					},
 				},
 				Status: v1.StatefulSetStatus{
-					ReadyReplicas: test.readyReplicas,
+					ReadyReplicas:   test.readyReplicas,
+					UpdatedReplicas: test.readyReplicas,
 				},
 			}
 			pod := corev1.Pod{
@@ -182,22 +203,28 @@ func TestStatefulSetReady(t *testing.T) {
 // WHEN CheckWorkLoadsReady is called
 // THEN ensure that correct readiness bool is returned.
 func TestDaemonsetReady(t *testing.T) {
+	const revision = "1"
+	const revisionNum = 1
+
 	asserts := assert.New(t)
 	tests := []struct {
 		name                string
 		releaseName         string
 		unavailableReplicas int32
+		replicas            int32
 		expectedReady       bool
 		hemlLabelVal        string
 	}{
 		{
 			name:          "test1",
 			releaseName:   "rel1",
+			replicas:      1,
 			expectedReady: true,
 		},
 		{
 			name:                "test2",
 			releaseName:         "rel2",
+			replicas:            1,
 			unavailableReplicas: 1,
 			expectedReady:       false,
 		},
@@ -208,7 +235,7 @@ func TestDaemonsetReady(t *testing.T) {
 			if test.hemlLabelVal != "" {
 				hemlLabelVal = test.hemlLabelVal
 			}
-			sts := v1.DaemonSet{
+			daem := v1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name, Annotations: map[string]string{helmKey: hemlLabelVal}},
 				Spec: v1.DaemonSetSpec{
 					Selector: &metav1.LabelSelector{
@@ -217,18 +244,30 @@ func TestDaemonsetReady(t *testing.T) {
 					},
 				},
 				Status: v1.DaemonSetStatus{
-					NumberUnavailable: test.unavailableReplicas,
+					NumberUnavailable:      test.unavailableReplicas,
+					UpdatedNumberScheduled: test.replicas,
 				},
 			}
+			crName := fmt.Sprintf("%s-%s", name, revision)
+			crev := appsv1.ControllerRevision{
+				TypeMeta: metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      crName,
+					Namespace: ns,
+				},
+				Revision: revisionNum,
+			}
+
 			pod := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name,
-					Labels: map[string]string{matchKey: test.releaseName}},
+					Labels: map[string]string{matchKey: test.releaseName,
+						controllerRevisionHashLabel: revision}},
 				Status: corev1.PodStatus{
 					ContainerStatuses: []corev1.ContainerStatus{{Ready: true}},
 				},
 			}
 
-			cli := fakes.NewClientBuilder().WithScheme(newScheme()).WithObjects(&sts, &pod).Build()
+			cli := fakes.NewClientBuilder().WithScheme(newScheme()).WithObjects(&daem, &crev, &pod).Build()
 			rctx := handlerspi.HandlerContext{
 				Log:    vzlog.DefaultLogger(),
 				Client: cli,
