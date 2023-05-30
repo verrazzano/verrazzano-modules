@@ -30,9 +30,6 @@ const (
 // WHEN CheckWorkLoadsReady is called
 // THEN ensure that correct readiness bool is returned.
 func TestDeploymentReady(t *testing.T) {
-	const stsRevision = "1"
-	const stsRevisionNum = 1
-
 	asserts := assert.New(t)
 	tests := []struct {
 		name          string
@@ -86,8 +83,7 @@ func TestDeploymentReady(t *testing.T) {
 			}
 			pod := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name,
-					Labels: map[string]string{matchKey: test.releaseName,
-						controllerRevisionHashLabel: stsRevision}},
+					Labels: map[string]string{matchKey: test.releaseName}},
 				Status: corev1.PodStatus{
 					ContainerStatuses: []corev1.ContainerStatus{{Ready: true}},
 				},
@@ -186,9 +182,6 @@ func TestStatefulSetReady(t *testing.T) {
 // WHEN CheckWorkLoadsReady is called
 // THEN ensure that correct readiness bool is returned.
 func TestDaemonsetReady(t *testing.T) {
-	const stsRevision = "1"
-	const stsRevisionNum = 1
-
 	asserts := assert.New(t)
 	tests := []struct {
 		name                string
@@ -229,8 +222,7 @@ func TestDaemonsetReady(t *testing.T) {
 			}
 			pod := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: name,
-					Labels: map[string]string{matchKey: test.releaseName,
-						controllerRevisionHashLabel: stsRevision}},
+					Labels: map[string]string{matchKey: test.releaseName}},
 				Status: corev1.PodStatus{
 					ContainerStatuses: []corev1.ContainerStatus{{Ready: true}},
 				},
