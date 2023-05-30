@@ -12,10 +12,12 @@ RUN dnf config-manager --add-repo http://yum.oracle.com/repo/OracleLinux/OL8/dev
     dnf update -y && \
     dnf install -y go-toolset-1.19.6-1.module+el8.8.0+21053+7bf42711
 
-RUN go build -o /root/go/src/github.com/verrazzano/verrazzano-modules/module-operator/bin/linux_amd64/verrazzano-module-operator /root/go/src/github.com/verrazzano/verrazzano-modules/module-operator/main.go
+# Build the operator binary
+RUN mkdir -p ./module-operator/bin/linux_amd64 && \
+    go build -o ./module-operator/bin/linux_amd64/verrazzano-module-operator ./module-operator/main.go
 
 # Copy the operator binary
-COPY /root/go/src/github.com/verrazzano/verrazzano-modules/module-operator/bin/linux_amd64/verrazzano-module-operator /usr/local/bin/verrazzano-module-operator
+COPY ./module-operator/bin/linux_amd64/verrazzano-module-operator /usr/local/bin/verrazzano-module-operator
 
 RUN chmod 500 /usr/local/bin/verrazzano-module-operator
 
