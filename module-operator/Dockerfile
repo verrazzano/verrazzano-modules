@@ -13,12 +13,7 @@ RUN dnf config-manager --add-repo http://yum.oracle.com/repo/OracleLinux/OL8/dev
     dnf install -y go-toolset-1.19.6-1.module+el8.8.0+21053+7bf42711
 
 # Build the operator binary
-RUN mkdir -p ./module-operator/bin/linux_amd64 && \
-    go build -o ./module-operator/bin/linux_amd64/verrazzano-module-operator ./module-operator/main.go
-
-# Copy the operator binary
-COPY ./module-operator/bin/linux_amd64/verrazzano-module-operator /usr/local/bin/verrazzano-module-operator
-
+RUN go build -o /usr/local/bin/verrazzano-module-operator ./module-operator/main.go
 RUN chmod 500 /usr/local/bin/verrazzano-module-operator
 
 # Create the verrazzano-module-operator image
