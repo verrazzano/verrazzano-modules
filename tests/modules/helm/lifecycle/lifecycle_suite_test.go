@@ -39,7 +39,7 @@ type testLogger struct {
 }
 
 func (logger *testLogger) log(format string, args ...any) {
-	fmt.Printf(fmt.Sprintf("\n%s: ", logger.testName)+format, args...)
+	fmt.Printf(fmt.Sprintf("%s: ", logger.testName)+format+"\n", args...)
 }
 
 var testNamespaces = make(map[string][]string)
