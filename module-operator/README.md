@@ -1,75 +1,95 @@
-# Copyright (c) 2023, Oracle and/or its affiliates.
-# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+[![Go Report Card](https://goreportcard.com/badge/github.com/verrazzano/verrazzano-module-operator)](https://goreportcard.com/report/github.com/verrazzano/verrazzano-module-operator)
 
-# module-operator
+# Verrazzano Module Operator
 
-TBD
+Instructions for building and testing the Verrazzano module operator.
 
-## Description
+## Prerequisites
+* `controller-gen` v0.9.2
+* `go` version v1.19
+* Docker
+* `kubectl`
+* `helm` (for testing)
 
-TBD
+## Build the Verrazzano module operator
 
-## Getting Started
+* To build the operator:
 
-TBD
+    ```
+    make go-build
+    ```
 
-### Running on the cluster
-1. Install Instances of Custom Resources:
+## Build and push Docker image
 
-```sh
-kubectl apply -f config/samples/
-```
+* To build the Docker image:
+    ```
+    DOCKER_REPO=<repo> DOCKER_NAMESPACE=<namespace> make docker-build
+    ```
 
-2. Build and push your image to the location specified by `IMG`:
+* To build and push the Docker image:
+    ```
+    DOCKER_REPO=<repo> DOCKER_NAMESPACE=<namespace> make docker-push
+    ```
 
-```sh
-make docker-build docker-push IMG=<some-registry>/module-operator:tag
-```
+* To build and push the Docker image and generate artifacts:
+    ```
+    IMAGE_PULL_SECRETS=<secret name> DOCKER_REPO=<repo> DOCKER_NAMESPACE=<namespace> make generate-operator-artifacts docker-push
+    ```
 
-3. Deploy the controller to the cluster with the image specified by `IMG`:
+## Running on a cluster
 
-```sh
-make deploy IMG=<some-registry>/module-operator:tag
-```
+1. After building and pushing the Docker image and generating the operator artifacts, apply the operator YAML file:
 
-### Uninstall CRDs
-To delete the CRDs from the cluster:
+    ```sh
+    kubectl apply -f build/deploy/verrazzano-module-operator.yaml
+    ```
 
-```sh
-make uninstall
-```
+2. Wait for the operator:
 
-### Undeploy controller
+    ```sh
+    kubectl -n verrazzano-install rollout status deployment/verrazzano-module-operator
+    ```
 
-## Contributing
+3. Alternatively, apply the CRDs and use `make` to run the operator:
 
-See [Contributing](../CONTRIBUTING.md)
+    ```sh
+    kubectl apply -f manifests/charts/operators/verrazzano-module-operator/crds/*
+    make run
+    ```
 
-### How it works
-This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
+## Testing
 
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/),
-which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
+1. After installing the operator, apply a Module CR:
 
-### Test It Out
-1. Install the CRDs into the cluster:
+    ```sh
+    kubectl apply -f - <<EOF
+    apiVersion: platform.verrazzano.io/v1alpha1
+    kind: Module
+    metadata:
+      name: vz-test
+    spec:
+      moduleName: helm
+      targetNamespace: default
+    EOF
+    ```
 
-```sh
-make install-crds
-```
+2. Verify that the Helm chart was installed:
 
-2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
+    ```sh
+    helm ls
+    ```
 
-```sh
-make run
-```
+## Modifying the API definitions
+If you update the API definitions, then you must regenerate CRDs and code.
 
-**NOTE:** You can also run this in one step by running: `make install run`
+* To generate manifests (for example, CRDs):
 
-### Modifying the API definitions
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
+    ```
+    make manifests
+    ```
 
-```sh
-make manifests
-```
+* To generate code (for example, `zz_generated.deepcopy.go`):
 
+    ```
+    make generate
+    ```
