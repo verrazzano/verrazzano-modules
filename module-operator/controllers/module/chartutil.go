@@ -16,7 +16,7 @@ import (
 
 func loadHelmInfo(cr *moduleapi.Module) (handlerspi.HelmInfo, error) {
 	chartDir := lookupChartDir(cr)
-	isChartFound, err := isFileExist(chartDir)
+	isChartFound, err := doesFileExist(chartDir)
 	if err != nil {
 		return handlerspi.HelmInfo{}, err
 	}
@@ -73,7 +73,7 @@ func lookupChartLeafDirName(mod *moduleapi.Module) string {
 	return dir
 }
 
-func isFileExist(chartDir string) (bool, error) {
+func doesFileExist(chartDir string) (bool, error) {
 	_, err := os.Stat(chartDir)
 	if err == nil {
 		return true, nil
