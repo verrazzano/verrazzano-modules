@@ -11,6 +11,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func loadHelmInfo(cr *moduleapi.Module) (handlerspi.HelmInfo, error) {
@@ -49,17 +50,25 @@ func lookupChartDir(mod *moduleapi.Module) string {
 
 func lookupChartLeafDirName(mod *moduleapi.Module) string {
 	var dir string
-
+	version := strings.TrimPrefix(mod.Spec.Version, "v")
 	switch mod.Spec.ModuleName {
 	case string(moduleapi.CalicoModuleClass):
-		dir = "modules/calico"
-	case string(moduleapi.CCMModuleClass):
-		dir = "modules/ccm"
-	case string(moduleapi.HelmModuleClass):
-		dir = filepath.Join("vz-test", mod.Spec.Version)
-		if mod.Spec.Version == "" {
-			dir = filepath.Join("vz-test", "0.1.0")
+		if version == "" {
+			version = "3.25.0"
 		}
+		dir = filepath.Join("modules/calico", version)
+	case string(moduleapi.CCMModuleClass):
+		if version == "" {
+			version = "1.25.0"
+		}
+		dir = filepath.Join("modules/ccm", version)
+	case string(moduleapi.HelmModuleClass):
+		if version == "" {
+			version = "0.1.0"
+		}
+		dir = filepath.Join("vz-test", version)
+	default:
+		// default to empty string
 	}
 	return dir
 }
