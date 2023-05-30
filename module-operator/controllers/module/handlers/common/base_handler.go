@@ -82,9 +82,6 @@ func (h BaseHandler) HelmUpgradeOrInstall(ctx handlerspi.HandlerContext) (ctrl.R
 		ChartPath:    helmRelease.ChartInfo.Path,
 		ChartVersion: helmRelease.ChartInfo.Version,
 		Overrides:    helmOverrides,
-		// TODO -- pull from a secret ref?
-		//Username:     "",
-		//Password:     "",
 	}
 	_, err = upgradeFunc(ctx.Log, opts, false, ctx.DryRun)
 	return ctrl.Result{}, err
