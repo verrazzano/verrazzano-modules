@@ -96,7 +96,7 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 		ctx.Log.Debugf("IsReady() dry run for %s", h.HelmRelease.Name)
 		return true, ctrl.Result{}, nil
 	}
-	// Wait until Helm says release is deployed
+	// Check if the Helm release is deployed
 	deployed, err := helm2.IsReleaseDeployed(h.HelmRelease.Name, h.HelmRelease.Namespace)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
@@ -106,7 +106,7 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 		return false, util.NewRequeueWithShortDelay(), nil
 	}
 
-	// Wait until all the workload pods are ready
+	// Check if the workload pods are ready
 	ready, err := CheckWorkLoadsReady(ctx, h.HelmRelease.Name, h.HelmRelease.Namespace)
 	return ready, ctrl.Result{}, err
 }

@@ -80,12 +80,7 @@ func GetRelease(log vzlog.VerrazzanoLogger, releaseName string, namespace string
 	}
 
 	client := action.NewGet(actionConfig)
-	rel, err := client.Run(releaseName)
-	if err != nil {
-		return nil, err
-	}
-
-	return rel, nil
+	return client.Run(releaseName)
 }
 
 // GetValuesMap will run 'helm get values' command and return the output from the command.

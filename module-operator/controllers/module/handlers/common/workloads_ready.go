@@ -14,8 +14,9 @@ import (
 
 const helmKey = " meta.helm.sh/release-name"
 
+// CheckWorkLoadsReady checks to see if the workloads used by the Helm release are ready.
 func CheckWorkLoadsReady(ctx handlerspi.HandlerContext, releaseName string, namespace string) (bool, error) {
-	// return true ifall the workloads are ready
+	// return true if all the workloads are ready
 	ready := checkDeploymentsReady(ctx, releaseName, namespace) && checkStatefulSetsReady(ctx, releaseName, namespace) &&
 		checkDaemonSetsReady(ctx, releaseName, namespace)
 
