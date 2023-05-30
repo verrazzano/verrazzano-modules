@@ -1,0 +1,191 @@
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+package readiness
+
+import (
+	"context"
+	"fmt"
+	"strconv"
+
+	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	clipkg "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+func DeploymentsReadyBySelectors(log vzlog.VerrazzanoLogger, client clipkg.Client, prefix string, opts ...clipkg.ListOption) bool {
+	deploymentList := &appsv1.DeploymentList{}
+	if err := client.List(context.TODO(), deploymentList, opts...); err != nil {
+		logErrorf(log, "%s failed listing deployments for selectors %v: %v", prefix, opts, err)
+		return false
+	}
+	if deploymentList.Items == nil || len(deploymentList.Items) < 1 {
+		logErrorf(log, "%s is waiting for deployments matching selector %s to exist", prefix, opts)
+		return false
+	}
+	for idx := range deploymentList.Items {
+		deployment := &deploymentList.Items[idx]
+		namespacedName := types.NamespacedName{
+			Namespace: deployment.Namespace,
+			Name:      deployment.Name,
+		}
+		expectedReplicas := deployment.Status.Replicas
+		if expectedReplicas == 0 {
+			expectedReplicas = 1
+		}
+		if !deploymentFullyReady(log, client, deployment, namespacedName, expectedReplicas, prefix) {
+			return false
+		}
+	}
+	return true
+}
+
+// DeploymentsAreReady check that the named deployments have the minimum number of specified replicas ready and available
+func DeploymentsAreReady(log vzlog.VerrazzanoLogger, client clipkg.Client, namespacedNames []types.NamespacedName, prefix string) bool {
+	for _, namespacedName := range namespacedNames {
+		deployment := appsv1.Deployment{}
+		if err := client.Get(context.TODO(), namespacedName, &deployment); err != nil {
+			if errors.IsNotFound(err) {
+				logProgressf(log, "%s is waiting for deployment %v to exist", prefix, namespacedName)
+				return false
+			}
+			logErrorf(log, "%s failed getting deployment %v: %v", prefix, namespacedName, err)
+			return false
+		}
+		var expectedReplicas int32
+		if deployment.Spec.Replicas != nil {
+			expectedReplicas = *deployment.Spec.Replicas
+		}
+		if expectedReplicas == 0 {
+			expectedReplicas = 1
+		}
+		if !deploymentFullyReady(log, client, &deployment, namespacedName, expectedReplicas, prefix) {
+			return false
+		}
+	}
+	return true
+}
+
+// DoDeploymentsExist checks if all the named deployments exist
+func DoDeploymentsExist(log vzlog.VerrazzanoLogger, client clipkg.Client, namespacedNames []types.NamespacedName, _ int32, prefix string) bool {
+	for _, namespacedName := range namespacedNames {
+		exists, err := DoesDeploymentExist(client, namespacedName)
+		if err != nil {
+			logErrorf(log, "%s failed getting deployment %v: %v", prefix, namespacedName, err)
+			return false
+		}
+		if !exists {
+			logProgressf(log, "%s is waiting for deployment %v to exist", prefix, namespacedName)
+			return false
+		}
+	}
+	return true
+}
+
+// DoesDeploymentsExist checks if the named deployment exists
+func DoesDeploymentExist(client clipkg.Client, namespacedName types.NamespacedName) (bool, error) {
+	deployment := appsv1.Deployment{}
+	if err := client.Get(context.TODO(), namespacedName, &deployment); err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func deploymentFullyReady(log vzlog.VerrazzanoLogger, client clipkg.Client, deployment *appsv1.Deployment, namespacedName types.NamespacedName, expectedReplicas int32, prefix string) bool {
+	if deployment.Status.UpdatedReplicas < expectedReplicas {
+		logProgressf(log, "%s is waiting for deployment %s replicas to be %v. Current updated replicas is %v", prefix, namespacedName,
+			expectedReplicas, deployment.Status.UpdatedReplicas)
+		return false
+	}
+	if deployment.Status.AvailableReplicas < expectedReplicas {
+		logProgressf(log, "%s is waiting for deployment %s replicas to be %v. Current available replicas is %v", prefix, namespacedName,
+			expectedReplicas, deployment.Status.AvailableReplicas)
+		return false
+	}
+
+	if deployment.Status.UnavailableReplicas > 0 {
+		logProgressf(log, "%s is waiting for deployment %s replicas to be %v. Current unavailable replicas is %v", prefix, namespacedName,
+			expectedReplicas, deployment.Status.UnavailableReplicas)
+		return false
+	}
+
+	podSelector := deployment.Spec.Selector
+	return PodsReadyDeployment(log, client, namespacedName, podSelector, expectedReplicas, prefix)
+}
+
+// PodsReadyDeployment checks for an expected number of pods to be using the latest replicaset revision and are
+// running and ready
+func PodsReadyDeployment(log vzlog.VerrazzanoLogger, client clipkg.Client, namespacedName types.NamespacedName, selector *metav1.LabelSelector, expectedReplicas int32, prefix string) bool {
+	// Get a list of pods for a given namespace and labels selector
+	pods := GetPodsList(log, client, namespacedName, selector)
+	if pods == nil {
+		return false
+	}
+
+	// If no pods found log a progress message and return
+	if len(pods.Items) == 0 {
+		logProgressf(log, "Found no pods with matching labels selector %v for namespace %s", selector, namespacedName.Namespace)
+		return false
+	}
+
+	// Loop through pods identifying pods that are using the latest replicaset revision
+	var savedPods []corev1.Pod
+	var savedPodTemplateHash string
+	var savedRevision int
+	for _, pod := range pods.Items {
+		// Log error and return if the pod-template-hash label is not found.  This should never happen.
+		if _, ok := pod.Labels[podTemplateHashLabel]; !ok {
+			logErrorf(log, "Failed to find pod label [pod-template-hash] for pod %s/%s", pod.Namespace, pod.Name)
+			return false
+		}
+
+		if pod.Labels[podTemplateHashLabel] == savedPodTemplateHash {
+			savedPods = append(savedPods, pod)
+			continue
+		}
+
+		// Get the replica set for the pod given the pod-template-hash label
+		var rs appsv1.ReplicaSet
+		rsName := fmt.Sprintf("%s-%s", namespacedName.Name, pod.Labels[podTemplateHashLabel])
+		err := client.Get(context.TODO(), types.NamespacedName{Namespace: namespacedName.Namespace, Name: rsName}, &rs)
+		if err != nil {
+			logErrorf(log, "Failed to get replicaset %s: %v", namespacedName, err)
+			return false
+		}
+
+		// Log error and return if the deployment.kubernetes.io/revision annotation is not found.  This should never happen.
+		if _, ok := rs.Annotations[deploymentRevisionAnnotation]; !ok {
+			logErrorf(log, "Failed to find pod annotation [deployment.kubernetes.io/revision] for pod %s/%s", pod.Namespace, pod.Name)
+			return false
+		}
+
+		revision, _ := strconv.Atoi(rs.Annotations[deploymentRevisionAnnotation])
+		if revision > savedRevision {
+			savedRevision = revision
+			savedPodTemplateHash = pod.Labels[podTemplateHashLabel]
+			savedPods = []corev1.Pod{}
+			savedPods = append(savedPods, pod)
+		}
+	}
+
+	// Make sure pods using the latest replicaset revision are ready.
+	podsReady, success := EnsurePodsAreReady(log, savedPods, expectedReplicas, prefix)
+	if !success {
+		return false
+	}
+
+	if podsReady < expectedReplicas {
+		logProgressf(log, "%s is waiting for deployment %s pods to be %v. Current available pods are %v", prefix, namespacedName,
+			expectedReplicas, podsReady)
+		return false
+	}
+
+	return true
+}
