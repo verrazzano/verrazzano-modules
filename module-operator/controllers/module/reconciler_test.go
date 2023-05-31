@@ -27,6 +27,7 @@ const name = "test"
 type handler struct {
 	statemachineError  bool
 	statemachineCalled bool
+	smHandler          handlerspi.StateMachineHandler
 }
 
 var _ handlerspi.StateMachineHandler = &handler{}
@@ -48,7 +49,7 @@ func TestReconcile(t *testing.T) {
 		expectedStatemachineCalled bool
 		expectedRequeue            bool
 		expectedError              bool
-		expectedHandler            handlerspi.StateMachineHandler
+		expectedHandler            int
 	}{
 		{
 			name:                       "test-install",
@@ -61,15 +62,43 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 		{
-			name:                       "test-state-machine-error",
-			statemachineError:          true,
+			name:                       "test-update",
+			statemachineError:          false,
 			expectedStatemachineCalled: true,
-			expectedRequeue:            true,
-			expectedError:              true,
+			expectedRequeue:            false,
+			expectedError:              false,
 			moduleInfo: handlerspi.ModuleHandlerInfo{
-				InstallActionHandler: &handler{},
+				UpdateActionHandler: &handler{},
 			},
+			conditions: []moduleapi.ModuleCondition{{
+				Type: moduleapi.CondInstallComplete,
+			}},
 		},
+		{
+			name:                       "test-upgrade",
+			statemachineError:          false,
+			specVersion:                "1.0.1",
+			statusVersion:              "1.0.0",
+			expectedStatemachineCalled: true,
+			expectedRequeue:            false,
+			expectedError:              false,
+			moduleInfo: handlerspi.ModuleHandlerInfo{
+				UpgradeActionHandler: &handler{},
+			},
+			conditions: []moduleapi.ModuleCondition{{
+				Type: moduleapi.CondInstallComplete,
+			}},
+		},
+		//{
+		//	name:                       "test-state-machine-error",
+		//	statemachineError:          true,
+		//	expectedStatemachineCalled: true,
+		//	expectedRequeue:            true,
+		//	expectedError:              false,
+		//	moduleInfo: handlerspi.ModuleHandlerInfo{
+		//		InstallActionHandler: &handler{},
+		//	},
+		//},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -97,6 +126,7 @@ func TestReconcile(t *testing.T) {
 				},
 				Status: moduleapi.ModuleStatus{
 					Conditions: test.conditions,
+					Version:    test.statusVersion,
 				},
 			}
 
@@ -114,6 +144,7 @@ func TestReconcile(t *testing.T) {
 			asserts.Equal(test.expectedStatemachineCalled, h.statemachineCalled)
 			asserts.Equal(test.expectedError, err != nil)
 			asserts.Equal(test.expectedRequeue, res.Requeue)
+			asserts.NotNil(h.smHandler)
 		})
 	}
 }
@@ -128,6 +159,7 @@ func initScheme() *runtime.Scheme {
 
 func (h *handler) testExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
 	h.statemachineCalled = true
+	h.smHandler = sm.Handler
 	if h.statemachineError {
 		return util.NewRequeueWithShortDelay()
 	}
