@@ -36,12 +36,3 @@ const (
 	// ModuleStateUnknown means the module is unknown
 	ModuleStateUnknown ModuleActualState = "Unknown"
 )
-
-// ModuleActualStateInCluster interface describes the actual state of the module in the cluster
-type ModuleActualStateInCluster interface {
-	// GetActualModuleState gets the state of the module
-	GetActualModuleState(context HandlerContext, helmInfo HelmInfo) (ModuleActualState, ctrl.Result, error)
-
-	// IsUpgradeNeeded checks if upgrade is needed
-	IsUpgradeNeeded(context HandlerContext, cr *moduleapi.Module, helmInfo HelmInfo) (bool, ctrl.Result, error)
-}
