@@ -7,4 +7,7 @@ metadata:
   name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
 data:
-  key: val
+{{- range $filename, $data := .Values.files }}
+  {{ $filename }}: |
+{{ $data | indent 4 -}}
+{{- end -}}

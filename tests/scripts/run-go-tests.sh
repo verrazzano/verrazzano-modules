@@ -16,7 +16,7 @@ SEQUENTIAL_SUITES=${SEQUENTIAL_SUITES:-false}
 
 GO_TEST_ARGS=${GO_TEST_ARGS:-"-v"}
 if [ "${RUN_PARALLEL}" == "true" ]; then
-  GO_TEST_ARGS="${GO_TEST_ARGS} -p=1"
+  GO_TEST_ARGS="${GO_TEST_ARGS} -p 10"
 fi
 if [ "${RANDOMIZE_TESTS}" == "true" ]; then
   GO_TEST_ARGS="${GO_TEST_ARGS} --shuffle=on"
@@ -34,6 +34,7 @@ fi
 #if [ -n "${DRY_RUN}" ]; then
 #  GO_TEST_ARGS="${GO_TEST_ARGS} --dry-run"
 #fi
+GO_TEST_ARGS="${GO_TEST_ARGS} -count=1"
 if [ -n "${SKIP_DEPLOY}" ]; then
   TEST_ARGS="${TEST_ARGS} --skip-deploy=${SKIP_DEPLOY}"
 fi
