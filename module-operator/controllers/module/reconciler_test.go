@@ -89,16 +89,16 @@ func TestReconcile(t *testing.T) {
 				Type: moduleapi.CondInstallComplete,
 			}},
 		},
-		//{
-		//	name:                       "test-state-machine-error",
-		//	statemachineError:          true,
-		//	expectedStatemachineCalled: true,
-		//	expectedRequeue:            true,
-		//	expectedError:              false,
-		//	moduleInfo: handlerspi.ModuleHandlerInfo{
-		//		InstallActionHandler: &handler{},
-		//	},
-		//},
+		{
+			name:                       "test-state-machine-error",
+			statemachineError:          true,
+			expectedStatemachineCalled: true,
+			expectedRequeue:            true,
+			expectedError:              false,
+			moduleInfo: handlerspi.ModuleHandlerInfo{
+				InstallActionHandler: &handler{},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
