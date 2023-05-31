@@ -82,9 +82,6 @@ func (h BaseHandler) HelmUpgradeOrInstall(ctx handlerspi.HandlerContext) (ctrl.R
 		ChartPath:    helmRelease.ChartInfo.Path,
 		ChartVersion: helmRelease.ChartInfo.Version,
 		Overrides:    helmOverrides,
-		// TODO -- pull from a secret ref?
-		//Username:     "",
-		//Password:     "",
 	}
 	_, err = upgradeFunc(ctx.Log, opts, false, ctx.DryRun)
 	return ctrl.Result{}, err
@@ -96,7 +93,7 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 		ctx.Log.Debugf("IsReady() dry run for %s", h.HelmRelease.Name)
 		return true, ctrl.Result{}, nil
 	}
-
+	// Check if the Helm release is deployed
 	deployed, err := helm2.IsReleaseDeployed(h.HelmRelease.Name, h.HelmRelease.Namespace)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
@@ -106,6 +103,7 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 		return false, util.NewRequeueWithShortDelay(), nil
 	}
 
-	// TODO check if release is ready (check deployments)
-	return true, ctrl.Result{}, err
+	// Check if the workload pods are ready
+	ready, err := CheckWorkLoadsReady(ctx, h.HelmRelease.Name, h.HelmRelease.Namespace)
+	return ready, ctrl.Result{}, err
 }

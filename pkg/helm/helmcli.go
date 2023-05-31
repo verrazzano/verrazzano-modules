@@ -70,6 +70,19 @@ func SetDefaultLoadChartFunction() {
 	loadChartFn = loadChart
 }
 
+// GetRelease will run 'helm get all' command and return the output from the command.
+func GetRelease(log vzlog.VerrazzanoLogger, releaseName string, namespace string) (*release.Release, error) {
+	settings := cli.New()
+	settings.SetNamespace(namespace)
+	actionConfig, err := actionConfigFn(log, settings, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	client := action.NewGet(actionConfig)
+	return client.Run(releaseName)
+}
+
 // GetValuesMap will run 'helm get values' command and return the output from the command.
 func GetValuesMap(log vzlog.VerrazzanoLogger, releaseName string, namespace string) (map[string]interface{}, error) {
 	settings := cli.New()
