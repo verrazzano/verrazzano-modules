@@ -108,33 +108,3 @@ func TestGetURLForIngress(t *testing.T) {
 		assert.Equal(t, url, "https://")
 	})
 }
-
-//func TestExecPod(t *testing.T) {
-//
-//	kubeconfigPath := "dummy-kubeconfig"
-//	config, err := GetKubeConfigGivenPath(kubeconfigPath)
-//	assert.Nil(t, err)
-//	testContainer := "test-container"
-//
-//	container := &v1.Container{
-//		Name:  testContainer,
-//		Image: "test-image",
-//	}
-//	pod := &v1.Pod{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "test-pod",
-//			Namespace: "testns",
-//		},
-//		Spec: v1.PodSpec{
-//			Containers: []v1.Container{*container},
-//		},
-//	}
-//	client := fake.NewSimpleClientset(pod)
-//	command := []string{"echo", "test123"}
-//
-//	// Invoke the function
-//	stdout, stderr, err := ExecPod(client, config, pod, testContainer, command)
-//	assert.Nil(t, err)
-//	assert.Equal(t, len(stderr), 0)
-//	assert.Contains(t, stdout, "test123")
-//}
