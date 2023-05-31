@@ -3,19 +3,14 @@
 
 package handlerspi
 
-import (
-	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
-)
-
 // ModuleHandlerInfo contains the Module handler interfaces.
 type ModuleHandlerInfo struct {
-	ModuleActualStateInCluster
 	DeleteActionHandler  StateMachineHandler
 	InstallActionHandler StateMachineHandler
 	UpdateActionHandler  StateMachineHandler
 	UpgradeActionHandler StateMachineHandler
 }
+<<<<<<< HEAD
 
 // ModuleActualState is the actual state of the module in the cluster
 type ModuleActualState string
@@ -36,3 +31,5 @@ const (
 	// ModuleStateUnknown means the module is unknown
 	ModuleStateUnknown ModuleActualState = "Unknown"
 )
+=======
+>>>>>>> 31da8ce42cfb64e8d44b0b74f4276a689cdcedce
