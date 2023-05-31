@@ -31,11 +31,9 @@ type handler struct {
 
 type moduleHandler struct {
 	actualVersion string
-	handlerspi.ModuleActualStateInCluster
 }
 
 var _ handlerspi.StateMachineHandler = &handler{}
-var _ handlerspi.ModuleActualStateInCluster = &moduleHandler{}
 
 // TestReconcile tests that the Reconcile implementation works correctly
 // GIVEN a Reconciler
@@ -49,7 +47,7 @@ func TestReconcile(t *testing.T) {
 		statemachineError          bool
 		specVersion                string
 		statusVersion              string
-		moduleInfo 					handlerspi.ModuleHandlerInfo
+		moduleInfo                 handlerspi.ModuleHandlerInfo
 		conditions                 []moduleapi.ModuleCondition
 		expectedStatemachineCalled bool
 		expectedRequeue            bool
@@ -62,8 +60,7 @@ func TestReconcile(t *testing.T) {
 			expectedStatemachineCalled: true,
 			expectedRequeue:            false,
 			expectedError:              false,
-			moduleInfo:  				handlerspi.ModuleHandlerInfo {
-				ModuleActualStateInCluster: moduleHandler{},
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				InstallActionHandler: &handler{},
 			},
 		},
@@ -100,8 +97,8 @@ func TestReconcile(t *testing.T) {
 			scheme := initScheme()
 			clientBuilder := fakes.NewClientBuilder().WithScheme(scheme)
 			r := Reconciler{
-				Client: clientBuilder.Build(),
-				Scheme: initScheme(),
+				Client:      clientBuilder.Build(),
+				Scheme:      initScheme(),
 				HandlerInfo: test.moduleInfo,
 			}
 			uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
@@ -181,14 +178,6 @@ func (h handler) IsPostActionDone(context handlerspi.HandlerContext) (bool, ctrl
 
 func (h handler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
-}
-
-func (m moduleHandler) GetActualModuleState(_ handlerspi.HandlerContext, _ handlerspi.HelmInfo) (handlerspi.ModuleActualState, ctrl.Result, error) {
-	return m., ctrl.Result{}, nil
-}
-
-func (m moduleHandler) IsUpgradeNeeded(context handlerspi.HandlerContext, cr *moduleapi.Module) (bool, ctrl.Result, error) {
-	return m.actualVersion != cr.Spec.Version, ctrl.Result{}, nil
 }
 
 func fakeLoadHelmInfo(cr *moduleapi.Module) (handlerspi.HelmInfo, error) {
