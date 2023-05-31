@@ -10,6 +10,10 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// TestOperatorRunning tests the ruuning status of module-operator.
+// GIVEN an installation of module-operator in a cluster
+// WHEN the status of ready replicas for the module-operator are checked
+// THEN 1 replica is found to be ready.
 func (suite *OperatorTestSuite) TestOperatorRunning() {
 	client, err := k8sutil.GetKubernetesClientset()
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -18,6 +22,10 @@ func (suite *OperatorTestSuite) TestOperatorRunning() {
 	suite.gomega.Expect(int(deployment.Status.ReadyReplicas)).To(gomega.Equal(1))
 }
 
+// TestCRDsInstalled tests the installation status of modules crds.
+// GIVEN an installation of module-operator in a cluster
+// WHEN the status of installtion of module crd is checked
+// THEN module crd is found to be installed.
 func (suite *OperatorTestSuite) TestCRDsInstalled() {
 	crdInstalled, err := k8sutil.CheckCRDsExist([]string{"modules.platform.verrazzano.io"})
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
