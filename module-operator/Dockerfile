@@ -8,9 +8,10 @@ FROM ghcr.io/oracle/oraclelinux:8 AS build_base
 WORKDIR /root/go/src/github.com/verrazzano/verrazzano-modules
 COPY . .
 
-RUN dnf config-manager --add-repo http://yum.oracle.com/repo/OracleLinux/OL8/developer/x86_64 && \
+RUN dnf install -y oraclelinux-developer-release-el8 && \
+    dnf config-manager --enable ol8_developer && \
     dnf update -y && \
-    dnf install -y go-toolset-1.19.6-1.module+el8.8.0+21053+7bf42711
+    dnf install -y go-toolset-1.19.6
 
 # Build the operator binary
 RUN go build -o /usr/local/bin/verrazzano-module-operator ./module-operator/main.go
