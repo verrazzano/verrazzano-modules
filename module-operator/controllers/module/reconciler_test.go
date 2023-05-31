@@ -29,15 +29,11 @@ type handler struct {
 	statemachineCalled bool
 }
 
-type moduleHandler struct {
-	actualVersion string
-}
-
 var _ handlerspi.StateMachineHandler = &handler{}
 
 // TestReconcile tests that the Reconcile implementation works correctly
 // GIVEN a Reconciler
-// WHEN the Reconcile method is called for various scenarios
+// WHEN the Reconcile method is called for the life cycle operations
 // THEN ensure that it works correctly
 func TestReconcile(t *testing.T) {
 	asserts := assert.New(t)
@@ -60,6 +56,16 @@ func TestReconcile(t *testing.T) {
 			expectedStatemachineCalled: true,
 			expectedRequeue:            false,
 			expectedError:              false,
+			moduleInfo: handlerspi.ModuleHandlerInfo{
+				InstallActionHandler: &handler{},
+			},
+		},
+		{
+			name:                       "test-state-machine-error",
+			statemachineError:          true,
+			expectedStatemachineCalled: true,
+			expectedRequeue:            true,
+			expectedError:              true,
 			moduleInfo: handlerspi.ModuleHandlerInfo{
 				InstallActionHandler: &handler{},
 			},
