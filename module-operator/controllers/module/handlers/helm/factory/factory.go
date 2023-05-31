@@ -4,7 +4,6 @@
 package factory
 
 import (
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/delete"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/install"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/update"
@@ -15,10 +14,9 @@ import (
 // NewModuleHandlerInfo creates a new ModuleHandlerInfo
 func NewModuleHandlerInfo() handlerspi.ModuleHandlerInfo {
 	return handlerspi.ModuleHandlerInfo{
-		ModuleActualStateInCluster: common.ModuleState{},
-		InstallActionHandler:       install.NewHandler(),
-		DeleteActionHandler:        delete.NewHandler(),
-		UpdateActionHandler:        update.NewHandler(),
-		UpgradeActionHandler:       upgrade.NewHandler(),
+		InstallActionHandler: install.NewHandler(),
+		DeleteActionHandler:  delete.NewHandler(),
+		UpdateActionHandler:  update.NewHandler(),
+		UpgradeActionHandler: upgrade.NewHandler(),
 	}
 }
