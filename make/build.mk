@@ -61,9 +61,9 @@ run: ## Run a controller from your host.
 # (i.e. ${DOCKER_CMD} build --platform linux/arm64 ). However, you must enable ${DOCKER_CMD} buildKit for it.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
-docker-build: docker-build-common
+docker-build: go-build-linux docker-build-common
 
-docker-build-common: BASE_IMAGE ?= ghcr.io/verrazzano/verrazzano-base:v1.0.0-20230529051534-037adf4-4653b27@sha256:73c0b081e13228fbbe5fb87b46cde1781cba25bdf9cf6489daa56460e5e1435b
+docker-build-common: BASE_IMAGE ?= ghcr.io/verrazzano/verrazzano-base:v1.0.0-20230327155846-4653b27@sha256:e82f7e630719a9f5a7309c41773385b273ec749f0e1ded96baa1a3f7a7e576e0
 .PHONY: docker-build-common
 docker-build-common:
 	@echo Building ${NAME} image ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
@@ -71,7 +71,7 @@ docker-build-common:
 	#cp ../THIRD_PARTY_LICENSES.txt .
 	${DOCKER_CMD} build --pull -f Dockerfile \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
-		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ..
+		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
 
 .PHONY: docker-push
 docker-push: docker-build docker-push-common
