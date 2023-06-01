@@ -156,6 +156,16 @@ func TestPostRemoveFinalizer(t *testing.T) {
 	r.PostRemoveFinalizer(rctx, &unstructured.Unstructured{Object: uObj})
 }
 
+// TestGetName tests that the GetName implementation works correctly
+// GIVEN a Finalizer
+// WHEN the GetName method is called
+// THEN ensure that the correct name is returned
+func TestGetName(t *testing.T) {
+	asserts := assert.New(t)
+	const expectedName = "module.platform.verrazzano.io/finalizer"
+	asserts.Equal(expectedName, Reconciler{}.GetName())
+}
+
 func (h *finalizerHandler) fakeExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
 	h.statemachineCalled = true
 	h.smHandler = sm.Handler
