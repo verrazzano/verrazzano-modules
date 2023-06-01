@@ -5,13 +5,14 @@ package install
 
 import (
 	"context"
+	"time"
+
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
 	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"time"
 )
 
 type HelmHandler struct {
@@ -90,7 +91,7 @@ func (h HelmHandler) PostWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.R
 	return ctrl.Result{}, nil
 }
 
-// PostWork does installation pre-work
+// PostWork does installation post-work
 func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }

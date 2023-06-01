@@ -5,6 +5,7 @@ package common
 
 import (
 	"context"
+
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/constants"
@@ -32,6 +33,14 @@ type BaseHandler struct {
 
 	// ImagePullSecretKeyname is the Helm Value Key for the image pull secret for a chart
 	ImagePullSecretKeyname string
+}
+
+func SetUpgradeFunc(f upgradeFuncSig) {
+	upgradeFunc = f
+}
+
+func ResetUpgradeFunc() {
+	upgradeFunc = helm2.UpgradeRelease
 }
 
 // Init initializes the handler with Helm chart information
