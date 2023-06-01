@@ -596,8 +596,6 @@ func TestGetKubeConfigGivenPath(t *testing.T) {
 	assert.NotNil(t, config)
 	assert.Equal(t, int(config.QPS), APIServerQPS)
 	assert.Equal(t, config.Burst, APIServerBurst)
-
-	fake.PodExecResult(nil)
 }
 
 // TestGetGoClient tests geting the go client
