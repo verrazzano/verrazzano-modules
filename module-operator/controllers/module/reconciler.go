@@ -18,6 +18,10 @@ import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 )
 
+var funcExecuteStateMachine = defaultExecuteStateMachine
+var funcLoadHelmInfo = loadHelmInfo
+var funcIsUpgradeNeeded = IsUpgradeNeeded
+
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
 	cr := &moduleapi.Module{}
@@ -46,7 +50,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler handlerspi.StateMachineHandler) (ctrl.Result, error) {
 	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 
-	helmInfo, err := loadHelmInfo(cr)
+	helmInfo, err := funcLoadHelmInfo(cr)
 	if err != nil {
 		if strings.Contains(err.Error(), "FileNotFound") {
 			err := spictx.Log.ErrorfNewErr("Failed loading file information: %v", err)
@@ -62,7 +66,7 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 		Handler:  handler,
 	}
 
-	res := sm.Execute(ctx)
+	res := funcExecuteStateMachine(ctx, sm)
 	return res, nil
 }
 
@@ -73,7 +77,7 @@ func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *modulea
 	}
 
 	// return UpgradeAction only when the desired version is different from current
-	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
+	upgradeNeeded, err := funcIsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Failed checking if upgrade needed for Module %s/%s failed with error: %v\n", cr.Namespace, cr.Name, err)
 		return nil, util.NewRequeueWithShortDelay()
@@ -108,4 +112,8 @@ func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
 		return false, err
 	}
 	return installedSemver.IsLessThan(desiredSemver), nil
+}
+
+func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
+	return sm.Execute(ctx)
 }
