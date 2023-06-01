@@ -20,6 +20,7 @@ import (
 
 var funcExecuteStateMachine = defaultExecuteStateMachine
 var funcLoadHelmInfo = loadHelmInfo
+var funcIsUpgradeNeeded = IsUpgradeNeeded
 
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
@@ -76,7 +77,7 @@ func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *modulea
 	}
 
 	// return UpgradeAction only when the desired version is different from current
-	upgradeNeeded, err := IsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
+	upgradeNeeded, err := funcIsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Failed checking if upgrade needed for Module %s/%s failed with error: %v\n", cr.Namespace, cr.Name, err)
 		return nil, util.NewRequeueWithShortDelay()
