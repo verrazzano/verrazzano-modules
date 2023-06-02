@@ -91,7 +91,7 @@ unit-test-coverage-ratcheting:  ## run unit tests with coverage ratcheting
 
 .PHONY: unit-test
 unit-test:  ## run all unit tests in project
-	go test $$(go list ./...)
+	go test $$(go list ./... | grep -v "/tests/")
 
 
 #@  Compliance check targets
