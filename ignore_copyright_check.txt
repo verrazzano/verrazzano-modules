@@ -8,7 +8,7 @@ coverage.xml
 
 # The charts and manifests directories contains external (3rd party) Helm charts and manifests
 module-operator/manifests/charts/modules/calico
-module-operator/manifests/charts/modules/ccm
+module-operator/manifests/charts/modules/oci-ccm
 module-operator/module-operator 
 
 tools/copyright/test
