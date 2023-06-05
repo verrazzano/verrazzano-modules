@@ -3,3 +3,6 @@
 files: {}
 variables:
   var1: "var1"
+deployment:
+  replicas: 2
+  delaySeconds: 2

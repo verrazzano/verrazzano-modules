@@ -5,13 +5,14 @@ package module
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/helm"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 func loadHelmInfo(cr *moduleapi.Module) (handlerspi.HelmInfo, error) {
@@ -61,7 +62,7 @@ func lookupChartLeafDirName(mod *moduleapi.Module) string {
 		if version == "" {
 			version = "1.25.0"
 		}
-		dir = filepath.Join("modules/ccm", version)
+		dir = filepath.Join("modules/oci-ccm", version)
 	case string(moduleapi.HelmModuleClass):
 		if version == "" {
 			version = "0.1.0"

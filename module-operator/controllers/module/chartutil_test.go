@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
+	"path"
 	"testing"
 )
 
@@ -18,6 +19,9 @@ import (
 func TestLoadHelmInfo(t *testing.T) {
 	asserts := assert.New(t)
 
+	const (
+		rootDir = "../../manifests/charts"
+	)
 	tests := []struct {
 		name        string
 		moduleName  string
@@ -26,51 +30,67 @@ func TestLoadHelmInfo(t *testing.T) {
 	}{
 		{
 			name:        "test-ccm",
-			moduleName:  "ccm",
-			expectedDir: "modules/ccm/1.25.0",
+			moduleName:  "oci-ccm",
+			expectedDir: path.Join(rootDir, "modules/oci-ccm/1.25.0"),
 		},
-		//{
-		//	name:        "test-calico",
-		//	moduleName:  "calico",
-		//	expectedDir: "modules/calico/3.25.0",
-		//},
-		//{
-		//	name:        "test-calico-version",
-		//	moduleName:  "calico",
-		//	version:     "v1.26.0",
-		//	expectedDir: "modules/calico/1.26.0",
-		//},
-		//{
-		//	name:        "test-calico-version-no-v",
-		//	moduleName:  "calico",
-		//	version:     "1.26.0",
-		//	expectedDir: "modules/calico/1.26.0",
-		//},
-		//{
-		//	name:        "test-vz-test",
-		//	moduleName:  "helm",
-		//	expectedDir: "vz-test/0.1.0",
-		//},
-		//{
-		//	name:        "test-vz-test-version",
-		//	moduleName:  "helm",
-		//	version:     "0.1.1",
-		//	expectedDir: "vz-test/0.1.1",
-		//},
-		//{
-		//	name:        "test-unknown",
-		//	moduleName:  "unknown",
-		//	expectedDir: "",
-		//},
+		{
+			name:        "test-calico",
+			moduleName:  "calico",
+			expectedDir: path.Join(rootDir, "modules/calico/3.25.0"),
+		},
+		{
+			name:        "test-vz-test",
+			moduleName:  "helm",
+			expectedDir: path.Join(rootDir, "vz-test/0.1.0"),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
-			const (
-				rootDir = "/root"
-				calico  = "calico"
-				version = "1.26.0"
-			)
+			c := config.Get()
+			defer func() { config.Set(c) }()
+			c.ChartsDir = rootDir
+			config.Set(c)
+
+			mod := moduleapi.Module{
+				Spec: moduleapi.ModuleSpec{
+					ModuleName: test.moduleName,
+				},
+			}
+			info, err := loadHelmInfo(&mod)
+			asserts.NoError(err)
+			asserts.NotNil(info)
+		})
+	}
+}
+
+// TestMissingChartFileError tests the loadHelmInfo function where the file is misisng
+// GIVEN a Module
+// WHEN the loadHelmInfo is called with the wrong root dir
+// THEN ensure that the correct error is returned
+func TestMissingChartFileError(t *testing.T) {
+	asserts := assert.New(t)
+
+	const (
+		rootDir = "missingDir/"
+		calico  = "calico"
+		version = "3.25.0"
+	)
+	tests := []struct {
+		name        string
+		moduleName  string
+		expectedDir string
+		expectedErr string
+		version     string
+	}{
+		{
+			name:        "test-ccm",
+			moduleName:  "oci-ccm",
+			expectedDir: path.Join(rootDir, "modules/oci-ccm/1.25.0"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 
 			c := config.Get()
 			defer func() { config.Set(c) }()
@@ -83,9 +103,8 @@ func TestLoadHelmInfo(t *testing.T) {
 					Version:    version,
 				},
 			}
-			info, err := loadHelmInfo(&mod)
-			asserts.NoError(err)
-			asserts.NotNil(info)
+			_, err := loadHelmInfo(&mod)
+			asserts.Error(err)
 		})
 	}
 }
@@ -105,8 +124,8 @@ func TestLookupChartLeafDirName(t *testing.T) {
 	}{
 		{
 			name:        "test-ccm",
-			moduleName:  "ccm",
-			expectedDir: "modules/ccm/1.25.0",
+			moduleName:  "oci-ccm",
+			expectedDir: "modules/oci-ccm/1.25.0",
 		},
 		{
 			name:        "test-calico",
@@ -116,14 +135,14 @@ func TestLookupChartLeafDirName(t *testing.T) {
 		{
 			name:        "test-calico-version",
 			moduleName:  "calico",
-			version:     "v1.26.0",
-			expectedDir: "modules/calico/1.26.0",
+			version:     "v3.25.0",
+			expectedDir: "modules/calico/3.25.0",
 		},
 		{
 			name:        "test-calico-version-no-v",
 			moduleName:  "calico",
-			version:     "1.26.0",
-			expectedDir: "modules/calico/1.26.0",
+			version:     "3.25.0",
+			expectedDir: "modules/calico/3.25.0",
 		},
 		{
 			name:        "test-vz-test",
