@@ -10,8 +10,12 @@ import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/constants"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
 	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	controllerruntime "sigs.k8s.io/controller-runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -49,6 +53,23 @@ func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Re
 
 // PreWork does the pre-work
 func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	// Create the target namespace (if it doesn't exist) and label it
+	if h.ModuleCR.Spec.TargetNamespace != "" {
+		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: h.ModuleCR.Spec.TargetNamespace}}
+		_, err := controllerruntime.CreateOrUpdate(context.TODO(), ctx.Client, ns,
+			func() error {
+				if ns.Labels == nil {
+					ns.Labels = map[string]string{}
+				}
+				ns.Labels[constants.VerrazzanoNamespaceLabel] = ns.Name
+				return nil
+			},
+		)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	// Update the spec version if it is not set
 	if len(h.ModuleCR.Spec.Version) == 0 {
 		// Update spec version to match chart, always requeue to get ModuleCR with version
