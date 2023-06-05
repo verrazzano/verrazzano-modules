@@ -95,7 +95,7 @@ const (
 
 	// CalicoModuleClass defines the class name used by the Calico operator
 	CalicoModuleClass ModuleClassType = "calico"
-	CCMModuleClass    ModuleClassType = "ccm"
+	CCMModuleClass    ModuleClassType = "oci-ccm"
 )
 
 type LifecycleCondition string
@@ -103,15 +103,15 @@ type LifecycleCondition string
 const (
 	ConditionArrayLimit = 5
 
-	CondPreInstall          LifecycleCondition = "PreInstall"
-	CondInstallStarted      LifecycleCondition = "InstallStarted"
-	CondInstallComplete     LifecycleCondition = "InstallComplete"
-	CondPreUninstall        LifecycleCondition = "PreUninstall"
-	CondUninstallStarted    LifecycleCondition = "UninstallStarted"
-	CondUninstallComplete   LifecycleCondition = "UninstallComplete"
-	CondPreUpgrade          LifecycleCondition = "PreUpgrade"
-	CondUpgradeStarted      LifecycleCondition = "UpgradeStarted"
-	CondUpgradeComplete     LifecycleCondition = "UpgradeComplete"
+	CondPreInstall        LifecycleCondition = "PreInstall"
+	CondInstallStarted    LifecycleCondition = "InstallStarted"
+	CondInstallComplete   LifecycleCondition = "InstallComplete"
+	CondPreUninstall      LifecycleCondition = "PreUninstall"
+	CondUninstallStarted  LifecycleCondition = "UninstallStarted"
+	CondUninstallComplete LifecycleCondition = "UninstallComplete"
+	CondPreUpgrade        LifecycleCondition = "PreUpgrade"
+	CondUpgradeStarted    LifecycleCondition = "UpgradeStarted"
+	CondUpgradeComplete   LifecycleCondition = "UpgradeComplete"
 )
 
 func init() {

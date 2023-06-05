@@ -4,9 +4,10 @@
 package module
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"testing"
 )
 
 // TestLookupChartLeafDirName tests the lookup of the chart directory name
@@ -24,8 +25,8 @@ func TestLookupChartLeafDirName(t *testing.T) {
 	}{
 		{
 			name:        "test-ccm",
-			moduleName:  "ccm",
-			expectedDir: "modules/ccm/1.25.0",
+			moduleName:  "oci-ccm",
+			expectedDir: "modules/oci-ccm/1.25.0",
 		},
 		{
 			name:        "test-calico",
