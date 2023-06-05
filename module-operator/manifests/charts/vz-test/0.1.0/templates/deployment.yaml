@@ -1,0 +1,39 @@
+# Copyright (c) 2023, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vz-test-nginx
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: vz-test
+  template:
+    metadata:
+      labels:
+        app: vz-test
+    spec:
+      containers:
+        - name: nginx
+          image: ghcr.io/oracle/oraclelinux8-nginx:latest
+          command:
+            [
+              "/bin/sh",
+              "-ec",
+              'x=1; while  [ $x -le {{ .Values.deployment.delaySeconds }} ]; do echo "$x" $(( x++ )); sleep 1; done; nginx -g "daemon off;"',
+            ]
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+              httpHeaders:
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 3

@@ -127,6 +127,8 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 	op := "create"
 	if update {
 		op = "update"
+		module, err = c.Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
+		suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}
 
 	logger.log("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
