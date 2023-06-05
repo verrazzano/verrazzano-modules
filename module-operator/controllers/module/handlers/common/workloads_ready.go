@@ -5,7 +5,6 @@ package common
 
 import (
 	"context"
-
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/k8s/readiness"
 	v1 "k8s.io/api/apps/v1"
@@ -13,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const helmKey = "meta.helm.sh/release-name"
+const helmKey = " meta.helm.sh/release-name"
 
 // CheckWorkLoadsReady checks to see if the workloads used by the Helm release are ready.
 func CheckWorkLoadsReady(ctx handlerspi.HandlerContext, releaseName string, namespace string) (bool, error) {
