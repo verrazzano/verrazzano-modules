@@ -23,7 +23,6 @@ import (
 
 	api "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
-	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrs "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -263,32 +262,6 @@ func (suite *HelmModuleLifecycleTestSuite) waitForNamespaceDeleted(logger testLo
 		}
 
 		return false
-	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
-	return err
-}
-
-func (suite *HelmModuleLifecycleTestSuite) waitForNamespaceCreated(logger testLogger, namespace string) error {
-	c, err := k8sutil.GetCoreV1Client()
-	if err != nil {
-		return err
-	}
-
-	suite.gomega.Eventually(func() bool {
-		_, err := c.Namespaces().Get(context.TODO(), namespace, v1.GetOptions{})
-		if err != nil {
-			if kerrs.IsNotFound(err) {
-				_, err = c.Namespaces().Create(context.TODO(), &corev1.Namespace{ObjectMeta: v1.ObjectMeta{Name: namespace}}, v1.CreateOptions{})
-				if err != nil {
-					logger.log("error while creating namespace %s, %v", namespace, err.Error())
-				}
-
-				return false
-			}
-			logger.log("error while fetching namespace %s, %v", namespace, err.Error())
-			return false
-		}
-
-		return true
 	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
 	return err
 }
