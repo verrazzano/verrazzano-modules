@@ -120,11 +120,15 @@ func TestPreWork(t *testing.T) {
 	// GIVEN an install handler and a Module with an empty version
 	// WHEN the PreWork function is called
 	// THEN no error occurs and the function returns a ctrl.Result for requeue and the Module spec version
-	// has been set
+	// has been set and the Module target namespace has been created
+	const targetNamespace = "target-namespace"
 	module := &v1alpha1.Module{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      moduleName,
 			Namespace: namespace,
+		},
+		Spec: v1alpha1.ModuleSpec{
+			TargetNamespace: targetNamespace,
 		},
 	}
 
@@ -157,6 +161,11 @@ func TestPreWork(t *testing.T) {
 	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
 	asserts.Equal(chartVersion, module.Spec.Version)
+
+	// validate that the namespace was created
+	ns := &corev1.Namespace{}
+	err = cli.Get(context.TODO(), types.NamespacedName{Name: targetNamespace}, ns)
+	asserts.NoError(err)
 
 	// GIVEN an install handler and a Module with a version set
 	// WHEN the PreWork function is called

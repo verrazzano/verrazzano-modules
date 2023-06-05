@@ -10,8 +10,10 @@ const GlobalImagePullSecName = "verrazzano-container-registry"
 type ComponentAvailability string
 
 const (
-	//ComponentAvailable signifies that a Component is ready for use.
+	// ComponentAvailable signifies that a Component is ready for use.
 	ComponentAvailable = "Available"
-	//ComponentUnavailable signifies that a Verrazzano Component is not ready for use.
+	// ComponentUnavailable signifies that a Verrazzano Component is not ready for use.
 	ComponentUnavailable = "Unavailable"
+	// VerrazzanoNamespaceLabel is the label used to indicate a Verrazzano namespace
+	VerrazzanoNamespaceLabel = "verrazzano.io/namespace"
 )
