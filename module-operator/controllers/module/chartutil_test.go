@@ -64,49 +64,25 @@ func TestLoadHelmInfo(t *testing.T) {
 	}
 }
 
-// TestMissingChartFileError tests the loadHelmInfo function where the file is misisng
+// TestMissingChartFileError tests the loadHelmInfo function where the file is missing
 // GIVEN a Module
 // WHEN the loadHelmInfo is called with the wrong root dir
 // THEN ensure that the correct error is returned
 func TestMissingChartFileError(t *testing.T) {
 	asserts := assert.New(t)
+	c := config.Get()
+	defer func() { config.Set(c) }()
+	c.ChartsDir = "missingdir"
+	config.Set(c)
 
-	const (
-		rootDir = "missingDir/"
-		calico  = "calico"
-		version = "3.25.0"
-	)
-	tests := []struct {
-		name        string
-		moduleName  string
-		expectedDir string
-		expectedErr string
-		version     string
-	}{
-		{
-			name:        "test-ccm",
-			moduleName:  "oci-ccm",
-			expectedDir: path.Join(rootDir, "modules/oci-ccm/1.25.0"),
+	mod := moduleapi.Module{
+		Spec: moduleapi.ModuleSpec{
+			ModuleName: "oci-ccm",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-
-			c := config.Get()
-			defer func() { config.Set(c) }()
-			c.ChartsDir = rootDir
-			config.Set(c)
-
-			mod := moduleapi.Module{
-				Spec: moduleapi.ModuleSpec{
-					ModuleName: calico,
-					Version:    version,
-				},
-			}
-			_, err := loadHelmInfo(&mod)
-			asserts.Error(err)
-		})
-	}
+	_, err := loadHelmInfo(&mod)
+	asserts.Error(err)
+	asserts.Contains(err.Error(), "NotFound")
 }
 
 // TestLookupChartLeafDirName tests the lookup of the chart leaf directory name
