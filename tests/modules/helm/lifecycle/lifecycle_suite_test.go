@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -42,6 +43,7 @@ func (logger *testLogger) log(format string, args ...any) {
 }
 
 var testNamespaces = make(map[string][]string)
+var namespacesMutex sync.Mutex
 
 const (
 	shortWaitTimeout     = 5 * time.Minute
@@ -57,11 +59,14 @@ func TestHelmModuleLifecycleTestSuite(t *testing.T) {
 
 func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(testName string, namespace string) {
 	logger := testLogger{testName: testName}
-	testNamespaces[namespace] = []string{}
 	module := &api.Module{}
 	err := common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	testNamespaces[namespace] = append(testNamespaces[namespace], module.GetName())
+
+	namespacesMutex.Lock()
+	testNamespaces[namespace] = []string{module.GetName()}
+	namespacesMutex.Unlock()
+
 	c := suite.getModuleClient()
 
 	module.SetNamespace(namespace)
