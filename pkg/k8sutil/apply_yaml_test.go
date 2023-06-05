@@ -27,6 +27,11 @@ const (
 	verrazzanoInstall        = "verrazzano-install"
 )
 
+// TestApplyD
+// GIVEN valid objects and invalid
+//
+//	WHEN I call apply with changes
+//	THEN the resulting object contains the updates as expected
 func TestApplyD(t *testing.T) {
 	var tests = []struct {
 		name    string
@@ -63,6 +68,11 @@ func TestApplyD(t *testing.T) {
 	}
 }
 
+// TestApplyF
+// GIVEN a list of fields
+//
+//	WHEN I call apply with changes on fields
+//	THEN the resulting object contains the updates as expected
 func TestApplyF(t *testing.T) {
 	var tests = []struct {
 		name                                 string
@@ -254,6 +264,11 @@ func TestApplyFClusterRole(t *testing.T) {
 	assert.Equal(t, 4, foundCount)
 }
 
+// TestApplyFT
+// GIVEN a template files with valid and invalid info
+//
+//	WHEN I call file template spec
+//	THEN the resulting object contains the expected configuration
 func TestApplyFT(t *testing.T) {
 	var tests = []struct {
 		name                                 string
@@ -307,6 +322,10 @@ func TestApplyFT(t *testing.T) {
 }
 
 // TestApplyDT tests the ApplyDT function.
+// GIVEN the directory of file templates
+//
+// WHEN ApplyDT is called
+// THEN the result object should return error as expected
 func TestApplyDT(t *testing.T) {
 	var tests = []struct {
 		name    string
@@ -352,6 +371,11 @@ func TestApplyDT(t *testing.T) {
 	}
 }
 
+// TestDeleteF tests the DeleteF function.
+// GIVEN the spec file
+//
+// WHEN DeleteF is called
+// THEN the function should return error as expected
 func TestDeleteF(t *testing.T) {
 	var tests = []struct {
 		name    string
@@ -384,6 +408,11 @@ func TestDeleteF(t *testing.T) {
 	}
 }
 
+// TestDeleteFD tests the DeleteF function.
+// GIVEN the spec file template spec
+//
+// WHEN DeleteFT is called
+// THEN the function should return error as expected
 func TestDeleteFD(t *testing.T) {
 	var tests = []struct {
 		name    string
@@ -419,6 +448,11 @@ func TestDeleteFD(t *testing.T) {
 	}
 }
 
+// TestDeleteAll tests the ApplyD and DeleteAll function.
+// GIVEN the list of valid objects
+//
+// WHEN ApplyD and DeleteAll is called
+// THEN the function should return no errors
 func TestDeleteAll(t *testing.T) {
 	c := fake.NewClientBuilder().WithScheme(k8scheme.Scheme).Build()
 	y := NewYAMLApplier(c, "")
