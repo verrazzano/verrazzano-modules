@@ -6,7 +6,7 @@ kind: Deployment
 metadata:
   name: vz-test-nginx
 spec:
-  replicas: { { .Values.deployment.replicas } }
+  replicas: {{ .Values.deployment.replicas }}
   selector:
     matchLabels:
       app: vz-test
