@@ -5,14 +5,14 @@ package helm
 
 import (
 	"fmt"
-	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
-	yaml2 "github.com/verrazzano/verrazzano-modules/pkg/yaml"
 	"io"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
 
+	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
+	yaml2 "github.com/verrazzano/verrazzano-modules/pkg/yaml"
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
@@ -159,6 +159,7 @@ func Upgrade(log vzlog.VerrazzanoLogger, releaseName string, namespace string, c
 		log.Infof("Starting Helm installation of release %s in namespace %s with overrides: %v", releaseName, namespace, overrides)
 		client := action.NewInstall(actionConfig)
 		client.Namespace = namespace
+		client.CreateNamespace = true
 		client.ReleaseName = releaseName
 		client.DryRun = dryRun
 		client.Replace = true
