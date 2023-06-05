@@ -5,7 +5,6 @@ apiVersion: platform.verrazzano.io/v1alpha1
 kind: Module
 metadata:
   name: vz-test-module
-  namespace: vz-test
 spec:
   moduleName: "helm"
   version: "0.1.0"

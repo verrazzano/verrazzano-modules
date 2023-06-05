@@ -58,11 +58,9 @@ func TestHelmModuleLifecycleTestSuite(t *testing.T) {
 
 func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(testName string, namespace string) {
 	logger := testLogger{testName: testName}
-	err := suite.waitForNamespaceCreated(logger, namespace)
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	testNamespaces[namespace] = []string{}
 	module := &api.Module{}
-	err = common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
+	err := common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	testNamespaces[namespace] = append(testNamespaces[namespace], module.GetName())
 	c := suite.getModuleClient()
