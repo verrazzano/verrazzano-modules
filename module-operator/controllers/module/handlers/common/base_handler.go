@@ -4,8 +4,6 @@
 package common
 
 import (
-	"context"
-
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/constants"
@@ -15,6 +13,22 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+// readyConditionMessages defines the condition messages for the Ready type condition
+var readyConditionMessages = map[moduleapi.ModuleConditionReason]string{
+	moduleapi.ReadyReasonInstallStarted:     "Started installing Module %s as Helm release %s/%s",
+	moduleapi.ReadyReasonInstallSucceeded:   "Successfully installed Module %s as Helm release %s/%s",
+	moduleapi.ReadyReasonInstallFailed:      "Failed installing Module %s as Helm release %s%s: %v",
+	moduleapi.ReadyReasonUninstallStarted:   "Started uninstalling Module %s as Helm release %s/%s",
+	moduleapi.ReadyReasonUninstallSucceeded: "Successfully uninstalled Module %s as Helm release %s/%s",
+	moduleapi.ReadyReasonUninstallFailed:    "Failed uninstalling Module %s as Helm release %s/%s: %v",
+	moduleapi.ReadyReasonUpdateStarted:      "Started updating Module %s as Helm release %s/%s",
+	moduleapi.ReadyReasonUpdateSucceeded:    "Successfully updated Module %s as Helm release %s/%s",
+	moduleapi.ReadyReasonUpdateFailed:       "Failed updating Module %s as Helm release %s/%s: %v",
+	moduleapi.ReadyReasonUpgradeStarted:     "Started upgrading Module %s as Helm release %s/%s",
+	moduleapi.ReadyReasonUpgradeSucceeded:   "Successfully upgraded Module %s as Helm release %s/%s",
+	moduleapi.ReadyReasonUpgradeFailed:      "Failed upgrading Module %s as Helm release %s/%s: %v",
+}
 
 // upgradeFuncSig is a function needed for unit test override
 type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm2.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
@@ -49,27 +63,6 @@ func (h *BaseHandler) InitHandler(_ handlerspi.HandlerContext, config handlerspi
 	h.HelmInfo = config.HelmInfo
 	h.ImagePullSecretKeyname = constants.GlobalImagePullSecName
 	h.ModuleCR = config.CR.(*moduleapi.Module)
-	return ctrl.Result{}, nil
-}
-
-// UpdateStatus does the lifecycle pre-Work status update
-func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.ModuleConditionReason) (ctrl.Result, error) {
-	AppendCondition(h.ModuleCR, string(cond), cond)
-	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
-		return util.NewRequeueWithShortDelay(), nil
-	}
-	return ctrl.Result{}, nil
-}
-
-// UpdateDoneStatus does the lifecycle status update when the work is done
-func (h BaseHandler) UpdateDoneStatus(ctx handlerspi.HandlerContext, cond moduleapi.ModuleConditionReason, version string) (ctrl.Result, error) {
-	AppendCondition(h.ModuleCR, string(cond), cond)
-	if len(version) > 0 {
-		h.ModuleCR.Status.LastSuccessfulVersion = version
-	}
-	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
-		return util.NewRequeueWithShortDelay(), nil
-	}
 	return ctrl.Result{}, nil
 }
 

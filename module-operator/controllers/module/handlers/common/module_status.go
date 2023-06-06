@@ -4,44 +4,72 @@
 package common
 
 import (
+	"context"
 	"fmt"
-	"time"
-
-	modulesplatform "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
 	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"time"
 )
 
-func AppendCondition(module *modulesplatform.Module, message string, conditionType modulesplatform.ModuleConditionReason) {
-	conditions := module.Status.Conditions
-	newCondition := NewCondition(message, conditionType)
-	var lastCondition modulesplatform.ModuleCondition
-	if len(conditions) > 0 {
-		lastCondition = conditions[len(conditions)-1]
-	}
+// UpdateReadyConditionSucceeded updates the Ready condition when the module has succeeded
+func (h BaseHandler) UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason) (ctrl.Result, error) {
+	h.ModuleCR.Status.LastSuccessfulVersion = h.ModuleCR.Spec.Version
 
-	// Only update the conditions if there is a notable change between the last update
-	if needsConditionUpdate(lastCondition, newCondition) {
-		// Delete the oldest condition if at tracking limit
-		if len(conditions) > modulesplatform.ConditionArrayLimit {
-			conditions = conditions[1:]
+	msgTemplate := readyConditionMessages[reason]
+	msg := fmt.Sprintf(msgTemplate, h.ModuleCR.Spec.ModuleName, h.HelmRelease.Namespace, h.HelmRelease.Name)
+	return h.updateReadyCondition(ctx, reason, corev1.ConditionTrue, msg)
+}
+
+// UpdateReadyConditionReconciling updates the Ready condition when the module is reconciling
+func (h BaseHandler) UpdateReadyConditionReconciling(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason) (ctrl.Result, error) {
+	msgTemplate := readyConditionMessages[reason]
+	msg := fmt.Sprintf(msgTemplate, h.ModuleCR.Spec.ModuleName, h.HelmRelease.Namespace, h.HelmRelease.Name)
+
+	return h.updateReadyCondition(ctx, reason, corev1.ConditionFalse, msg)
+}
+
+// UpdateReadyConditionFailed updates the Ready condition when the module has failed
+func (h BaseHandler) UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason, msgDetail string) (ctrl.Result, error) {
+	msgTemplate := readyConditionMessages[reason]
+	msg := fmt.Sprintf(msgTemplate, h.ModuleCR.Spec.ModuleName, h.HelmRelease.Namespace, h.HelmRelease.Name, msgDetail)
+
+	return h.updateReadyCondition(ctx, reason, corev1.ConditionFalse, msg)
+}
+
+// updateReadyCondition updates the Ready condition
+func (h BaseHandler) updateReadyCondition(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason, status corev1.ConditionStatus, msg string) (ctrl.Result, error) {
+	cond := moduleapi.ModuleCondition{
+		Type:    moduleapi.ModuleConditionReady,
+		Reason:  reason,
+		Status:  status,
+		Message: msg,
+	}
+	appendCondition(h.ModuleCR, cond)
+	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
+		return util.NewRequeueWithShortDelay(), nil
+	}
+	return ctrl.Result{}, nil
+}
+
+// appendCondition appends the condition to the list of conditions
+func appendCondition(module *moduleapi.Module, cond moduleapi.ModuleCondition) {
+	cond.LastTransitionTime = getTransitionTime()
+
+	// Copy conditions that have a different type than the input condition into a new list
+	var newConditions []moduleapi.ModuleCondition
+	for i, existing := range module.Status.Conditions {
+		if existing.Type != cond.Type {
+			newConditions = append(newConditions, module.Status.Conditions[i])
 		}
-		module.Status.Conditions = append(conditions, newCondition)
 	}
+	newConditions = append(newConditions, cond)
 }
 
-func NewCondition(message string, conditionType modulesplatform.ModuleConditionReason) modulesplatform.ModuleCondition {
+func getTransitionTime() string {
 	t := time.Now().UTC()
-	return modulesplatform.ModuleCondition{
-		Type:    conditionType,
-		Message: message,
-		Status:  corev1.ConditionTrue,
-		LastTransitionTime: fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02dZ",
-			t.Year(), t.Month(), t.Day(),
-			t.Hour(), t.Minute(), t.Second()),
-	}
-}
-
-// needsConditionUpdate checks if the condition needs an update
-func needsConditionUpdate(last, new modulesplatform.ModuleCondition) bool {
-	return last.Type != new.Type && last.Message != new.Message
+	return fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02dZ",
+		t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
 }

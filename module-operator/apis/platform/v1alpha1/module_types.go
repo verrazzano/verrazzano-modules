@@ -112,7 +112,7 @@ const (
 	ReadyReasonInstallSucceeded   ModuleConditionReason = "InstallSucceeded"
 	ReadyReasonInstallFailed      ModuleConditionReason = "InstallFailed"
 	ReadyReasonUninstallStarted   ModuleConditionReason = "UninstallStarted"
-	ReadyReasonUnInstallSucceeded ModuleConditionReason = "UninstallSucceeded"
+	ReadyReasonUninstallSucceeded ModuleConditionReason = "UninstallSucceeded"
 	ReadyReasonUninstallFailed    ModuleConditionReason = "UninstallFailed"
 	ReadyReasonUpdateStarted      ModuleConditionReason = "UpdateStarted"
 	ReadyReasonUpdateSucceeded    ModuleConditionReason = "UpdateSucceeded"

@@ -50,7 +50,7 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 
 // DoWorkUpdateStatus does the work status update
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.ReadyReasonUninstallStarted)
+	return h.BaseHandler.UpdateReadyConditionReconciling(ctx, moduleapi.ReadyReasonUninstallStarted)
 }
 
 // DoWork uninstalls the module using Helm
@@ -96,5 +96,5 @@ func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 
 // CompletedWorkUpdateStatus does the lifecycle completed Work status update
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.ReadyReasonUnInstallSucceeded)
+	return h.BaseHandler.UpdateReadyConditionSucceeded(ctx, moduleapi.ReadyReasonUninstallSucceeded)
 }
