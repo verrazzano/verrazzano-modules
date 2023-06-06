@@ -5,30 +5,16 @@ package common
 
 import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/constants"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
 	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"helm.sh/helm/v3/pkg/release"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
-
-// readyConditionMessages defines the condition messages for the Ready type condition
-var readyConditionMessages = map[moduleapi.ModuleConditionReason]string{
-	moduleapi.ReadyReasonInstallStarted:     "Started installing Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonInstallSucceeded:   "Successfully installed Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonInstallFailed:      "Failed installing Module %s as Helm release %s%s: %v",
-	moduleapi.ReadyReasonUninstallStarted:   "Started uninstalling Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUninstallSucceeded: "Successfully uninstalled Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUninstallFailed:    "Failed uninstalling Module %s as Helm release %s/%s: %v",
-	moduleapi.ReadyReasonUpdateStarted:      "Started updating Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUpdateSucceeded:    "Successfully updated Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUpdateFailed:       "Failed updating Module %s as Helm release %s/%s: %v",
-	moduleapi.ReadyReasonUpgradeStarted:     "Started upgrading Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUpgradeSucceeded:   "Successfully upgraded Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUpgradeFailed:      "Failed upgrading Module %s as Helm release %s/%s: %v",
-}
 
 // upgradeFuncSig is a function needed for unit test override
 type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm2.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
@@ -44,6 +30,9 @@ type BaseHandler struct {
 
 	// ModuleCR is the Module CR being handled
 	ModuleCR *moduleapi.Module
+
+	// Module status
+	status.StatusManager
 
 	// ImagePullSecretKeyname is the Helm Value Key for the image pull secret for a chart
 	ImagePullSecretKeyname string
@@ -63,6 +52,14 @@ func (h *BaseHandler) InitHandler(_ handlerspi.HandlerContext, config handlerspi
 	h.HelmInfo = config.HelmInfo
 	h.ImagePullSecretKeyname = constants.GlobalImagePullSecName
 	h.ModuleCR = config.CR.(*moduleapi.Module)
+	h.StatusManager = status.StatusManager{
+		ModuleName: h.ModuleCR.Name,
+		Module:     config.CR.(*moduleapi.Module),
+		ReleaseNsn: types.NamespacedName{
+			Namespace: config.Namespace,
+			Name:      config.Name,
+		},
+	}
 	return ctrl.Result{}, nil
 }
 

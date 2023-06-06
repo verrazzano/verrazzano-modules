@@ -4,6 +4,7 @@
 package module
 
 import (
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
@@ -27,11 +28,6 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return ctrl.Result{}, err
-	}
-
-	// TODO - there needs to be a check if a watch caused this to reconcile, the generation will be the same
-	if cr.Status.ObservedGeneration == cr.Generation {
-		return ctrl.Result{}, nil
 	}
 
 	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
@@ -72,12 +68,12 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 
 // getActionHandler must return one of the Module action handlers.
 func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, ctrl.Result) {
-	if !hasInstalledCondition(ctx, cr) {
+	if status.IsInstalled(cr) {
 		return r.HandlerInfo.InstallActionHandler, ctrl.Result{}
 	}
 
 	// return UpgradeAction only when the desired version is different from current
-	upgradeNeeded, err := funcIsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
+	upgradeNeeded, err := funcIsUpgradeNeeded(cr.Spec.Version, cr.Status.LastSuccessfulVersion)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Failed checking if upgrade needed for Module %s/%s failed with error: %v\n", cr.Namespace, cr.Name, err)
 		return nil, util.NewRequeueWithShortDelay()
@@ -87,15 +83,6 @@ func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *modulea
 	}
 	return r.HandlerInfo.UpdateActionHandler, ctrl.Result{}
 
-}
-
-func hasInstalledCondition(ctx handlerspi.HandlerContext, cr *moduleapi.Module) bool {
-	for _, cond := range cr.Status.Conditions {
-		if cond.Type == moduleapi.ReasonInstallSucceeded {
-			return true
-		}
-	}
-	return false
 }
 
 // IsUpgradeNeeded returns true if upgrade is needed
