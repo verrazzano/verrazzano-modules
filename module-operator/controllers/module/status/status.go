@@ -23,23 +23,24 @@ type StatusManager struct {
 
 // readyConditionMessages defines the condition messages for the Ready type condition
 var readyConditionMessages = map[moduleapi.ModuleConditionReason]string{
-	moduleapi.ReadyReasonInstallStarted:     "Started installing Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonInstallSucceeded:   "Successfully installed Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonInstallFailed:      "Failed installing Module %s as Helm release %s%s: %v",
-	moduleapi.ReadyReasonUninstallStarted:   "Started uninstalling Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUninstallSucceeded: "Successfully uninstalled Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUninstallFailed:    "Failed uninstalling Module %s as Helm release %s/%s: %v",
-	moduleapi.ReadyReasonUpdateStarted:      "Started updating Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUpdateSucceeded:    "Successfully updated Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUpdateFailed:       "Failed updating Module %s as Helm release %s/%s: %v",
-	moduleapi.ReadyReasonUpgradeStarted:     "Started upgrading Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUpgradeSucceeded:   "Successfully upgraded Module %s as Helm release %s/%s",
-	moduleapi.ReadyReasonUpgradeFailed:      "Failed upgrading Module %s as Helm release %s/%s: %v",
+	moduleapi.ReadyReasonInstallStarted:     "Started installing Module `%s` as Helm release `%s/%s`",
+	moduleapi.ReadyReasonInstallSucceeded:   "Successfully installed Module `%s` as Helm release `%s/%s`",
+	moduleapi.ReadyReasonInstallFailed:      "Failed installing Module `%s` as Helm release `%s%s`: %v",
+	moduleapi.ReadyReasonUninstallStarted:   "Started uninstalling Module `%s` as Helm release `%s/%s`",
+	moduleapi.ReadyReasonUninstallSucceeded: "Successfully uninstalled Module `%s` as Helm release `%s/%s`",
+	moduleapi.ReadyReasonUninstallFailed:    "Failed uninstalling Module `%s` as Helm release `%s/%s`: %v",
+	moduleapi.ReadyReasonUpdateStarted:      "Started updating Module `%s` as Helm release `%s/%s`",
+	moduleapi.ReadyReasonUpdateSucceeded:    "Successfully updated Module `%s` as Helm release `%s/%s`",
+	moduleapi.ReadyReasonUpdateFailed:       "Failed updating Module `%s` as Helm release `%s/%s`: %v",
+	moduleapi.ReadyReasonUpgradeStarted:     "Started upgrading Module `%s` as Helm release `%s/%s`",
+	moduleapi.ReadyReasonUpgradeSucceeded:   "Successfully upgraded Module `%s` as Helm release `%s/%s`",
+	moduleapi.ReadyReasonUpgradeFailed:      "Failed upgrading Module `%s` as Helm release `%s/%s`: %v",
 }
 
 // UpdateReadyConditionSucceeded updates the Ready condition when the module has succeeded
 func (s StatusManager) UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason, version string) (ctrl.Result, error) {
 	s.Module.Status.LastSuccessfulVersion = version
+	s.Module.Status.LastSuccessfulGeneration = s.Generation
 
 	msgTemplate := readyConditionMessages[reason]
 	msg := fmt.Sprintf(msgTemplate, s.ModuleName, s.ReleaseNsn.Namespace, s.ReleaseNsn.Name)
@@ -71,6 +72,7 @@ func (s StatusManager) updateReadyCondition(ctx handlerspi.HandlerContext, reaso
 		Message: msg,
 	}
 	s.appendCondition(cond)
+
 	if err := ctx.Client.Status().Update(context.TODO(), s.Module); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
@@ -88,7 +90,7 @@ func (s StatusManager) appendCondition(cond moduleapi.ModuleCondition) {
 			newConditions = append(newConditions, s.Module.Status.Conditions[i])
 		}
 	}
-	newConditions = append(newConditions, cond)
+	s.Module.Status.Conditions = append(newConditions, cond)
 }
 
 // IsInstalled checks if the modules is installed

@@ -69,7 +69,12 @@ type ModuleStatus struct {
 	Conditions []ModuleCondition `json:"conditions,omitempty"`
 
 	// LastSuccessfulVersion is the last version of the module that was successfully reconciled.
+	// +optional
 	LastSuccessfulVersion string `json:"lastSuccessfulVersion,omitempty"`
+
+	// LastSuccessfulGeneration is the last generation that was successfully reconciled.
+	// +optional
+	LastSuccessfulGeneration int64 `json:"LastSuccessfulGeneration,omitempty"`
 }
 
 // ModuleCondition describes the current condition of the Module.

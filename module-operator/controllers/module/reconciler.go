@@ -30,6 +30,10 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return ctrl.Result{}, err
 	}
 
+	if cr.Generation == cr.Status.LastSuccessfulGeneration {
+		return ctrl.Result{}, nil
+	}
+
 	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 	handler, res := r.getActionHandler(ctx, cr)
 	if res.Requeue {

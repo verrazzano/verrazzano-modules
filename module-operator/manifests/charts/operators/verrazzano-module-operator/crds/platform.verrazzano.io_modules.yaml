@@ -108,6 +108,11 @@ spec:
           status:
             description: ModuleStatus defines the action state of the Module resource.
             properties:
+              LastSuccessfulGeneration:
+                description: LastSuccessfulGeneration is the last generation that
+                  was successfully reconciled.
+                format: int64
+                type: integer
               conditions:
                 description: Conditions are the list of conditions for the module.
                 items:
