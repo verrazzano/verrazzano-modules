@@ -317,7 +317,13 @@ func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeUpgraded(logger test
 			return false
 		}
 
-		return deployedModule.Status.State == api.ModuleStateReady && deployedModule.Status.Version == module.Spec.Version
+		cond := status.GetReadyCondition(module)
+		if cond == nil {
+			return false
+		}
+		return cond.Status == corev1.ConditionTrue &&
+			cond.Reason == api.ReadyReasonUpgradeSucceeded &&
+			deployedModule.Status.LastSuccessfulVersion == module.Spec.Version
 	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
 	return deployedModule
 }
