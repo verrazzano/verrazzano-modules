@@ -80,5 +80,5 @@ func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 
 // WorkCompletedUpdateStatus updates the status to completed
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateReadyConditionSucceeded(ctx, moduleapi.ReadyReasonUpgradeSucceeded, h.ModuleCR.Spec.Version)
+	return h.BaseHandler.UpdateReadyConditionSucceeded(ctx, moduleapi.ReadyReasonUpgradeSucceeded)
 }

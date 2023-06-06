@@ -237,7 +237,7 @@ func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeReady(logger testLog
 			return false
 		}
 
-		cond := status.GetReadyCondition(module)
+		cond := status.GetReadyCondition(deployedModule)
 		if cond == nil {
 			return false
 		}
@@ -317,12 +317,11 @@ func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeUpgraded(logger test
 			return false
 		}
 
-		cond := status.GetReadyCondition(module)
+		cond := status.GetReadyCondition(deployedModule)
 		if cond == nil {
 			return false
 		}
-		return cond.Status == corev1.ConditionTrue &&
-			cond.Reason == api.ReadyReasonUpgradeSucceeded &&
+		return cond.Status == corev1.ConditionTrue && cond.Reason == api.ReadyReasonUpgradeSucceeded &&
 			deployedModule.Status.LastSuccessfulVersion == module.Spec.Version
 	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
 	return deployedModule

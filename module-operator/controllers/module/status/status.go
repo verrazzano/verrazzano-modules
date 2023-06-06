@@ -38,8 +38,8 @@ var readyConditionMessages = map[moduleapi.ModuleConditionReason]string{
 }
 
 // UpdateReadyConditionSucceeded updates the Ready condition when the module has succeeded
-func (s StatusManager) UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason, version string) (ctrl.Result, error) {
-	s.Module.Status.LastSuccessfulVersion = version
+func (s StatusManager) UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason) (ctrl.Result, error) {
+	s.Module.Status.LastSuccessfulVersion = s.Module.Spec.Version
 	s.Module.Status.LastSuccessfulGeneration = s.Generation
 
 	msgTemplate := readyConditionMessages[reason]
