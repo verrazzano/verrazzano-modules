@@ -57,7 +57,8 @@ spec:
                   description: Overrides identifies overrides for a component.
                   properties:
                     configMapRef:
-                      description: Selector for ConfigMap containing override data.
+                      description: ConfigMapRef is a selector for a ConfigMap containing
+                        override data.
                       properties:
                         key:
                           description: The key to select.
@@ -75,7 +76,8 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     secretRef:
-                      description: Selector for Secret containing override data.
+                      description: SecretRef is a selector for a Secret containing
+                        override data.
                       properties:
                         key:
                           description: The key of the secret to select from.  Must
@@ -94,7 +96,7 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     values:
-                      description: Configure overrides using inline YAML.
+                      description: Values specifies overrides using inline YAML.
                       x-kubernetes-preserve-unknown-fields: true
                   type: object
                 type: array
@@ -104,22 +106,25 @@ spec:
                 type: string
             type: object
           status:
-            description: ModuleStatus defines the observed state of a Verrazzano Module
-              resource.
+            description: ModuleStatus defines the action state of the Module resource.
             properties:
               conditions:
-                description: The latest available observations of an object's current
-                  state.
+                description: Conditions are the list of conditions for the module.
                 items:
-                  description: ModuleCondition describes the current state of an installation.
+                  description: ModuleCondition describes the current condition of
+                    the Module.
                   properties:
                     lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another.
+                      description: LastTransitionTime is the last time the condition
+                        transitioned from one status to another.
                       type: string
                     message:
-                      description: Human-readable message indicating details about
-                        the last transition.
+                      description: Message is a human-readable message indicating
+                        details about the last transition.
+                      type: string
+                    reason:
+                      description: Reason for the condition.  This is a machine-readable
+                        one word value
                       type: string
                     status:
                       description: 'Status of the condition: one of `True`, `False`,
@@ -129,20 +134,15 @@ spec:
                       description: Type of condition.
                       type: string
                   required:
+                  - lastTransitionTime
+                  - reason
                   - status
                   - type
                   type: object
                 type: array
-              observedGeneration:
-                description: ObservedGeneration is the actual generation that was
-                  reconciled
-                format: int64
-                type: integer
-              state:
-                description: State is the Module state
-                type: string
-              version:
-                description: The version of module that is installed.
+              lastSuccessfulVersion:
+                description: LastSuccessfulVersion is the last version of the module
+                  that was successfully reconciled.
                 type: string
             type: object
         type: object
