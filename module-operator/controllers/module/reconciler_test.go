@@ -65,12 +65,41 @@ func TestReconcileSuccess(t *testing.T) {
 			expectedError:              false,
 		},
 		{
+			name:              "test-install-started",
+			statemachineError: false,
+			moduleInfo: handlerspi.ModuleHandlerInfo{
+				InstallActionHandler: &handler{},
+			},
+			conditions: []moduleapi.ModuleCondition{{
+				Type:   moduleapi.ModuleConditionReady,
+				Reason: moduleapi.ReadyReasonInstallStarted,
+			}},
+			expectedStatemachineCalled: true,
+			expectedRequeue:            false,
+			expectedError:              false,
+		},
+		{
+			name:              "test-install-failed",
+			statemachineError: false,
+			moduleInfo: handlerspi.ModuleHandlerInfo{
+				InstallActionHandler: &handler{},
+			},
+			conditions: []moduleapi.ModuleCondition{{
+				Type:   moduleapi.ModuleConditionReady,
+				Reason: moduleapi.ReadyReasonInstallFailed,
+			}},
+			expectedStatemachineCalled: true,
+			expectedRequeue:            false,
+			expectedError:              false,
+		},
+		{
 			name:              "test-update",
 			statemachineError: false,
 			moduleInfo: handlerspi.ModuleHandlerInfo{
 				UpdateActionHandler: &handler{},
 			},
 			conditions: []moduleapi.ModuleCondition{{
+				Type:   moduleapi.ModuleConditionReady,
 				Reason: moduleapi.ReadyReasonInstallSucceeded,
 			}},
 			expectedStatemachineCalled: true,
@@ -86,6 +115,7 @@ func TestReconcileSuccess(t *testing.T) {
 				UpgradeActionHandler: &handler{},
 			},
 			conditions: []moduleapi.ModuleCondition{{
+				Type:   moduleapi.ModuleConditionReady,
 				Reason: moduleapi.ReadyReasonInstallSucceeded,
 			}},
 			expectedStatemachineCalled: true,
@@ -192,6 +222,7 @@ func TestReconcileErrors(t *testing.T) {
 			expectedError:              false,
 			expectNilHandler:           true,
 			conditions: []moduleapi.ModuleCondition{{
+				Type:   moduleapi.ModuleConditionReady,
 				Reason: moduleapi.ReadyReasonInstallSucceeded,
 			}},
 		},
@@ -260,8 +291,9 @@ func TestReconcileErrors(t *testing.T) {
 					Version: test.specVersion,
 				},
 				Status: moduleapi.ModuleStatus{
-					Conditions:            test.conditions,
-					LastSuccessfulVersion: test.statusVersion,
+					Conditions:               test.conditions,
+					LastSuccessfulVersion:    test.statusVersion,
+					LastSuccessfulGeneration: test.statusGeneration,
 				},
 			}
 

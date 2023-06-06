@@ -41,7 +41,14 @@ func TestInit(t *testing.T) {
 	// GIVEN a delete handler
 	// WHEN the Init function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	config := handlerspi.StateMachineHandlerConfig{CR: &v1alpha1.Module{}}
+	config := handlerspi.StateMachineHandlerConfig{
+		CR: &v1alpha1.Module{},
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      "name",
+				Namespace: "ns",
+			},
+		}}
 	result, err := handler.Init(handlerspi.HandlerContext{}, config)
 	asserts.NoError(err)
 	asserts.Equal(ctrl.Result{}, result)
@@ -96,7 +103,10 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 	}
 
 	// need to init the handler so that the Module is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{CR: module}
+	config := handlerspi.StateMachineHandlerConfig{
+		CR:       module,
+		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{}},
+	}
 	_, err := handler.Init(ctx, config)
 	asserts.NoError(err)
 
@@ -145,7 +155,10 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 	}
 
 	// need to init the handler so that the Module is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{CR: module}
+	config := handlerspi.StateMachineHandlerConfig{
+		CR:       module,
+		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{}},
+	}
 	_, err := handler.Init(ctx, config)
 	asserts.NoError(err)
 
@@ -156,7 +169,7 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 	// fetch the Module and validate that the condition and state are set
 	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
-	asserts.Equal(v1alpha1.ReadyReasonUninstallStarted, module.Status.Conditions[0].Type)
+	asserts.Equal(v1alpha1.ReadyReasonUninstallStarted, module.Status.Conditions[0].Reason)
 }
 
 func getChart() *chart.Chart {
@@ -224,12 +237,10 @@ func TestDoWork(t *testing.T) {
 	// need to init the handler so that the Helm release info is set in the base handler
 	config := handlerspi.StateMachineHandlerConfig{
 		CR: &v1alpha1.Module{},
-		HelmInfo: handlerspi.HelmInfo{
-			HelmRelease: &handlerspi.HelmRelease{
-				Name:      releaseName,
-				Namespace: namespace,
-			},
-		},
+		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{
+			Name:      releaseName,
+			Namespace: namespace,
+		}},
 	}
 	_, err := handler.Init(ctx, config)
 	asserts.NoError(err)
@@ -268,12 +279,10 @@ func TestIsWorkDone(t *testing.T) {
 	// need to init the handler so that the Helm release info is set in the base handler
 	config := handlerspi.StateMachineHandlerConfig{
 		CR: &v1alpha1.Module{},
-		HelmInfo: handlerspi.HelmInfo{
-			HelmRelease: &handlerspi.HelmRelease{
-				Name:      releaseName,
-				Namespace: namespace,
-			},
-		},
+		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{
+			Name:      releaseName,
+			Namespace: namespace,
+		}},
 	}
 	_, err := handler.Init(ctx, config)
 	asserts.NoError(err)
@@ -345,7 +354,13 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 	}
 
 	// need to init the handler so that the Module is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{CR: module}
+	config := handlerspi.StateMachineHandlerConfig{
+		CR: module,
+		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{
+			Name:      "name",
+			Namespace: "namespace",
+		}},
+	}
 	_, err := handler.Init(ctx, config)
 	asserts.NoError(err)
 
@@ -356,7 +371,7 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 	// fetch the Module and validate that the condition and state are set
 	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
-	asserts.Equal(v1alpha1.ReadyReasonUninstallSucceeded, module.Status.Conditions[0].Type)
+	asserts.Equal(v1alpha1.ReadyReasonUninstallSucceeded, module.Status.Conditions[0].Reason)
 }
 
 func newScheme() *runtime.Scheme {
