@@ -57,11 +57,10 @@ type Overrides struct {
 	Values *apiextensionsv1.JSON `json:"values,omitempty"`
 }
 
-type ModuleStateType string
+type ModuleConditionType string
 
 const (
-	ModuleStateReady       = "Ready"
-	ModuleStateReconciling = "Reconciling"
+	ModuleConditionReady = "Ready"
 )
 
 // ModuleStatus defines the action state of the Module resource.
@@ -85,10 +84,10 @@ type ModuleCondition struct {
 	Status corev1.ConditionStatus `json:"status"`
 
 	// Type of condition.
-	Type ModuleStatusType `json:"type"`
+	Type ModuleConditionType `json:"type"`
 
 	// Reason for the condition.  This is a machine-readable one word value
-	Reason ModuleStatusReason `json:"reason"`
+	Reason ModuleConditionReason `json:"reason"`
 }
 
 // ModuleClassType Identifies the class used to manage a set of Module types
@@ -105,21 +104,22 @@ const (
 	CCMModuleClass ModuleClassType = "oci-ccm"
 )
 
-type ModuleStatusReason string
+// ModuleConditionReason is the reason for the condition type
+type ModuleConditionReason string
 
 const (
-	ReasonInstallStarted     ModuleStatusReason = "InstallStarted"
-	ReasonInstallSucceeded   ModuleStatusReason = "InstallSucceeded"
-	ReasonInstallFailed      ModuleStatusReason = "InstallFailed"
-	ReasonUninstallStarted   ModuleStatusReason = "UninstallStarted"
-	ReasonUnInstallSucceeded ModuleStatusReason = "UninstallSucceeded"
-	ReasonUninstallFailed    ModuleStatusReason = "UninstallFailed"
-	ReasonUpdateStarted      ModuleStatusReason = "UpdateStarted"
-	ReasonUpdateSucceeded    ModuleStatusReason = "UpdateSucceeded"
-	ReasonUpdateFailed       ModuleStatusReason = "UpdateFailed"
-	ReasonUpgradeStarted     ModuleStatusReason = "UpgradeStarted"
-	ReasonUpgradeSucceeded   ModuleStatusReason = "UpgradeSucceeded"
-	ReasonUpgradeFailed      ModuleStatusReason = "UpgradeFailed"
+	ReadyReasonInstallStarted     ModuleConditionReason = "InstallStarted"
+	ReadyReasonInstallSucceeded   ModuleConditionReason = "InstallSucceeded"
+	ReadyReasonInstallFailed      ModuleConditionReason = "InstallFailed"
+	ReadyReasonUninstallStarted   ModuleConditionReason = "UninstallStarted"
+	ReadyReasonUnInstallSucceeded ModuleConditionReason = "UninstallSucceeded"
+	ReadyReasonUninstallFailed    ModuleConditionReason = "UninstallFailed"
+	ReadyReasonUpdateStarted      ModuleConditionReason = "UpdateStarted"
+	ReadyReasonUpdateSucceeded    ModuleConditionReason = "UpdateSucceeded"
+	ReadyReasonUpdateFailed       ModuleConditionReason = "UpdateFailed"
+	ReadyReasonUpgradeStarted     ModuleConditionReason = "UpgradeStarted"
+	ReadyReasonUpgradeSucceeded   ModuleConditionReason = "UpgradeSucceeded"
+	ReadyReasonUpgradeFailed      ModuleConditionReason = "UpgradeFailed"
 )
 
 func init() {

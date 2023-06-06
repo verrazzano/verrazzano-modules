@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func AppendCondition(module *modulesplatform.Module, message string, conditionType modulesplatform.ModuleStatusReason) {
+func AppendCondition(module *modulesplatform.Module, message string, conditionType modulesplatform.ModuleConditionReason) {
 	conditions := module.Status.Conditions
 	newCondition := NewCondition(message, conditionType)
 	var lastCondition modulesplatform.ModuleCondition
@@ -29,7 +29,7 @@ func AppendCondition(module *modulesplatform.Module, message string, conditionTy
 	}
 }
 
-func NewCondition(message string, conditionType modulesplatform.ModuleStatusReason) modulesplatform.ModuleCondition {
+func NewCondition(message string, conditionType modulesplatform.ModuleConditionReason) modulesplatform.ModuleCondition {
 	t := time.Now().UTC()
 	return modulesplatform.ModuleCondition{
 		Type:    conditionType,

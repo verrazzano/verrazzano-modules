@@ -45,7 +45,7 @@ func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Res
 
 // PreWorkUpdateStatus updates the status for the pre-work state
 func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreInstall, moduleapi.ModuleStateReconciling)
+	return ctrl.Result{}, nil
 }
 
 // PreWork does the pre-work
@@ -55,7 +55,7 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 
 // DoWorkUpdateStatus updates the status for the work state
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.ReasonInstallStarted, moduleapi.ModuleStateReconciling)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.ReadyReasonUpdateStarted)
 }
 
 // DoWork updates the module using Helm
@@ -80,5 +80,5 @@ func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 
 // WorkCompletedUpdateStatus updates the status to completed
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.ReasonInstallSucceeded, moduleapi.ModuleStateReady)
+	return h.BaseHandler.UpdateStatus(ctx, moduleapi.ReadyReasonUpdateSucceeded)
 }
