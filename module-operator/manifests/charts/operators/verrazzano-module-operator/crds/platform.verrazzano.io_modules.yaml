@@ -22,12 +22,12 @@ spec:
   versions:
   - additionalPrinterColumns:
     - description: The current version of the Verrazzano platform.
-      jsonPath: .status.version
+      jsonPath: .status.lastSuccessfulVersion
       name: Version
       type: string
-    - description: State of Module reconciliation
-      jsonPath: .status.state
-      name: Status
+    - description: True if the Module is ready
+      jsonPath: .status.conditions[:].status
+      name: Ready
       type: string
     name: v1alpha1
     schema:
@@ -108,11 +108,6 @@ spec:
           status:
             description: ModuleStatus defines the action state of the Module resource.
             properties:
-              LastSuccessfulGeneration:
-                description: LastSuccessfulGeneration is the last generation that
-                  was successfully reconciled.
-                format: int64
-                type: integer
               conditions:
                 description: Conditions are the list of conditions for the module.
                 items:
@@ -145,6 +140,11 @@ spec:
                   - type
                   type: object
                 type: array
+              lastSuccessfulGeneration:
+                description: LastSuccessfulGeneration is the last generation of the
+                  module that was successfully reconciled.
+                format: int64
+                type: integer
               lastSuccessfulVersion:
                 description: LastSuccessfulVersion is the last version of the module
                   that was successfully reconciled.

@@ -12,8 +12,8 @@ import (
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:path=modules,shortName=module;modules
-// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="The current version of the Verrazzano platform."
-// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.state",description="State of Module reconciliation"
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.lastSuccessfulVersion",description="The current version of the Verrazzano platform."
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[:].status",description="True if the Module is ready"
 // +genclient
 
 // Module specifies a Verrazzano Module instance
@@ -72,9 +72,9 @@ type ModuleStatus struct {
 	// +optional
 	LastSuccessfulVersion string `json:"lastSuccessfulVersion,omitempty"`
 
-	// LastSuccessfulGeneration is the last generation that was successfully reconciled.
+	// LastSuccessfulGeneration is the last generation of the module that was successfully reconciled.
 	// +optional
-	LastSuccessfulGeneration int64 `json:"LastSuccessfulGeneration,omitempty"`
+	LastSuccessfulGeneration int64 `json:"lastSuccessfulGeneration,omitempty"`
 }
 
 // ModuleCondition describes the current condition of the Module.
