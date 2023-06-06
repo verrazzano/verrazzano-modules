@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"strings"
 	"sync"
 	"testing"
@@ -165,7 +166,7 @@ func (suite *HelmModuleLifecycleTestSuite) verifyModule(logger testLogger, c *v1
 
 func (suite *HelmModuleLifecycleTestSuite) verifyModuleIsReady(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module) *api.Module {
 	deployedModule := suite.waitForModuleToBeReady(logger, c, module)
-	suite.gomega.Expect(deployedModule.Status.Version).To(gomega.Equal(module.Spec.Version))
+	suite.gomega.Expect(deployedModule.Status.LastSuccessfulVersion).To(gomega.Equal(module.Spec.Version))
 	return deployedModule
 }
 
@@ -173,7 +174,7 @@ func (suite *HelmModuleLifecycleTestSuite) verifyHelmReleaseStatus(c *v1alpha1.P
 	status, err := helm.GetHelmReleaseStatus(deployedModule.GetName(), deployedModule.GetNamespace())
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	suite.gomega.Expect(status).To(gomega.Equal(helm.ReleaseStatusDeployed))
-	suite.gomega.Expect(deployedModule.Status.Version).To(gomega.Equal(module.Spec.Version))
+	suite.gomega.Expect(deployedModule.Status.LastSuccessfulVersion).To(gomega.Equal(module.Spec.Version))
 }
 
 func (suite *HelmModuleLifecycleTestSuite) verifyHelmValues(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, deployedModule *api.Module, overrides *apiextensionsv1.JSON) {
@@ -236,7 +237,11 @@ func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeReady(logger testLog
 			return false
 		}
 
-		return deployedModule.Status.State == api.ModuleStateReady
+		cond := status.GetReadyCondition(module)
+		if cond == nil {
+			return false
+		}
+		return cond.Status == corev1.ConditionTrue
 	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
 	return deployedModule
 }
