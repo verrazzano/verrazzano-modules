@@ -53,9 +53,8 @@ func (h *BaseHandler) InitHandler(_ handlerspi.HandlerContext, config handlerspi
 }
 
 // UpdateStatus does the lifecycle pre-Work status update
-func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType) (ctrl.Result, error) {
+func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.ModuleStatusReason, state moduleapi.ModuleStateType) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
-	h.ModuleCR.Status.State = state
 	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
@@ -63,12 +62,10 @@ func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.
 }
 
 // UpdateDoneStatus does the lifecycle status update when the work is done
-func (h BaseHandler) UpdateDoneStatus(ctx handlerspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType, version string) (ctrl.Result, error) {
+func (h BaseHandler) UpdateDoneStatus(ctx handlerspi.HandlerContext, cond moduleapi.ModuleStatusReason, state moduleapi.ModuleStateType, version string) (ctrl.Result, error) {
 	AppendCondition(h.ModuleCR, string(cond), cond)
-	h.ModuleCR.Status.State = state
-	h.ModuleCR.Status.ObservedGeneration = h.ModuleCR.Generation
 	if len(version) > 0 {
-		h.ModuleCR.Status.Version = version
+		h.ModuleCR.Status.LastSuccessfulVersion = version
 	}
 	if err := ctx.Client.Status().Update(context.TODO(), h.ModuleCR); err != nil {
 		return util.NewRequeueWithShortDelay(), nil

@@ -44,13 +44,15 @@ type ModuleSpec struct {
 
 // Overrides identifies overrides for a component.
 type Overrides struct {
-	// Selector for ConfigMap containing override data.
+	// ConfigMapRef is a selector for a ConfigMap containing override data.
 	// +optional
 	ConfigMapRef *corev1.ConfigMapKeySelector `json:"configMapRef,omitempty"`
-	// Selector for Secret containing override data.
+
+	// SecretRef is a selector for a Secret containing override data.
 	// +optional
 	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
-	// Configure overrides using inline YAML.
+
+	// Values specifies overrides using inline YAML.
 	// +optional
 	Values *apiextensionsv1.JSON `json:"values,omitempty"`
 }
@@ -62,56 +64,62 @@ const (
 	ModuleStateReconciling = "Reconciling"
 )
 
-// ModuleStatus defines the observed state of a Verrazzano Module resource.
+// ModuleStatus defines the action state of the Module resource.
 type ModuleStatus struct {
-	// State is the Module state
-	State ModuleStateType `json:"state,omitempty"`
-	// The latest available observations of an object's current state.
+	// Conditions are the list of conditions for the module.
 	Conditions []ModuleCondition `json:"conditions,omitempty"`
-	// ObservedGeneration is the actual generation that was reconciled
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-	// The version of module that is installed.
-	Version string `json:"version,omitempty"`
+
+	// LastSuccessfulVersion is the last version of the module that was successfully reconciled.
+	LastSuccessfulVersion string `json:"lastSuccessfulVersion,omitempty"`
 }
 
-// ModuleCondition describes the current state of an installation.
+// ModuleCondition describes the current condition of the Module.
 type ModuleCondition struct {
-	// Last time the condition transitioned from one status to another.
-	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
-	// Human-readable message indicating details about the last transition.
+	// LastTransitionTime is the last time the condition transitioned from one status to another.
+	LastTransitionTime string `json:"lastTransitionTime"`
+
+	// Message is a human-readable message indicating details about the last transition.
 	Message string `json:"message,omitempty"`
+
 	// Status of the condition: one of `True`, `False`, or `Unknown`.
 	Status corev1.ConditionStatus `json:"status"`
+
 	// Type of condition.
-	Type LifecycleCondition `json:"type"`
+	Type ModuleStatusType `json:"type"`
+
+	// Reason for the condition.  This is a machine-readable one word value
+	Reason ModuleStatusReason `json:"reason"`
 }
 
-// ModuleClassType Identifies the lifecycle class used to manage a subset of Module types
+// ModuleClassType Identifies the class used to manage a set of Module types
 type ModuleClassType string
 
 const (
-	// HelmModuleClass defines the class name used by the Helm operator
+	// HelmModuleClass defines the class type used by the Helm operator
 	HelmModuleClass ModuleClassType = "helm"
 
-	// CalicoModuleClass defines the class name used by the Calico operator
+	// CalicoModuleClass defines the class type used by the Calico operator
 	CalicoModuleClass ModuleClassType = "calico"
-	CCMModuleClass    ModuleClassType = "oci-ccm"
+
+	// CCMModuleClass defines the class type used by the oci-ccm operator
+	CCMModuleClass ModuleClassType = "oci-ccm"
 )
 
-type LifecycleCondition string
+type ModuleStatusReason string
 
 const (
-	ConditionArrayLimit = 5
-
-	CondPreInstall        LifecycleCondition = "PreInstall"
-	CondInstallStarted    LifecycleCondition = "InstallStarted"
-	CondInstallComplete   LifecycleCondition = "InstallComplete"
-	CondPreUninstall      LifecycleCondition = "PreUninstall"
-	CondUninstallStarted  LifecycleCondition = "UninstallStarted"
-	CondUninstallComplete LifecycleCondition = "UninstallComplete"
-	CondPreUpgrade        LifecycleCondition = "PreUpgrade"
-	CondUpgradeStarted    LifecycleCondition = "UpgradeStarted"
-	CondUpgradeComplete   LifecycleCondition = "UpgradeComplete"
+	ReasonInstallStarted     ModuleStatusReason = "InstallStarted"
+	ReasonInstallSucceeded   ModuleStatusReason = "InstallSucceeded"
+	ReasonInstallFailed      ModuleStatusReason = "InstallFailed"
+	ReasonUninstallStarted   ModuleStatusReason = "UninstallStarted"
+	ReasonUnInstallSucceeded ModuleStatusReason = "UninstallSucceeded"
+	ReasonUninstallFailed    ModuleStatusReason = "UninstallFailed"
+	ReasonUpdateStarted      ModuleStatusReason = "UpdateStarted"
+	ReasonUpdateSucceeded    ModuleStatusReason = "UpdateSucceeded"
+	ReasonUpdateFailed       ModuleStatusReason = "UpdateFailed"
+	ReasonUpgradeStarted     ModuleStatusReason = "UpgradeStarted"
+	ReasonUpgradeSucceeded   ModuleStatusReason = "UpgradeSucceeded"
+	ReasonUpgradeFailed      ModuleStatusReason = "UpgradeFailed"
 )
 
 func init() {

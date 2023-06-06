@@ -95,7 +95,6 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
 	asserts.Equal(v1alpha1.CondPreUpgrade, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReconciling, string(module.Status.State))
 }
 
 // TestPreWork tests the upgrade handler PreWork function
@@ -146,7 +145,6 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
 	asserts.Equal(v1alpha1.CondUpgradeStarted, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReconciling, string(module.Status.State))
 }
 
 func getChart() *chart.Chart {

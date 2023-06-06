@@ -145,7 +145,7 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 	// fetch the Module and validate that the condition and state are set
 	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondInstallStarted, module.Status.Conditions[0].Type)
+	asserts.Equal(v1alpha1.ReasonInstallStarted, module.Status.Conditions[0].Type)
 	asserts.Equal(v1alpha1.ModuleStateReconciling, string(module.Status.State))
 }
 
@@ -380,7 +380,7 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 	// fetch the Module and validate that the condition and state are set
 	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondInstallComplete, module.Status.Conditions[0].Type)
+	asserts.Equal(v1alpha1.ReasonInstallSucceeded, module.Status.Conditions[0].Type)
 	asserts.Equal(v1alpha1.ModuleStateReady, string(module.Status.State))
 }
 

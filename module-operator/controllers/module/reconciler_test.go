@@ -71,7 +71,7 @@ func TestReconcileSuccess(t *testing.T) {
 				UpdateActionHandler: &handler{},
 			},
 			conditions: []moduleapi.ModuleCondition{{
-				Type: moduleapi.CondInstallComplete,
+				Type: moduleapi.ReasonInstallSucceeded,
 			}},
 			expectedStatemachineCalled: true,
 			expectedRequeue:            false,
@@ -86,7 +86,7 @@ func TestReconcileSuccess(t *testing.T) {
 				UpgradeActionHandler: &handler{},
 			},
 			conditions: []moduleapi.ModuleCondition{{
-				Type: moduleapi.CondInstallComplete,
+				Type: moduleapi.ReasonInstallSucceeded,
 			}},
 			expectedStatemachineCalled: true,
 			expectedRequeue:            false,
@@ -193,7 +193,7 @@ func TestReconcileErrors(t *testing.T) {
 			expectedError:              false,
 			expectNilHandler:           true,
 			conditions: []moduleapi.ModuleCondition{{
-				Type: moduleapi.CondInstallComplete,
+				Type: moduleapi.ReasonInstallSucceeded,
 			}},
 		},
 		{

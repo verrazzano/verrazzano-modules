@@ -91,7 +91,7 @@ func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *modulea
 
 func hasInstalledCondition(ctx handlerspi.HandlerContext, cr *moduleapi.Module) bool {
 	for _, cond := range cr.Status.Conditions {
-		if cond.Type == moduleapi.CondInstallComplete {
+		if cond.Type == moduleapi.ReasonInstallSucceeded {
 			return true
 		}
 	}
