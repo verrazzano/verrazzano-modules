@@ -68,7 +68,7 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 
 // getActionHandler must return one of the Module action handlers.
 func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, ctrl.Result) {
-	if status.IsInstalled(cr) {
+	if !status.IsInstalled(cr) {
 		return r.HandlerInfo.InstallActionHandler, ctrl.Result{}
 	}
 

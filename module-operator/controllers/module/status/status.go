@@ -1,7 +1,7 @@
-package status
-
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+package status
 
 import (
 	"context"
@@ -98,11 +98,15 @@ func IsInstalled(cr *moduleapi.Module) bool {
 		return false
 	}
 
-	for _, cond := range cr.Status.Conditions {
-		if cond.Type == moduleapi.ModuleConditionReady {
-			return true
-		}
+	// If the reason is not install started or failed, then assume installed.
+	switch cond.Reason {
+	case moduleapi.ReadyReasonInstallStarted:
+	case moduleapi.ReadyReasonInstallFailed:
+		return false
+	default:
+		return true
 	}
+
 	return false
 }
 
