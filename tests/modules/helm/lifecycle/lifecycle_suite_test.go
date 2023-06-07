@@ -130,25 +130,21 @@ func (suite *HelmModuleLifecycleTestSuite) cleanup() {
 
 func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, overridesFile string, update bool) (*api.Module, *apiextensionsv1.JSON) {
 	var overrides *apiextensionsv1.JSON
+	op := "create"
+	if update {
+		op = "update"
+	}
+
+	logger.log("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
+	overrides = suite.generateOverridesFromFile(overridesFile)
+	module.Spec.Overrides = []api.Overrides{
+		{
+			Values: overrides,
+		},
+	}
 
 	suite.gomega.Eventually(func() error {
 		var err error
-		op := "create"
-		if update {
-			op = "update"
-			if module, err = c.Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{}); err != nil {
-				return err
-			}
-		}
-
-		logger.log("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
-		overrides = suite.generateOverridesFromFile(overridesFile)
-		module.Spec.Overrides = []api.Overrides{
-			{
-				Values: overrides,
-			},
-		}
-
 		if update {
 			module, err = c.Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
 		} else {
