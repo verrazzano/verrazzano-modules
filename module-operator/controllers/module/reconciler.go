@@ -65,6 +65,7 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 	// Execute the state machine
 	sm := statemachine.StateMachine{
 		Handler: handler,
+		CR:      cr,
 	}
 	res := funcExecuteStateMachine(ctx, sm)
 	return res, nil
