@@ -33,6 +33,7 @@ const (
 	moduleName  = "test-module"
 )
 
+<<<<<<< HEAD
 // TestInit tests the delete handler Init function
 func TestInit(t *testing.T) {
 	asserts := assert.New(t)
@@ -54,6 +55,8 @@ func TestInit(t *testing.T) {
 	asserts.Equal(ctrl.Result{}, result)
 }
 
+=======
+>>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 // TestGetWorkName tests the delete handler GetWorkName function
 func TestGetWorkName(t *testing.T) {
 	asserts := assert.New(t)
@@ -100,8 +103,10 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
+		CR:     module,
 	}
 
+<<<<<<< HEAD
 	// need to init the handler so that the Module is set in the base handler
 	config := handlerspi.StateMachineHandlerConfig{
 		CR:       module,
@@ -110,6 +115,8 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 	_, err := handler.Init(ctx, config)
 	asserts.NoError(err)
 
+=======
+>>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 	result, err := handler.PreWorkUpdateStatus(ctx)
 	asserts.NoError(err)
 	asserts.Equal(ctrl.Result{}, result)
@@ -152,8 +159,10 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
+		CR:     module,
 	}
 
+<<<<<<< HEAD
 	// need to init the handler so that the Module is set in the base handler
 	config := handlerspi.StateMachineHandlerConfig{
 		CR:       module,
@@ -162,6 +171,8 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 	_, err := handler.Init(ctx, config)
 	asserts.NoError(err)
 
+=======
+>>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 	result, err := handler.DoWorkUpdateStatus(ctx)
 	asserts.NoError(err)
 	asserts.Equal(ctrl.Result{}, result)
@@ -232,6 +243,7 @@ func TestDoWork(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
+<<<<<<< HEAD
 	}
 
 	// need to init the handler so that the Helm release info is set in the base handler
@@ -241,9 +253,16 @@ func TestDoWork(t *testing.T) {
 			Name:      releaseName,
 			Namespace: namespace,
 		}},
+=======
+		CR:     &v1alpha1.Module{},
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
+>>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 	}
-	_, err := handler.Init(ctx, config)
-	asserts.NoError(err)
 
 	result, err := handler.DoWork(ctx)
 	asserts.NoError(err)
@@ -274,6 +293,7 @@ func TestIsWorkDone(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
+<<<<<<< HEAD
 	}
 
 	// need to init the handler so that the Helm release info is set in the base handler
@@ -283,9 +303,16 @@ func TestIsWorkDone(t *testing.T) {
 			Name:      releaseName,
 			Namespace: namespace,
 		}},
+=======
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
+		CR: &v1alpha1.Module{},
+>>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 	}
-	_, err := handler.Init(ctx, config)
-	asserts.NoError(err)
 
 	done, result, err := handler.IsWorkDone(ctx)
 	asserts.NoError(err)
@@ -351,8 +378,10 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
+		CR:     module,
 	}
 
+<<<<<<< HEAD
 	// need to init the handler so that the Module is set in the base handler
 	config := handlerspi.StateMachineHandlerConfig{
 		CR: module,
@@ -364,6 +393,8 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 	_, err := handler.Init(ctx, config)
 	asserts.NoError(err)
 
+=======
+>>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 	result, err := handler.WorkCompletedUpdateStatus(ctx)
 	asserts.NoError(err)
 	asserts.Equal(ctrl.Result{}, result)

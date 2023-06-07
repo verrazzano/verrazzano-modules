@@ -10,16 +10,9 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 )
-
-type StatusManager struct {
-	ModuleName string
-	*moduleapi.Module
-	ReleaseNsn types.NamespacedName
-}
 
 // readyConditionMessages defines the condition messages for the Ready type condition
 var readyConditionMessages = map[moduleapi.ModuleConditionReason]string{
@@ -38,59 +31,59 @@ var readyConditionMessages = map[moduleapi.ModuleConditionReason]string{
 }
 
 // UpdateReadyConditionSucceeded updates the Ready condition when the module has succeeded
-func (s StatusManager) UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason) (ctrl.Result, error) {
-	s.Module.Status.LastSuccessfulVersion = s.Module.Spec.Version
-	s.Module.Status.LastSuccessfulGeneration = s.Generation
+func UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason) (ctrl.Result, error) {
+	module.Status.LastSuccessfulVersion = module.Spec.Version
+	module.Status.LastSuccessfulGeneration = module.Generation
 
 	msgTemplate := readyConditionMessages[reason]
-	msg := fmt.Sprintf(msgTemplate, s.ModuleName, s.ReleaseNsn.Namespace, s.ReleaseNsn.Name)
-	return s.updateReadyCondition(ctx, reason, corev1.ConditionTrue, msg)
+	msg := fmt.Sprintf(msgTemplate, module.Name, module.Spec.TargetNamespace, ctx.HelmRelease.Name)
+	return updateReadyCondition(ctx, module, reason, corev1.ConditionTrue, msg)
 }
 
 // UpdateReadyConditionReconciling updates the Ready condition when the module is reconciling
-func (s StatusManager) UpdateReadyConditionReconciling(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason) (ctrl.Result, error) {
+func UpdateReadyConditionReconciling(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason) (ctrl.Result, error) {
 	msgTemplate := readyConditionMessages[reason]
-	msg := fmt.Sprintf(msgTemplate, s.ModuleName, s.ReleaseNsn.Namespace, s.ReleaseNsn.Name)
+	msg := fmt.Sprintf(msgTemplate, module.Name, module.Spec.TargetNamespace, ctx.HelmRelease.Name)
 
-	return s.updateReadyCondition(ctx, reason, corev1.ConditionFalse, msg)
+	return updateReadyCondition(ctx, module, reason, corev1.ConditionFalse, msg)
 }
 
 // UpdateReadyConditionFailed updates the Ready condition when the module has failed
-func (s StatusManager) UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason, msgDetail string) (ctrl.Result, error) {
+func UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, msgDetail string) (ctrl.Result, error) {
 	msgTemplate := readyConditionMessages[reason]
-	msg := fmt.Sprintf(msgTemplate, s.ModuleName, s.ReleaseNsn.Namespace, s.ReleaseNsn.Name, msgDetail)
+	msg := fmt.Sprintf(msgTemplate, module.Name, module.Spec.TargetNamespace, ctx.HelmRelease.Name, msgDetail)
 
-	return s.updateReadyCondition(ctx, reason, corev1.ConditionFalse, msg)
+	return updateReadyCondition(ctx, module, reason, corev1.ConditionFalse, msg)
 }
 
 // updateReadyCondition updates the Ready condition
-func (s StatusManager) updateReadyCondition(ctx handlerspi.HandlerContext, reason moduleapi.ModuleConditionReason, status corev1.ConditionStatus, msg string) (ctrl.Result, error) {
+func updateReadyCondition(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, status corev1.ConditionStatus, msg string) (ctrl.Result, error) {
 	cond := moduleapi.ModuleCondition{
 		Type:    moduleapi.ModuleConditionReady,
 		Reason:  reason,
 		Status:  status,
 		Message: msg,
 	}
-	s.appendCondition(cond)
+	appendCondition(module, cond)
 
-	if err := ctx.Client.Status().Update(context.TODO(), s.Module); err != nil {
+	if err := ctx.Client.Status().Update(context.TODO(), module); err != nil {
 		return util.NewRequeueWithShortDelay(), nil
 	}
 	return ctrl.Result{}, nil
 }
 
 // appendCondition appends the condition to the list of conditions
-func (s StatusManager) appendCondition(cond moduleapi.ModuleCondition) {
+func appendCondition(module *moduleapi.Module, cond moduleapi.ModuleCondition) {
 	cond.LastTransitionTime = getTransitionTime()
 
 	// Copy conditions that have a different type than the input condition into a new list
 	var newConditions []moduleapi.ModuleCondition
-	for i, existing := range s.Module.Status.Conditions {
+	for i, existing := range module.Status.Conditions {
 		if existing.Type != cond.Type {
-			newConditions = append(newConditions, s.Module.Status.Conditions[i])
+			newConditions = append(newConditions, module.Status.Conditions[i])
 		}
 	}
-	s.Module.Status.Conditions = append(newConditions, cond)
+	module.Status.Conditions = append(newConditions, cond)
 }
 
 // IsInstalled checks if the modules is installed

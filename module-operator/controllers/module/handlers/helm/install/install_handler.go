@@ -5,6 +5,7 @@ package install
 
 import (
 	"context"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"time"
 
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -31,11 +32,6 @@ func NewHandler() handlerspi.StateMachineHandler {
 	return &HelmHandler{}
 }
 
-// Init initializes the handler with Helm chart information
-func (h *HelmHandler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.InitHandler(ctx, config)
-}
-
 // GetWorkName returns the work name
 func (h HelmHandler) GetWorkName() string {
 	return "install"
@@ -53,9 +49,11 @@ func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Re
 
 // PreWork does the pre-work
 func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	module := ctx.CR.(*moduleapi.Module)
+
 	// Create the target namespace (if it doesn't exist) and label it
-	if h.ModuleCR.Spec.TargetNamespace != "" {
-		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: h.ModuleCR.Spec.TargetNamespace}}
+	if module.Spec.TargetNamespace != "" {
+		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: module.Spec.TargetNamespace}}
 		_, err := controllerruntime.CreateOrUpdate(context.TODO(), ctx.Client, ns,
 			func() error {
 				if ns.Labels == nil {
@@ -71,10 +69,10 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 	}
 
 	// Update the spec version if it is not set
-	if len(h.ModuleCR.Spec.Version) == 0 {
+	if len(module.Spec.Version) == 0 {
 		// Update spec version to match chart, always requeue to get ModuleCR with version
-		h.ModuleCR.Spec.Version = h.Config.ChartInfo.Version
-		if err := ctx.Client.Update(context.TODO(), h.ModuleCR); err != nil {
+		module.Spec.Version = ctx.ChartInfo.Version
+		if err := ctx.Client.Update(context.TODO(), module); err != nil {
 			return util.NewRequeueWithShortDelay(), nil
 		}
 		// ALways reconcile so that we get a new tracker with the latest ModuleCR
@@ -86,14 +84,19 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 
 // DoWorkUpdateStatus does th status update
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.UpdateReadyConditionReconciling(ctx, moduleapi.ReadyReasonInstallStarted)
+	module := ctx.CR.(*moduleapi.Module)
+	statusMgr := status.StatusManager{
+		Module:      module,
+		ReleaseName: ctx.HelmInfo.Name,
+	}
+	return statusMgr.UpdateReadyConditionReconciling(ctx, moduleapi.ReadyReasonInstallStarted)
 }
 
 // DoWork installs the module using Helm
 func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	installed, err := helm2.IsReleaseInstalled(h.HelmRelease.Name, h.HelmRelease.Namespace)
+	installed, err := helm2.IsReleaseInstalled(ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	if err != nil {
-		ctx.Log.ErrorfThrottled("Failed checking if Helm release installed for %s/%s: %v", h.HelmRelease.Namespace, h.HelmRelease.Name, err)
+		ctx.Log.ErrorfThrottled("Failed checking if Helm release installed for %s/%s: %v", ctx.HelmRelease.Namespace, ctx.HelmRelease.Name, err)
 		return ctrl.Result{}, err
 	}
 	if installed {
@@ -119,5 +122,10 @@ func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 
 // WorkCompletedUpdateStatus updates the status to completed
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateReadyConditionSucceeded(ctx, moduleapi.ReadyReasonInstallSucceeded)
+	module := ctx.CR.(*moduleapi.Module)
+	statusMgr := status.StatusManager{
+		Module:      module,
+		ReleaseName: ctx.HelmInfo.Name,
+	}
+	return statusMgr.UpdateReadyConditionSucceeded(ctx, moduleapi.ReadyReasonInstallSucceeded)
 }
