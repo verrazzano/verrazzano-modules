@@ -81,6 +81,12 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
 	result, err := handler.PreWorkUpdateStatus(ctx)
@@ -170,6 +176,12 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
 	result, err := handler.DoWorkUpdateStatus(ctx)
@@ -351,6 +363,12 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
 	result, err := handler.WorkCompletedUpdateStatus(ctx)
