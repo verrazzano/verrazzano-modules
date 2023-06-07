@@ -307,10 +307,6 @@ func (h handler) GetWorkName() string {
 	return "install"
 }
 
-func (h handler) Init(context handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
-}
-
 func (h handler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }
