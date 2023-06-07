@@ -76,7 +76,7 @@ func buildOverrides(module *moduleapi.Module) []helm2.ValueOverrides {
 	overrides := []helm2.ValueOverrides{}
 
 	// Add all the valueFrom overrides
-	for i, _ := range module.Spec.ValuesFrom {
+	for i := range module.Spec.ValuesFrom {
 		// Skip creating an entry if both refs are nil
 		if module.Spec.ValuesFrom[i].ConfigMapRef == nil && module.Spec.ValuesFrom[i].SecretRef == nil {
 			continue
