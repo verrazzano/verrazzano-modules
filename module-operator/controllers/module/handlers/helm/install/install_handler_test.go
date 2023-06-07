@@ -34,20 +34,6 @@ const (
 	moduleName  = "test-module"
 )
 
-// TestInit tests the install handler Init function
-func TestInit(t *testing.T) {
-	asserts := assert.New(t)
-	handler := NewHandler()
-
-	// GIVEN an install handler
-	// WHEN the Init function is called
-	// THEN no error occurs and the function returns an empty ctrl.Result
-	config := handlerspi.StateMachineHandlerConfig{CR: &v1alpha1.Module{}}
-	result, err := handler.Init(handlerspi.HandlerContext{}, config)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
-}
-
 // TestGetWorkName tests the install handler GetWorkName function
 func TestGetWorkName(t *testing.T) {
 	asserts := assert.New(t)
@@ -94,12 +80,8 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
+		CR:     module,
 	}
-
-	// need to init the handler so that the Module is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{CR: module}
-	_, err := handler.Init(ctx, config)
-	asserts.NoError(err)
 
 	result, err := handler.PreWorkUpdateStatus(ctx)
 	asserts.NoError(err)
@@ -133,15 +115,11 @@ func TestPreWork(t *testing.T) {
 	}
 
 	cli := fake.NewClientBuilder().WithScheme(newScheme()).WithObjects(module).Build()
+	const chartVersion = "1.2.3"
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
-	}
-
-	// need to init the handler so that the Module and Helm release info are set in the base handler
-	const chartVersion = "1.2.3"
-	config := handlerspi.StateMachineHandlerConfig{
-		CR: module,
+		CR:     module,
 		HelmInfo: handlerspi.HelmInfo{
 			HelmRelease: &handlerspi.HelmRelease{
 				ChartInfo: handlerspi.HelmChart{
@@ -150,8 +128,6 @@ func TestPreWork(t *testing.T) {
 			},
 		},
 	}
-	_, err := handler.Init(ctx, config)
-	asserts.NoError(err)
 
 	result, err := handler.PreWork(ctx)
 	asserts.NoError(err)
@@ -195,12 +171,8 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
+		CR:     module,
 	}
-
-	// need to init the handler so that the Module is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{CR: module}
-	_, err := handler.Init(ctx, config)
-	asserts.NoError(err)
 
 	result, err := handler.DoWorkUpdateStatus(ctx)
 	asserts.NoError(err)
@@ -273,11 +245,7 @@ func TestDoWork(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
-	}
-
-	// need to init the handler so that the Helm release info is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{
-		CR: &v1alpha1.Module{},
+		CR:     &v1alpha1.Module{},
 		HelmInfo: handlerspi.HelmInfo{
 			HelmRelease: &handlerspi.HelmRelease{
 				Name:      releaseName,
@@ -285,8 +253,6 @@ func TestDoWork(t *testing.T) {
 			},
 		},
 	}
-	_, err := handler.Init(ctx, config)
-	asserts.NoError(err)
 
 	result, err := handler.DoWork(ctx)
 	asserts.NoError(err)
@@ -324,11 +290,7 @@ func TestIsWorkDone(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
-	}
-
-	// need to init the handler so that the Helm release info is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{
-		CR: &v1alpha1.Module{},
+		CR:     &v1alpha1.Module{},
 		HelmInfo: handlerspi.HelmInfo{
 			HelmRelease: &handlerspi.HelmRelease{
 				Name:      releaseName,
@@ -336,8 +298,6 @@ func TestIsWorkDone(t *testing.T) {
 			},
 		},
 	}
-	_, err := handler.Init(ctx, config)
-	asserts.NoError(err)
 
 	done, result, err := handler.IsWorkDone(ctx)
 	asserts.NoError(err)
@@ -393,12 +353,8 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
+		CR:     module,
 	}
-
-	// need to init the handler so that the Module is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{CR: module}
-	_, err := handler.Init(ctx, config)
-	asserts.NoError(err)
 
 	result, err := handler.WorkCompletedUpdateStatus(ctx)
 	asserts.NoError(err)
