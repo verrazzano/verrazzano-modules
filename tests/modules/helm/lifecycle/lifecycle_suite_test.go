@@ -85,6 +85,7 @@ func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(test
 	module, overrides = suite.createOrUpdateModule(logger, c, module, common.TEST_HELM_MODULE_OVERRIDE_011, true)
 	module = suite.waitForModuleToBeUpgraded(logger, c, module)
 	module = suite.verifyModule(logger, c, module, overrides)
+
 	logger.log("delete module %s, version %s, namespace %s", module.GetName(), module.Spec.Version, module.GetNamespace())
 	err = c.Modules(module.GetNamespace()).Delete(context.TODO(), module.GetName(), v1.DeleteOptions{})
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -134,22 +135,36 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 	if update {
 		op = "update"
 	}
+	name := module.Name
+	namespace := module.Namespace
 
 	logger.log("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
 	overrides = suite.generateOverridesFromFile(overridesFile)
-	module.Spec.Overrides = []api.Overrides{
-		{
-			Values: overrides,
-		},
-	}
-
+	version := module.Spec.Version
 	suite.gomega.Eventually(func() error {
 		var err error
+		if op != "create" {
+			module, err = c.Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
+			if err != nil {
+				return err
+			}
+		}
+
+		module.Spec.Overrides = []api.Overrides{
+			{
+				Values: overrides,
+			},
+		}
+		if version != "" {
+			module.Spec.Version = version
+		}
+
 		if update {
 			module, err = c.Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
 		} else {
 			module, err = c.Modules(module.GetNamespace()).Create(context.TODO(), module, v1.CreateOptions{})
 		}
+
 		return err
 	}, shortWaitTimeout, shortPollingInterval).ShouldNot(gomega.HaveOccurred())
 
