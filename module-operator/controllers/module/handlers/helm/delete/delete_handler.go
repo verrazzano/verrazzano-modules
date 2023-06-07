@@ -47,11 +47,7 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 // DoWorkUpdateStatus does the work status update
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	module := ctx.CR.(*moduleapi.Module)
-	statusMgr := status.StatusManager{
-		Module:      module,
-		ReleaseName: ctx.HelmInfo.Name,
-	}
-	return statusMgr.UpdateReadyConditionReconciling(ctx, moduleapi.ReadyReasonUninstallStarted)
+	return status.UpdateReadyConditionReconciling(ctx, module, moduleapi.ReadyReasonUninstallStarted)
 }
 
 // DoWork uninstalls the module using Helm
@@ -95,12 +91,8 @@ func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 	return ctrl.Result{}, nil
 }
 
-// CompletedWorkUpdateStatus does the lifecycle completed Work status update
+// WorkCompletedUpdateStatus does the lifecycle completed Work status update
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	module := ctx.CR.(*moduleapi.Module)
-	statusMgr := status.StatusManager{
-		Module:      module,
-		ReleaseName: ctx.HelmInfo.Name,
-	}
-	return h.BaseHandler.UpdateReadyConditionSucceeded(ctx, moduleapi.ReadyReasonUninstallSucceeded)
+	return status.UpdateReadyConditionSucceeded(ctx, module, moduleapi.ReadyReasonUninstallSucceeded)
 }

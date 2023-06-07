@@ -85,11 +85,7 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 // DoWorkUpdateStatus does th status update
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	module := ctx.CR.(*moduleapi.Module)
-	statusMgr := status.StatusManager{
-		Module:      module,
-		ReleaseName: ctx.HelmInfo.Name,
-	}
-	return statusMgr.UpdateReadyConditionReconciling(ctx, moduleapi.ReadyReasonInstallStarted)
+	return status.UpdateReadyConditionReconciling(ctx, module, moduleapi.ReadyReasonInstallStarted)
 }
 
 // DoWork installs the module using Helm
@@ -123,9 +119,5 @@ func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 // WorkCompletedUpdateStatus updates the status to completed
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	module := ctx.CR.(*moduleapi.Module)
-	statusMgr := status.StatusManager{
-		Module:      module,
-		ReleaseName: ctx.HelmInfo.Name,
-	}
-	return statusMgr.UpdateReadyConditionSucceeded(ctx, moduleapi.ReadyReasonInstallSucceeded)
+	return status.UpdateReadyConditionSucceeded(ctx, module, moduleapi.ReadyReasonInstallSucceeded)
 }

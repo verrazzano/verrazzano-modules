@@ -6,6 +6,7 @@ package upgrade
 import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,7 +53,8 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 
 // DoWorkUpdateStatus updates the status for the work state
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateReadyConditionReconciling(ctx, moduleapi.ReadyReasonUpgradeStarted)
+	module := ctx.CR.(*moduleapi.Module)
+	return status.UpdateReadyConditionReconciling(ctx, module, moduleapi.ReadyReasonUpgradeStarted)
 }
 
 // DoWork upgrades the module using Helm
@@ -77,10 +79,6 @@ func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 
 // WorkCompletedUpdateStatus updates the status to completed
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-<<<<<<< HEAD
-	return h.BaseHandler.UpdateReadyConditionSucceeded(ctx, moduleapi.ReadyReasonUpgradeSucceeded)
-=======
 	module := ctx.CR.(*moduleapi.Module)
-	return h.BaseHandler.UpdateDoneStatus(ctx, moduleapi.CondUpgradeComplete, moduleapi.ModuleStateReady, module.Spec.Version)
->>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
+	return status.UpdateReadyConditionSucceeded(ctx, module, moduleapi.ReadyReasonUpgradeSucceeded)
 }

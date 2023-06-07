@@ -6,6 +6,7 @@ package update
 import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,7 +53,8 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 
 // DoWorkUpdateStatus updates the status for the work state
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateReadyConditionReconciling(ctx, moduleapi.ReadyReasonUpdateStarted)
+	module := ctx.CR.(*moduleapi.Module)
+	return status.UpdateReadyConditionReconciling(ctx, module, moduleapi.ReadyReasonUpdateStarted)
 }
 
 // DoWork updates the module using Helm
@@ -77,5 +79,6 @@ func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 
 // WorkCompletedUpdateStatus updates the status to completed
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateReadyConditionSucceeded(ctx, moduleapi.ReadyReasonUpdateSucceeded)
+	module := ctx.CR.(*moduleapi.Module)
+	return status.UpdateReadyConditionSucceeded(ctx, module, moduleapi.ReadyReasonUpdateSucceeded)
 }

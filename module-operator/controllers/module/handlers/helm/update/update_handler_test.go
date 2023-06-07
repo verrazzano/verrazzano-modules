@@ -34,26 +34,6 @@ const (
 	moduleName  = "test-module"
 )
 
-<<<<<<< HEAD
-// TestInit tests the update handler Init function
-func TestInit(t *testing.T) {
-	asserts := assert.New(t)
-	handler := NewHandler()
-
-	// GIVEN an update handler
-	// WHEN the Init function is called
-	// THEN no error occurs and the function returns an empty ctrl.Result
-	config := handlerspi.StateMachineHandlerConfig{
-		CR:       &v1alpha1.Module{},
-		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{}},
-	}
-	result, err := handler.Init(handlerspi.HandlerContext{}, config)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
-}
-
-=======
->>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 // TestGetWorkName tests the update handler GetWorkName function
 func TestGetWorkName(t *testing.T) {
 	asserts := assert.New(t)
@@ -134,20 +114,6 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 		CR:     module,
 	}
 
-<<<<<<< HEAD
-	// need to init the handler so that the Module is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{
-		CR: module,
-		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{
-			Name:      releaseName,
-			Namespace: namespace,
-		}},
-	}
-	_, err := handler.Init(ctx, config)
-	asserts.NoError(err)
-
-=======
->>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 	result, err := handler.DoWorkUpdateStatus(ctx)
 	asserts.NoError(err)
 	asserts.Equal(ctrl.Result{}, result)
@@ -215,14 +181,6 @@ func TestDoWork(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
-<<<<<<< HEAD
-	}
-
-	// need to init the handler so that the Helm release info is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{
-		CR:       &v1alpha1.Module{},
-		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{}},
-=======
 		CR:     &v1alpha1.Module{},
 		HelmInfo: handlerspi.HelmInfo{
 			HelmRelease: &handlerspi.HelmRelease{
@@ -230,7 +188,6 @@ func TestDoWork(t *testing.T) {
 				Namespace: namespace,
 			},
 		},
->>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 	}
 
 	var upgradeFuncCalled = false
@@ -262,17 +219,6 @@ func TestIsWorkDone(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
-<<<<<<< HEAD
-	}
-
-	// need to init the handler so that the Helm release info is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{
-		CR: &v1alpha1.Module{},
-		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{
-			Name:      releaseName,
-			Namespace: namespace,
-		}},
-=======
 		CR:     &v1alpha1.Module{},
 		HelmInfo: handlerspi.HelmInfo{
 			HelmRelease: &handlerspi.HelmRelease{
@@ -280,7 +226,6 @@ func TestIsWorkDone(t *testing.T) {
 				Namespace: namespace,
 			},
 		},
->>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 	}
 
 	done, result, err := handler.IsWorkDone(ctx)
@@ -305,17 +250,6 @@ func TestIsWorkNeeded(t *testing.T) {
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
-<<<<<<< HEAD
-	}
-
-	// need to init the handler so that the Helm release info is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{
-		CR: &v1alpha1.Module{},
-		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{
-			Name:      releaseName,
-			Namespace: namespace,
-		}},
-=======
 		CR:     &v1alpha1.Module{},
 		HelmInfo: handlerspi.HelmInfo{
 			HelmRelease: &handlerspi.HelmRelease{
@@ -323,7 +257,6 @@ func TestIsWorkNeeded(t *testing.T) {
 				Namespace: namespace,
 			},
 		},
->>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 	}
 
 	needed, result, err := handler.IsWorkNeeded(ctx)
@@ -393,17 +326,6 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 		CR:     module,
 	}
 
-<<<<<<< HEAD
-	// need to init the handler so that the Module is set in the base handler
-	config := handlerspi.StateMachineHandlerConfig{
-		CR:       module,
-		HelmInfo: handlerspi.HelmInfo{HelmRelease: &handlerspi.HelmRelease{}},
-	}
-	_, err := handler.Init(ctx, config)
-	asserts.NoError(err)
-
-=======
->>>>>>> 90b9ed23ff373f6f515b2e48dbcd48051ea50d77
 	result, err := handler.WorkCompletedUpdateStatus(ctx)
 	asserts.NoError(err)
 	asserts.Equal(ctrl.Result{}, result)
