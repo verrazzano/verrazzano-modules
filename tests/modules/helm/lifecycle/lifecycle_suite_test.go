@@ -137,10 +137,10 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 	}
 	name := module.Name
 	namespace := module.Namespace
+	version := module.Spec.Version
 
 	logger.log("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
 	overrides = suite.generateOverridesFromFile(overridesFile)
-	version := module.Spec.Version
 	suite.gomega.Eventually(func() error {
 		var err error
 		if op != "create" {
@@ -150,11 +150,7 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 			}
 		}
 
-		module.Spec.Overrides = []api.ValuesFrom{
-			{
-				Values: overrides,
-			},
-		}
+		module.Spec.Values = overrides
 		if version != "" {
 			module.Spec.Version = version
 		}
