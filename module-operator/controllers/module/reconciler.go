@@ -48,8 +48,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 
 // reconcileAction reconciles the Module CR for a particular action
 func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler handlerspi.StateMachineHandler) (ctrl.Result, error) {
-	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
-
+	// Load the helm information needed by the handler
 	helmInfo, err := funcLoadHelmInfo(cr)
 	if err != nil {
 		if strings.Contains(err.Error(), "FileNotFound") {
@@ -59,13 +58,14 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 		err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
 		return util.NewRequeueWithShortDelay(), err
 	}
-	sm := statemachine.StateMachine{
-		Scheme:   r.Scheme,
-		CR:       cr,
-		HelmInfo: &helmInfo,
-		Handler:  handler,
-	}
 
+	// Initialize the handler context
+	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log, CR: cr, HelmInfo: helmInfo}
+
+	// Execute the state machine
+	sm := statemachine.StateMachine{
+		Handler: handler,
+	}
 	res := funcExecuteStateMachine(ctx, sm)
 	return res, nil
 }
