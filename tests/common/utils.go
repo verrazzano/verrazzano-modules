@@ -5,8 +5,10 @@ package common
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"time"
 
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -32,4 +34,15 @@ func UnmarshalTestFile(filePath string, element interface{}) error {
 	}
 
 	return yaml.Unmarshal(data, element)
+}
+
+// GetRandomNamespace generates a random namespace name of given length.
+func GetRandomNamespace(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	chars := "abcdefghijklmnopqrstuvwxyz123456789"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = chars[rand.Int63()%int64(len(chars))]
+	}
+	return string(b)
 }
