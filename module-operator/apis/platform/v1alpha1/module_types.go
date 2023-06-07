@@ -53,7 +53,7 @@ type ModuleSpec struct {
 
 	// ValuesFrom specifies the values from a Configmap or Secret
 	// +optional
-	ValuesFrom []ValuesFromSource `json:"ValuesFrom,omitempty"`
+	ValuesFrom []ValuesFromSource `json:"valuesFrom,omitempty"`
 }
 
 // ValuesFromSource identifies value overrides for a Module.
