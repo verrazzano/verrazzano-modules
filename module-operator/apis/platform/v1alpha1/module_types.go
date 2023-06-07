@@ -36,14 +36,29 @@ type ModuleList struct {
 
 // ModuleSpec defines the attributes for a Verrazzano Module instance
 type ModuleSpec struct {
-	ModuleName      string      `json:"moduleName,omitempty"`
-	Version         string      `json:"version,omitempty"`
-	TargetNamespace string      `json:"targetNamespace,omitempty"`
-	Overrides       []Overrides `json:"overrides,omitempty"`
+	// Module name is the well-known Module name
+	ModuleName string `json:"moduleName,omitempty"`
+
+	// Version is the desired version of the Module
+	// +optional
+	Version string `json:"version,omitempty"`
+
+	// TargetNamespace is the namespace where the Module will be installed
+	// +optional
+	TargetNamespace string `json:"targetNamespace,omitempty"`
+
+	// Values specifies overrides using inline YAML.  Values have precedence over ValuesFrom
+	// +optional
+	Values *apiextensionsv1.JSON `json:"values,omitempty"`
+
+	// ValuesFrom specifies the values from a Configmap or Secret
+	// +optional
+	ValuesFrom []ValuesFromSource `json:"ValuesFrom,omitempty"`
 }
 
-// Overrides identifies overrides for a component.
-type Overrides struct {
+// ValuesFromSource identifies value overrides for a Module.
+type ValuesFromSource struct {
+
 	// ConfigMapRef is a selector for a ConfigMap containing override data.
 	// +optional
 	ConfigMapRef *corev1.ConfigMapKeySelector `json:"configMapRef,omitempty"`
@@ -51,10 +66,6 @@ type Overrides struct {
 	// SecretRef is a selector for a Secret containing override data.
 	// +optional
 	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
-
-	// Values specifies overrides using inline YAML.
-	// +optional
-	Values *apiextensionsv1.JSON `json:"values,omitempty"`
 }
 
 type ModuleConditionType string

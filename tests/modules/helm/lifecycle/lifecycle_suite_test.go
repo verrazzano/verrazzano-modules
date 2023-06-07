@@ -150,7 +150,7 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 			}
 		}
 
-		module.Spec.Overrides = []api.Overrides{
+		module.Spec.Overrides = []api.ValuesFrom{
 			{
 				Values: overrides,
 			},

@@ -50,11 +50,10 @@ spec:
             description: ModuleSpec defines the attributes for a Verrazzano Module
               instance
             properties:
-              moduleName:
-                type: string
-              overrides:
+              ValuesFrom:
+                description: ValuesFrom specifies the values from a Configmap or Secret
                 items:
-                  description: Overrides identifies overrides for a component.
+                  description: ValuesFromSource identifies value overrides for a Module.
                   properties:
                     configMapRef:
                       description: ConfigMapRef is a selector for a ConfigMap containing
@@ -95,14 +94,21 @@ spec:
                       - key
                       type: object
                       x-kubernetes-map-type: atomic
-                    values:
-                      description: Values specifies overrides using inline YAML.
-                      x-kubernetes-preserve-unknown-fields: true
                   type: object
                 type: array
-              targetNamespace:
+              moduleName:
+                description: Module name is the well-known Module name
                 type: string
+              targetNamespace:
+                description: TargetNamespace is the namespace where the Module will
+                  be installed
+                type: string
+              values:
+                description: Values specifies overrides using inline YAML.  Values
+                  have precedence over ValuesFrom
+                x-kubernetes-preserve-unknown-fields: true
               version:
+                description: Version is the desired version of the Module
                 type: string
             type: object
           status:

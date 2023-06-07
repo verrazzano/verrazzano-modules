@@ -34,7 +34,7 @@ func (h BaseHandler) HelmUpgradeOrInstall(ctx handlerspi.HandlerContext) (ctrl.R
 
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := ctx.HelmInfo.HelmRelease
-	helmOverrides, err := helm2.LoadOverrideFiles(ctx.Log, ctx.Client, helmRelease.Name, module.Namespace, module.Spec.Overrides)
+	helmOverrides, err := helm2.LoadOverrideFiles(ctx.Log, ctx.Client, helmRelease.Name, module.Namespace, buildOverrides(module))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -69,4 +69,32 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 	// Check if the workload pods are ready
 	ready, err := CheckWorkLoadsReady(ctx, ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	return ready, ctrl.Result{}, err
+}
+
+// buildOverrides builds the Helm value overrides in the correct precedence order, where values has the highest precedence.
+func buildOverrides(module *moduleapi.Module) []helm2.ValueOverrides {
+	overrides := []helm2.ValueOverrides{}
+
+	// Add all the valueFrom overrides
+	for i, _ := range module.Spec.ValuesFrom {
+		// Skip creating an entry if both refs are nil
+		if module.Spec.ValuesFrom[i].ConfigMapRef == nil && module.Spec.ValuesFrom[i].SecretRef == nil {
+			continue
+		}
+		override := helm2.ValueOverrides{
+			ConfigMapRef: module.Spec.ValuesFrom[i].ConfigMapRef,
+			SecretRef:    module.Spec.ValuesFrom[i].SecretRef,
+		}
+		overrides = append(overrides, override)
+	}
+
+	// Add the values overrides last, so they have the highest precedence
+	if module.Spec.Values != nil {
+		override := helm2.ValueOverrides{
+			Values: module.Spec.Values,
+		}
+		overrides = append(overrides, override)
+	}
+
+	return overrides
 }

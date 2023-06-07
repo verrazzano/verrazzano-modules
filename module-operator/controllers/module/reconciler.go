@@ -48,6 +48,10 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 
 // reconcileAction reconciles the Module CR for a particular action
 func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler handlerspi.StateMachineHandler) (ctrl.Result, error) {
+	if cr.Spec.TargetNamespace == "" {
+		cr.Spec.TargetNamespace = cr.Namespace
+	}
+
 	// Load the helm information needed by the handler
 	helmInfo, err := funcLoadHelmInfo(cr)
 	if err != nil {
