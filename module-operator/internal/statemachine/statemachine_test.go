@@ -31,7 +31,6 @@ type handler struct {
 
 const (
 	getWorkName               = "GetWorkName"
-	initFunc                  = "init"
 	isWorkNeeded              = "isWorkNeeded"
 	preWorkUpdateStatus       = "preWorkUpdateStatus"
 	preWork                   = "preWork"
@@ -47,7 +46,6 @@ const (
 func getStatesInOrder() []string {
 	return []string{
 		getWorkName,
-		initFunc,
 		isWorkNeeded,
 		preWorkUpdateStatus,
 		preWork,
@@ -80,12 +78,10 @@ func TestAllStatesSucceed(t *testing.T) {
 		},
 	}
 	sm := StateMachine{
-		Scheme:   nil,
-		CR:       cr,
-		HelmInfo: &handlerspi.HelmInfo{},
-		Handler:  h,
+		CR:      cr,
+		Handler: h,
 	}
-	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
+	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger(), HelmInfo: handlerspi.HelmInfo{}}
 
 	res := sm.Execute(ctx)
 	asserts.False(res.Requeue)
@@ -104,7 +100,7 @@ func TestAllStatesSucceed(t *testing.T) {
 // AND each subsequent state is not executed
 func TestEachStateRequeue(t *testing.T) {
 	asserts := assert.New(t)
-	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
+	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger(), HelmInfo: handlerspi.HelmInfo{}}
 
 	// Check for a Requeue result for every state
 	for i, s := range getStatesInOrder() {
@@ -125,10 +121,8 @@ func TestEachStateRequeue(t *testing.T) {
 			},
 		}
 		sm := StateMachine{
-			Scheme:   nil,
-			CR:       cr,
-			HelmInfo: &handlerspi.HelmInfo{},
-			Handler:  h,
+			CR:      cr,
+			Handler: h,
 		}
 		b := h.behaviorMap[s]
 		b.Result = util.NewRequeueWithShortDelay()
@@ -159,7 +153,7 @@ func TestEachStateRequeue(t *testing.T) {
 // AND each subsequent state is not executed
 func TestNotDone(t *testing.T) {
 	asserts := assert.New(t)
-	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger()}
+	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger(), HelmInfo: handlerspi.HelmInfo{}}
 
 	tests := []struct {
 		name          string
@@ -192,10 +186,8 @@ func TestNotDone(t *testing.T) {
 				},
 			}
 			sm := StateMachine{
-				Scheme:   nil,
-				CR:       cr,
-				HelmInfo: &handlerspi.HelmInfo{},
-				Handler:  h,
+				CR:      cr,
+				Handler: h,
 			}
 			b := h.behaviorMap[test.stateNotDone]
 			b.boolResult = false
@@ -232,10 +224,6 @@ func (h handler) GetWorkName() string {
 	b := h.behaviorMap[getWorkName]
 	b.visited = true
 	return "install"
-}
-
-func (h handler) Init(context handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return h.procHandlerCall(initFunc)
 }
 
 func (h handler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {

@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -68,10 +67,8 @@ const (
 
 // StateMachine contains the fields needed to execute the state machine.
 type StateMachine struct {
-	*runtime.Scheme
-	CR       client.Object
-	HelmInfo *handlerspi.HelmInfo
-	Handler  handlerspi.StateMachineHandler
+	CR      client.Object
+	Handler handlerspi.StateMachineHandler
 }
 
 // Execute runs the state machine starting at the state stored in the tracker.
@@ -84,7 +81,6 @@ type StateMachine struct {
 // During state machine execution, a result may be returned to indicate that the
 // controller-runtime should requeue after a delay.  This is done when a handler is
 // waiting for a resource or some other condition.
-//
 func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) ctrl.Result {
 	tracker := ensureTracker(s.CR, stateInit)
 
@@ -94,16 +90,6 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) ctrl.Re
 	for tracker.state != stateEnd {
 		switch tracker.state {
 		case stateInit:
-			// Init the Handler
-			config := handlerspi.StateMachineHandlerConfig{
-				HelmInfo: *s.HelmInfo,
-				CR:       s.CR,
-				Scheme:   s.Scheme,
-			}
-			res, err := s.Handler.Init(handlerContext, config)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2
-			}
 			tracker.state = stateCheckWorkNeeded
 
 		case stateCheckWorkNeeded:

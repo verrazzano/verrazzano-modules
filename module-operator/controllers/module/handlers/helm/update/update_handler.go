@@ -23,11 +23,6 @@ func NewHandler() handlerspi.StateMachineHandler {
 	return &HelmHandler{}
 }
 
-// Init initializes the handler with Helm chart information
-func (h *HelmHandler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.InitHandler(ctx, config)
-}
-
 // GetWorkName returns the work name
 func (h HelmHandler) GetWorkName() string {
 	return "update"
@@ -35,9 +30,11 @@ func (h HelmHandler) GetWorkName() string {
 
 // IsWorkNeeded returns true if update is needed
 func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	installed, err := helm2.IsReleaseInstalled(h.HelmRelease.Name, h.BaseHandler.Config.Namespace)
+	module := ctx.CR.(*moduleapi.Module)
+
+	installed, err := helm2.IsReleaseInstalled(ctx.HelmRelease.Name, module.Spec.TargetNamespace)
 	if err != nil {
-		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.HelmRelease.Namespace, h.HelmRelease.Name)
+		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", ctx.HelmRelease.Namespace, ctx.HelmRelease.Name)
 		return true, ctrl.Result{}, err
 	}
 	return installed, ctrl.Result{}, err
