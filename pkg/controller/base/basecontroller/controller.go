@@ -70,7 +70,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Create a new context for this reconcile loop
 	rctx := controllerspi.ReconcileContext{
-		Log:       vzlog.DefaultLogger(),
+		Log:       log,
 		ClientCtx: ctx,
 	}
 
