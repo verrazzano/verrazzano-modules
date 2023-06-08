@@ -96,6 +96,7 @@ func IsInstalled(cr *moduleapi.Module) bool {
 	// If the reason is not install started or failed, then assume installed.
 	switch cond.Reason {
 	case moduleapi.ReadyReasonInstallStarted:
+		return false
 	case moduleapi.ReadyReasonInstallFailed:
 		return false
 	}
