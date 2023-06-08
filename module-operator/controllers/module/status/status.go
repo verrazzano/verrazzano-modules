@@ -11,7 +11,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 )
 
@@ -32,7 +31,7 @@ var readyConditionMessages = map[moduleapi.ModuleConditionReason]string{
 }
 
 // UpdateReadyConditionSucceeded updates the Ready condition when the module has succeeded
-func UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason) (ctrl.Result, error) {
+func UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason) result.Result {
 	module.Status.LastSuccessfulVersion = module.Spec.Version
 	module.Status.LastSuccessfulGeneration = module.Generation
 
@@ -42,7 +41,7 @@ func UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, module *module
 }
 
 // UpdateReadyConditionReconciling updates the Ready condition when the module is reconciling
-func UpdateReadyConditionReconciling(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason) (ctrl.Result, error) {
+func UpdateReadyConditionReconciling(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason) result.Result {
 	msgTemplate := readyConditionMessages[reason]
 	msg := fmt.Sprintf(msgTemplate, module.Name, module.Spec.TargetNamespace, ctx.HelmRelease.Name)
 
@@ -50,7 +49,7 @@ func UpdateReadyConditionReconciling(ctx handlerspi.HandlerContext, module *modu
 }
 
 // UpdateReadyConditionFailed updates the Ready condition when the module has failed
-func UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, msgDetail string) (ctrl.Result, error) {
+func UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, msgDetail string) result.Result {
 	msgTemplate := readyConditionMessages[reason]
 	msg := fmt.Sprintf(msgTemplate, module.Name, module.Spec.TargetNamespace, ctx.HelmRelease.Name, msgDetail)
 
@@ -58,11 +57,11 @@ func UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, module *moduleapi
 }
 
 // updateReadyCondition updates the Ready condition
-func updateReadyCondition(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, status corev1.ConditionStatus, msg string) (ctrl.Result, error) {
+func updateReadyCondition(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, status corev1.ConditionStatus, msg string) result.Result {
 	// Always get the latest module from the controller-runtime cache to try and avoid conflict error
 	latestModule := &moduleapi.Module{}
 	if err := ctx.Client.Get(context.TODO(), types.NamespacedName{Namespace: module.Namespace, Name: module.Name}, latestModule); err != nil {
-		return result.NewRequeueWithShortDelay(), nil
+		return result.NewRequeueWithShortDelay()
 	}
 	latestModule.Status.LastSuccessfulVersion = module.Status.LastSuccessfulVersion
 	latestModule.Status.LastSuccessfulGeneration = module.Status.LastSuccessfulGeneration
@@ -76,9 +75,9 @@ func updateReadyCondition(ctx handlerspi.HandlerContext, module *moduleapi.Modul
 	appendCondition(latestModule, cond)
 
 	if err := ctx.Client.Status().Update(context.TODO(), latestModule); err != nil {
-		return result.NewRequeueWithShortDelay(), nil
+		return result.NewRequeueWithShortDelay()
 	}
-	return ctrl.Result{}, nil
+	return result.NewResult()
 }
 
 // appendCondition appends the condition to the list of conditions

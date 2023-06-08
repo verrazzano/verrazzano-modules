@@ -10,7 +10,6 @@ import (
 	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"helm.sh/helm/v3/pkg/release"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // upgradeFuncSig is a function needed for unit test override
@@ -29,14 +28,14 @@ func ResetUpgradeFunc() {
 }
 
 // HelmUpgradeOrInstall does a Helm upgrade --install of the chart
-func (h BaseHandler) HelmUpgradeOrInstall(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h BaseHandler) HelmUpgradeOrInstall(ctx handlerspi.HandlerContext) result.Result {
 	module := ctx.CR.(*moduleapi.Module)
 
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := ctx.HelmInfo.HelmRelease
 	helmOverrides, err := helm2.LoadOverrideFiles(ctx.Log, ctx.Client, helmRelease.Name, module.Namespace, buildOverrides(module))
 	if err != nil {
-		return ctrl.Result{}, err
+		return result.NewResult()
 	}
 	var opts = &helm2.HelmReleaseOpts{
 		RepoURL:      helmRelease.Repository.URI,
@@ -47,28 +46,28 @@ func (h BaseHandler) HelmUpgradeOrInstall(ctx handlerspi.HandlerContext) (ctrl.R
 		Overrides:    helmOverrides,
 	}
 	_, err = upgradeFunc(ctx.Log, opts, false, ctx.DryRun)
-	return ctrl.Result{}, err
+	return result.NewResult()
 }
 
 // CheckReleaseDeployedAndReady checks if the Helm release is deployed and ready
-func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext) (bool, result.Result) {
 	if ctx.DryRun {
 		ctx.Log.Debugf("IsReady() dry run for %s", ctx.HelmRelease.Name)
-		return true, ctrl.Result{}, nil
+		return true, result.NewResult()
 	}
 	// Check if the Helm release is deployed
 	deployed, err := helm2.IsReleaseDeployed(ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
-		return false, ctrl.Result{}, err
+		return false, result.NewResult()
 	}
 	if !deployed {
-		return false, result.NewRequeueWithShortDelay(), nil
+		return false, result.NewRequeueWithShortDelay()
 	}
 
 	// Check if the workload pods are ready
 	ready, err := CheckWorkLoadsReady(ctx, ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
-	return ready, ctrl.Result{}, err
+	return ready, result.NewResult()
 }
 
 // buildOverrides builds the Helm value overrides in the correct precedence order, where values has the highest precedence.

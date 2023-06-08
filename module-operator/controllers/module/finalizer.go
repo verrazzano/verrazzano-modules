@@ -10,7 +10,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const finalizerName = "module.platform.verrazzano.io/finalizer"
@@ -25,7 +24,7 @@ func (r Reconciler) GetName() string {
 func (r Reconciler) PreRemoveFinalizer(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) result.Result {
 	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
-		return ctrl.Result{}, err
+		return result.NewResult()
 	}
 	return r.reconcileAction(spictx, cr, r.HandlerInfo.DeleteActionHandler)
 }

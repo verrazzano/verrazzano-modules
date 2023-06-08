@@ -17,7 +17,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type HelmHandler struct {
@@ -38,17 +37,17 @@ func (h HelmHandler) GetWorkName() string {
 }
 
 // IsWorkNeeded returns true if install is needed
-func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
+func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, result.Result) {
+	return true, result.NewResult()
 }
 
 // PreWorkUpdateStatus does the pre-Work status update
-func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
 }
 
 // PreWork does the pre-work
-func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) result.Result {
 	module := ctx.CR.(*moduleapi.Module)
 
 	// Create the target namespace (if it doesn't exist) and label it
@@ -64,7 +63,7 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 			},
 		)
 		if err != nil {
-			return ctrl.Result{}, err
+			return result.NewResult()
 		}
 	}
 
@@ -73,51 +72,51 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 		// Update spec version to match chart, always requeue to get ModuleCR with version
 		module.Spec.Version = ctx.ChartInfo.Version
 		if err := ctx.Client.Update(context.TODO(), module); err != nil {
-			return result.NewRequeueWithShortDelay(), nil
+			return result.NewRequeueWithShortDelay()
 		}
 		// ALways reconcile so that we get a new tracker with the latest ModuleCR
-		return result.NewRequeueWithDelay(1, 2, time.Second), nil
+		return result.NewRequeueWithDelay(1, 2, time.Second)
 	}
 
-	return ctrl.Result{}, nil
+	return result.NewResult()
 }
 
 // DoWorkUpdateStatus does th status update
-func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) result.Result {
 	module := ctx.CR.(*moduleapi.Module)
 	return status.UpdateReadyConditionReconciling(ctx, module, moduleapi.ReadyReasonInstallStarted)
 }
 
 // DoWork installs the module using Helm
-func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) result.Result {
 	installed, err := helm2.IsReleaseInstalled(ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Failed checking if Helm release installed for %s/%s: %v", ctx.HelmRelease.Namespace, ctx.HelmRelease.Name, err)
-		return ctrl.Result{}, err
+		return result.NewResult()
 	}
 	if installed {
-		return ctrl.Result{}, nil
+		return result.NewResult()
 	}
 	return h.HelmUpgradeOrInstall(ctx)
 }
 
 // IsWorkDone Indicates whether a module is installed and ready
-func (h HelmHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h HelmHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, result.Result) {
 	return h.CheckReleaseDeployedAndReady(ctx)
 }
 
 // PostWorkUpdateStatus does the post-work status update
-func (h HelmHandler) PostWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h HelmHandler) PostWorkUpdateStatus(ctx handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
 }
 
 // PostWork does installation post-work
-func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
 }
 
 // WorkCompletedUpdateStatus updates the status to completed
-func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) result.Result {
 	module := ctx.CR.(*moduleapi.Module)
 	return status.UpdateReadyConditionSucceeded(ctx, module, moduleapi.ReadyReasonInstallSucceeded)
 }

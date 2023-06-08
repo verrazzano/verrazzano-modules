@@ -5,6 +5,7 @@ package install
 
 import (
 	"context"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,10 +55,10 @@ func TestIsWorkNeeded(t *testing.T) {
 	// GIVEN an install handler
 	// WHEN the IsWorkNeeded function is called
 	// THEN no error occurs and the function returns true and an empty ctrl.Result
-	needed, result, err := handler.IsWorkNeeded(handlerspi.HandlerContext{})
-	asserts.NoError(err)
+	needed, res := handler.IsWorkNeeded(handlerspi.HandlerContext{})
+	asserts.NoError(res.GetError())
 	asserts.True(needed)
-	asserts.Equal(ctrl.Result{}, result)
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPreWorkUpdateStatus tests the install handler PreWorkUpdateStatus function
@@ -89,9 +90,9 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 		},
 	}
 
-	result, err := handler.PreWorkUpdateStatus(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.PreWorkUpdateStatus(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPreWork tests the install handler PreWork function
@@ -129,12 +130,12 @@ func TestPreWork(t *testing.T) {
 		},
 	}
 
-	result, err := handler.PreWork(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{Requeue: true, RequeueAfter: 1000000000}, result)
+	res := handler.PreWork(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(ctrl.Result{Requeue: true, RequeueAfter: 1000000000}, res)
 
 	// fetch the Module and validate that the spec version has been set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
+	err := cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
 	asserts.Equal(chartVersion, module.Spec.Version)
 
@@ -146,9 +147,9 @@ func TestPreWork(t *testing.T) {
 	// GIVEN an install handler and a Module with a version set
 	// WHEN the PreWork function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	result, err = handler.PreWork(ctx)
+	res = handler.PreWork(ctx)
 	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestDoWorkUpdateStatus tests the install handler DoWorkUpdateStatus function
@@ -180,12 +181,12 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 		},
 	}
 
-	result, err := handler.DoWorkUpdateStatus(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.DoWorkUpdateStatus(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 
 	// fetch the Module and validate that the condition and state are set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
+	err := cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
 	asserts.Equal(v1alpha1.ReadyReasonInstallStarted, module.Status.Conditions[0].Reason)
 }
@@ -259,9 +260,9 @@ func TestDoWork(t *testing.T) {
 		},
 	}
 
-	result, err := handler.DoWork(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.DoWork(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 
 	// GIVEN an install handler and a Helm release that is not installed
 	// WHEN the DoWork function is called
@@ -274,8 +275,8 @@ func TestDoWork(t *testing.T) {
 	defer common.ResetUpgradeFunc()
 	vzhelm.SetActionConfigFunction(testActionConfigWithNoRelease)
 
-	_, err = handler.DoWork(ctx)
-	asserts.NoError(err)
+	res = handler.DoWork(ctx)
+	asserts.NoError(res.GetError())
 	asserts.True(upgradeFuncCalled)
 }
 
@@ -304,10 +305,10 @@ func TestIsWorkDone(t *testing.T) {
 		},
 	}
 
-	done, result, err := handler.IsWorkDone(ctx)
-	asserts.NoError(err)
+	done, res := handler.IsWorkDone(ctx)
+	asserts.NoError(res.GetError())
 	asserts.True(done)
-	asserts.Equal(ctrl.Result{}, result)
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPostWorkUpdateStatus tests the install handler PostWorkUpdateStatus function
@@ -319,9 +320,9 @@ func TestPostWorkUpdateStatus(t *testing.T) {
 	// GIVEN an install handler
 	// WHEN the PostWorkUpdateStatus function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	result, err := handler.PostWorkUpdateStatus(handlerspi.HandlerContext{})
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.PostWorkUpdateStatus(handlerspi.HandlerContext{})
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPostWork tests the install handler PostWork function
@@ -333,9 +334,9 @@ func TestPostWork(t *testing.T) {
 	// GIVEN an install handler
 	// WHEN the PostWork function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	result, err := handler.PostWork(handlerspi.HandlerContext{})
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.PostWork(handlerspi.HandlerContext{})
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestWorkCompletedUpdateStatus tests the install handler WorkCompletedUpdateStatus function
@@ -367,12 +368,12 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 		},
 	}
 
-	result, err := handler.WorkCompletedUpdateStatus(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.WorkCompletedUpdateStatus(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 
 	// fetch the Module and validate that the condition and state are set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
+	err := cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
 	asserts.Equal(v1alpha1.ReadyReasonInstallSucceeded, module.Status.Conditions[0].Reason)
 }

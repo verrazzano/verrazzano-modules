@@ -165,5 +165,5 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 			tracker.state = stateEnd
 		}
 	}
-	return result.ControllerResult{}
+	return result.NewResult()
 }

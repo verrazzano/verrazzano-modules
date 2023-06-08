@@ -95,7 +95,7 @@ func IgnoreConflictWithLog(message string, err error, log *zap.SugaredLogger) (r
 	} else {
 		log.Errorf("%s: %v", message, err)
 	}
-	return vzctrl.NewRequeueWithDelay(2, 3, time.Second), nil
+	return vzctrl.NewRequeueWithDelay(2, 3, time.Second).GetControllerResult(), nil
 }
 
 // BuildZapInfoLogger initializes a zap logger at info level

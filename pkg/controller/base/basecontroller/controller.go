@@ -156,7 +156,7 @@ func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured
 	finalizerName := r.Finalizer.GetName()
 	finalizers := u.GetFinalizers()
 	if vzstring.SliceContainsString(finalizers, finalizerName) {
-		return result.ControllerResult{}
+		return result.NewResult()
 	}
 
 	log.Debugf("Adding finalizer %s", finalizerName)

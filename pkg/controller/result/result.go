@@ -13,6 +13,7 @@ type Result interface {
 	ShouldRequeue() bool
 	GetControllerResult() ctrl.Result
 	GetError() error
+	IsError() bool
 }
 
 type controllerResult struct {
@@ -54,4 +55,8 @@ func (r controllerResult) GetControllerResult() ctrl.Result {
 
 func (r controllerResult) GetError() error {
 	return r.err
+}
+
+func (r controllerResult) IsError() bool {
+	return r.err.Error() != ""
 }
