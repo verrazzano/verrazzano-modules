@@ -78,10 +78,6 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 	result, err := handler.PreWorkUpdateStatus(ctx)
 	asserts.NoError(err)
 	asserts.Equal(ctrl.Result{}, result)
-
-	// fetch the Module and validate that the condition and state are set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
-	asserts.NoError(err)
 }
 
 // TestPreWork tests the upgrade handler PreWork function

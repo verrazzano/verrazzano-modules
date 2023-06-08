@@ -98,11 +98,9 @@ func IsInstalled(cr *moduleapi.Module) bool {
 	case moduleapi.ReadyReasonInstallStarted:
 	case moduleapi.ReadyReasonInstallFailed:
 		return false
-	default:
-		return true
 	}
 
-	return false
+	return true
 }
 
 // GetReadyCondition gets the Ready condition type
