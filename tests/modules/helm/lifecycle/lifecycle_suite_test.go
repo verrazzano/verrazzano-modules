@@ -6,26 +6,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-<<<<<<< HEAD
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
-	"strings"
-=======
-	"reflect"
->>>>>>> 72875d50d95ceeb3c1e69ee108bbbee4b820c4fd
-	"sync"
-	"testing"
-	"time"
-
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/suite"
 	"github.com/verrazzano/verrazzano-modules/module-operator/clientset/versioned/typed/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/k8sutil"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"github.com/verrazzano/verrazzano-modules/pkg/yaml"
 	"github.com/verrazzano/verrazzano-modules/tests/common"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"reflect"
+	"sync"
+	"testing"
+	"time"
 
 	api "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
@@ -89,22 +84,7 @@ func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(test
 	module, overrides = suite.createOrUpdateModule(logger, c, module, common.TEST_HELM_MODULE_OVERRIDE_011, true)
 	module = suite.waitForModuleToBeUpgraded(logger, c, module)
 	module = suite.verifyModule(logger, c, module, overrides)
-<<<<<<< HEAD
-
-	logger.log("delete module %s, version %s, namespace %s", module.GetName(), module.Spec.Version, module.GetNamespace())
-	err = c.Modules(module.GetNamespace()).Delete(context.TODO(), module.GetName(), v1.DeleteOptions{})
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	suite.verifyModuleDeleted(logger, c, module)
-	if suite.deleteNamespace(namespace) {
-		corev1client, err := k8sutil.GetCoreV1Client()
-		suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		err = corev1client.Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
-		suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	}
-
-=======
 	suite.removeModuleAndNamespace(logger, c, module)
->>>>>>> 72875d50d95ceeb3c1e69ee108bbbee4b820c4fd
 }
 
 func (suite *HelmModuleLifecycleTestSuite) cleanup() {
@@ -137,7 +117,7 @@ func (suite *HelmModuleLifecycleTestSuite) cleanup() {
 	}
 }
 
-func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, overridesFile string, update bool, otherOverrides ...*api.Overrides) (*api.Module, *apiextensionsv1.JSON) {
+func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, overridesFile string, update bool, otherOverrides ...*api.ValuesFromSource) (*api.Module, *apiextensionsv1.JSON) {
 	op := "create"
 	if update {
 		op = "update"
@@ -147,19 +127,11 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 	version := module.Spec.Version
 
 	logger.log("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
-<<<<<<< HEAD
-	overrides = suite.generateOverridesFromFile(overridesFile)
-=======
 	overrides := suite.generateOverridesFromFile(overridesFile)
-	module.Spec.Overrides = []api.Overrides{
-		{
-			Values: overrides,
-		},
-	}
+	module.Spec.Values = overrides
 	for _, toAppend := range otherOverrides {
-		module.Spec.Overrides = append(module.Spec.Overrides, *toAppend)
+		module.Spec.ValuesFrom = append(module.Spec.ValuesFrom, *toAppend)
 	}
->>>>>>> 72875d50d95ceeb3c1e69ee108bbbee4b820c4fd
 	suite.gomega.Eventually(func() error {
 		var err error
 		if op != "create" {
