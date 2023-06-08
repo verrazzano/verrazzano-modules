@@ -62,7 +62,7 @@ func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) result.Result {
 	}
 
 	err = helm.Uninstall(ctx.Log, ctx.HelmRelease.Name, ctx.HelmRelease.Namespace, ctx.DryRun)
-	return result.NewResult()
+	return result.NewResultShortRequeueDelayIfError(err)
 }
 
 // IsWorkDone Indicates whether a module is uninstalled
@@ -75,7 +75,7 @@ func (h HelmHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, result.Res
 	deployed, err := helm.IsReleaseDeployed(ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
-		return false, result.NewResult()
+		return false, result.NewResultShortRequeueDelayIfError(err)
 	}
 
 	return !deployed, result.NewResult()

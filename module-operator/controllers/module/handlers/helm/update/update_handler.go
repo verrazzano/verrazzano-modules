@@ -36,7 +36,7 @@ func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, result.R
 	installed, err := helm2.IsReleaseInstalled(ctx.HelmRelease.Name, module.Spec.TargetNamespace)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", ctx.HelmRelease.Namespace, ctx.HelmRelease.Name)
-		return true, result.NewResult()
+		return true, result.NewResultShortRequeueDelayWithError(err)
 	}
 	return installed, result.NewResult()
 }

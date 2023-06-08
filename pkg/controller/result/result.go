@@ -45,6 +45,11 @@ func NewResultShortRequeueDelayIfError(err error) Result {
 	return b.Build()
 }
 
+// NewResultShortRequeueDelayWithError returns a new Result that will cause requeue after a short delay
+func NewResultShortRequeueDelayWithError(err error) Result {
+	return NewResultShortRequeueDelayIfError(err)
+}
+
 func (r controllerResult) ShouldRequeue() bool {
 	return r.result.Requeue
 }

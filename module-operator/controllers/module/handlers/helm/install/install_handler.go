@@ -5,14 +5,12 @@ package install
 
 import (
 	"context"
-	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
-	"time"
-
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/constants"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,7 +61,7 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) result.Result {
 			},
 		)
 		if err != nil {
-			return result.NewResult()
+			return result.NewResultShortRequeueDelayWithError(err)
 		}
 	}
 
@@ -75,7 +73,7 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) result.Result {
 			return result.NewResultShortRequeueDelay()
 		}
 		// ALways reconcile so that we get a new tracker with the latest ModuleCR
-		return result.NewResultRequeueDelay(1, 2, time.Second)
+		return result.NewResultShortRequeueDelay()
 	}
 
 	return result.NewResult()
