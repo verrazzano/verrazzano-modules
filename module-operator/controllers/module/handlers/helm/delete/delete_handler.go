@@ -6,6 +6,7 @@ package delete
 import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,7 +36,7 @@ func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, ctrl.Res
 
 // PreWorkUpdateStatus does the lifecycle pre-Work status update
 func (h HelmHandler) PreWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondPreUninstall, moduleapi.ModuleStateReconciling)
+	return ctrl.Result{}, nil
 }
 
 // PreWork does the pre-work
@@ -45,7 +46,8 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 
 // DoWorkUpdateStatus does the work status update
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUninstallStarted, moduleapi.ModuleStateReconciling)
+	module := ctx.CR.(*moduleapi.Module)
+	return status.UpdateReadyConditionReconciling(ctx, module, moduleapi.ReadyReasonUninstallStarted)
 }
 
 // DoWork uninstalls the module using Helm
@@ -89,7 +91,8 @@ func (h HelmHandler) PostWork(ctx handlerspi.HandlerContext) (ctrl.Result, error
 	return ctrl.Result{}, nil
 }
 
-// CompletedWorkUpdateStatus does the lifecycle completed Work status update
+// WorkCompletedUpdateStatus does the lifecycle completed Work status update
 func (h HelmHandler) WorkCompletedUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
-	return h.BaseHandler.UpdateStatus(ctx, moduleapi.CondUninstallComplete, moduleapi.ModuleStateReady)
+	module := ctx.CR.(*moduleapi.Module)
+	return status.UpdateReadyConditionSucceeded(ctx, module, moduleapi.ReadyReasonUninstallSucceeded)
 }

@@ -83,7 +83,7 @@ func exec(testName string, namespace string, suite *HelmModuleLifecycleTestSuite
 	module.SetNamespace(namespace)
 	module.Spec.TargetNamespace = namespace
 
-	overrides := []*api.Overrides{
+	overrides := []*api.ValuesFromSource{
 		{
 			SecretRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -117,7 +117,7 @@ func exec(testName string, namespace string, suite *HelmModuleLifecycleTestSuite
 	suite.removeModuleAndNamespace(logger, c, module)
 }
 
-func mutateAndVerifyModule(suite *HelmModuleLifecycleTestSuite, corev1Client coreclientv1.CoreV1Interface, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, moduleOverrideFile string, secret *corev1.Secret, secretOverrideFile string, cm *corev1.ConfigMap, cmOverrideFile string, logger testLogger, overrides []*api.Overrides, update bool, upgrade bool) (*corev1.Secret, *corev1.ConfigMap, *api.Module) {
+func mutateAndVerifyModule(suite *HelmModuleLifecycleTestSuite, corev1Client coreclientv1.CoreV1Interface, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, moduleOverrideFile string, secret *corev1.Secret, secretOverrideFile string, cm *corev1.ConfigMap, cmOverrideFile string, logger testLogger, overrides []*api.ValuesFromSource, update bool, upgrade bool) (*corev1.Secret, *corev1.ConfigMap, *api.Module) {
 	secretData, err := common.LoadTestFile(secretOverrideFile)
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	secret.Data = map[string][]byte{

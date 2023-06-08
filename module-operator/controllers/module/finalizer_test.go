@@ -98,8 +98,7 @@ func TestPreRemoveFinalizer(t *testing.T) {
 					Version: test.specVersion,
 				},
 				Status: moduleapi.ModuleStatus{
-					Version:            test.statusVersion,
-					ObservedGeneration: test.statusGeneration,
+					LastSuccessfulVersion: test.statusVersion,
 				},
 			}
 

@@ -6,21 +6,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
-	"sync"
-	"testing"
-	"time"
-
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/suite"
 	"github.com/verrazzano/verrazzano-modules/module-operator/clientset/versioned/typed/platform/v1alpha1"
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/k8sutil"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"github.com/verrazzano/verrazzano-modules/pkg/yaml"
 	"github.com/verrazzano/verrazzano-modules/tests/common"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"reflect"
+	"sync"
+	"testing"
+	"time"
 
 	api "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 
@@ -117,29 +117,41 @@ func (suite *HelmModuleLifecycleTestSuite) cleanup() {
 	}
 }
 
-func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, overridesFile string, update bool, otherOverrides ...*api.Overrides) (*api.Module, *apiextensionsv1.JSON) {
+func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, overridesFile string, update bool, otherOverrides ...*api.ValuesFromSource) (*api.Module, *apiextensionsv1.JSON) {
 	op := "create"
 	if update {
 		op = "update"
 	}
+	name := module.Name
+	namespace := module.Namespace
+	version := module.Spec.Version
 
 	logger.log("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
 	overrides := suite.generateOverridesFromFile(overridesFile)
-	module.Spec.Overrides = []api.Overrides{
-		{
-			Values: overrides,
-		},
-	}
+	module.Spec.Values = overrides
 	for _, toAppend := range otherOverrides {
-		module.Spec.Overrides = append(module.Spec.Overrides, *toAppend)
+		module.Spec.ValuesFrom = append(module.Spec.ValuesFrom, *toAppend)
 	}
 	suite.gomega.Eventually(func() error {
 		var err error
+		if op != "create" {
+			module, err = c.Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
+			if err != nil {
+				return err
+			}
+		}
+
+		module.Spec.Values = overrides
+		if version != "" {
+			module.Spec.Version = version
+		}
+
 		if update {
 			module, err = c.Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
 		} else {
 			module, err = c.Modules(module.GetNamespace()).Create(context.TODO(), module, v1.CreateOptions{})
 		}
+
 		return err
 	}, shortWaitTimeout, shortPollingInterval).ShouldNot(gomega.HaveOccurred())
 
@@ -157,7 +169,7 @@ func (suite *HelmModuleLifecycleTestSuite) verifyModule(logger testLogger, c *v1
 
 func (suite *HelmModuleLifecycleTestSuite) verifyModuleIsReady(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module) *api.Module {
 	deployedModule := suite.waitForModuleToBeReady(logger, c, module)
-	suite.gomega.Expect(deployedModule.Status.Version).To(gomega.Equal(module.Spec.Version))
+	suite.gomega.Expect(deployedModule.Status.LastSuccessfulVersion).To(gomega.Equal(module.Spec.Version))
 	return deployedModule
 }
 
@@ -165,7 +177,7 @@ func (suite *HelmModuleLifecycleTestSuite) verifyHelmReleaseStatus(c *v1alpha1.P
 	status, err := helm.GetHelmReleaseStatus(deployedModule.GetName(), deployedModule.GetNamespace())
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	suite.gomega.Expect(status).To(gomega.Equal(helm.ReleaseStatusDeployed))
-	suite.gomega.Expect(deployedModule.Status.Version).To(gomega.Equal(module.Spec.Version))
+	suite.gomega.Expect(deployedModule.Status.LastSuccessfulVersion).To(gomega.Equal(module.Spec.Version))
 }
 
 func (suite *HelmModuleLifecycleTestSuite) verifyHelmValues(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, deployedModule *api.Module, overrides *apiextensionsv1.JSON, otherOverrides ...*map[string]interface{}) {
@@ -230,15 +242,19 @@ func (suite *HelmModuleLifecycleTestSuite) deleteNamespace(ns string) bool {
 func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeReady(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module) *api.Module {
 	var deployedModule *api.Module
 	var err error
-	suite.gomega.Eventually(func() (api.ModuleStateType, error) {
+	suite.gomega.Eventually(func() (bool, error) {
 		deployedModule, err = c.Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
 		if err != nil {
 			logger.log("error while fetching module %s/%s, %v", module.GetNamespace(), module.GetName(), err.Error())
-			return "", err
+			return false, err
 		}
 
-		return deployedModule.Status.State, nil
-	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeEquivalentTo(api.ModuleStateReady))
+		cond := status.GetReadyCondition(deployedModule)
+		if cond == nil {
+			return false, nil
+		}
+		return cond.Status == corev1.ConditionTrue, nil
+	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
 	return deployedModule
 }
 
@@ -313,7 +329,12 @@ func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeUpgraded(logger test
 			return false
 		}
 
-		return deployedModule.Status.State == api.ModuleStateReady && deployedModule.Status.Version == module.Spec.Version
+		cond := status.GetReadyCondition(deployedModule)
+		if cond == nil {
+			return false
+		}
+		return cond.Status == corev1.ConditionTrue && cond.Reason == api.ReadyReasonUpgradeSucceeded &&
+			deployedModule.Status.LastSuccessfulVersion == module.Spec.Version
 	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
 	return deployedModule
 }

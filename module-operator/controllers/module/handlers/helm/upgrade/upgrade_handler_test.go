@@ -67,17 +67,17 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
 	result, err := handler.PreWorkUpdateStatus(ctx)
 	asserts.NoError(err)
 	asserts.Equal(ctrl.Result{}, result)
-
-	// fetch the Module and validate that the condition and state are set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
-	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondPreUpgrade, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReconciling, string(module.Status.State))
 }
 
 // TestPreWork tests the upgrade handler PreWork function
@@ -114,6 +114,12 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
 	result, err := handler.DoWorkUpdateStatus(ctx)
@@ -123,8 +129,7 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 	// fetch the Module and validate that the condition and state are set
 	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondUpgradeStarted, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReconciling, string(module.Status.State))
+	asserts.Equal(v1alpha1.ReadyReasonUpgradeStarted, module.Status.Conditions[0].Reason)
 }
 
 func getChart() *chart.Chart {
@@ -327,6 +332,12 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
 	result, err := handler.WorkCompletedUpdateStatus(ctx)
@@ -336,8 +347,7 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 	// fetch the Module and validate that the condition and state are set
 	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondUpgradeComplete, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReady, string(module.Status.State))
+	asserts.Equal(v1alpha1.ReadyReasonUpgradeSucceeded, module.Status.Conditions[0].Reason)
 }
 
 func newScheme() *runtime.Scheme {

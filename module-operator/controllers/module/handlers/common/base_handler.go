@@ -4,8 +4,6 @@
 package common
 
 import (
-	"context"
-
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
@@ -30,40 +28,13 @@ func ResetUpgradeFunc() {
 	upgradeFunc = helm2.UpgradeRelease
 }
 
-// UpdateStatus does the lifecycle pre-Work status update
-func (h BaseHandler) UpdateStatus(ctx handlerspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType) (ctrl.Result, error) {
-	module := ctx.CR.(*moduleapi.Module)
-	AppendCondition(module, string(cond), cond)
-	module.Status.State = state
-	if err := ctx.Client.Status().Update(context.TODO(), module); err != nil {
-		return util.NewRequeueWithShortDelay(), nil
-	}
-	return ctrl.Result{}, nil
-}
-
-// UpdateDoneStatus does the lifecycle status update when the work is done
-func (h BaseHandler) UpdateDoneStatus(ctx handlerspi.HandlerContext, cond moduleapi.LifecycleCondition, state moduleapi.ModuleStateType, version string) (ctrl.Result, error) {
-	module := ctx.CR.(*moduleapi.Module)
-
-	AppendCondition(module, string(cond), cond)
-	module.Status.State = state
-	module.Status.ObservedGeneration = module.Generation
-	if len(version) > 0 {
-		module.Status.Version = version
-	}
-	if err := ctx.Client.Status().Update(context.TODO(), module); err != nil {
-		return util.NewRequeueWithShortDelay(), nil
-	}
-	return ctrl.Result{}, nil
-}
-
 // HelmUpgradeOrInstall does a Helm upgrade --install of the chart
 func (h BaseHandler) HelmUpgradeOrInstall(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
 	module := ctx.CR.(*moduleapi.Module)
 
 	// Perform a Helm install using the helm upgrade --install command
 	helmRelease := ctx.HelmInfo.HelmRelease
-	helmOverrides, err := helm2.LoadOverrideFiles(ctx.Log, ctx.Client, helmRelease.Name, module.Namespace, module.Spec.Overrides)
+	helmOverrides, err := helm2.LoadOverrideFiles(ctx.Log, ctx.Client, helmRelease.Name, module.Namespace, buildOverrides(module))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -98,4 +69,32 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 	// Check if the workload pods are ready
 	ready, err := CheckWorkLoadsReady(ctx, ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	return ready, ctrl.Result{}, err
+}
+
+// buildOverrides builds the Helm value overrides in the correct precedence order, where values has the highest precedence.
+func buildOverrides(module *moduleapi.Module) []helm2.ValueOverrides {
+	overrides := []helm2.ValueOverrides{}
+
+	// Add all the valueFrom overrides
+	for i := range module.Spec.ValuesFrom {
+		// Skip creating an entry if both refs are nil
+		if module.Spec.ValuesFrom[i].ConfigMapRef == nil && module.Spec.ValuesFrom[i].SecretRef == nil {
+			continue
+		}
+		override := helm2.ValueOverrides{
+			ConfigMapRef: module.Spec.ValuesFrom[i].ConfigMapRef,
+			SecretRef:    module.Spec.ValuesFrom[i].SecretRef,
+		}
+		overrides = append(overrides, override)
+	}
+
+	// Add the values overrides last, so they have the highest precedence
+	if module.Spec.Values != nil {
+		override := helm2.ValueOverrides{
+			Values: module.Spec.Values,
+		}
+		overrides = append(overrides, override)
+	}
+
+	return overrides
 }

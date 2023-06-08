@@ -12,8 +12,8 @@ import (
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:path=modules,shortName=module;modules
-// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="The current version of the Verrazzano platform."
-// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.state",description="State of Module reconciliation"
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.lastSuccessfulVersion",description="The current version of the Verrazzano platform."
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[:].status",description="True if the Module is ready"
 // +genclient
 
 // Module specifies a Verrazzano Module instance
@@ -36,82 +36,106 @@ type ModuleList struct {
 
 // ModuleSpec defines the attributes for a Verrazzano Module instance
 type ModuleSpec struct {
-	ModuleName      string      `json:"moduleName,omitempty"`
-	Version         string      `json:"version,omitempty"`
-	TargetNamespace string      `json:"targetNamespace,omitempty"`
-	Overrides       []Overrides `json:"overrides,omitempty"`
-}
+	// Module name is the well-known Module name
+	ModuleName string `json:"moduleName,omitempty"`
 
-// Overrides identifies overrides for a component.
-type Overrides struct {
-	// Selector for ConfigMap containing override data.
+	// Version is the desired version of the Module
 	// +optional
-	ConfigMapRef *corev1.ConfigMapKeySelector `json:"configMapRef,omitempty"`
-	// Selector for Secret containing override data.
+	Version string `json:"version,omitempty"`
+
+	// TargetNamespace is the namespace where the Module will be installed
 	// +optional
-	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
-	// Configure overrides using inline YAML.
+	TargetNamespace string `json:"targetNamespace,omitempty"`
+
+	// Values specifies overrides using inline YAML.  Values have precedence over ValuesFrom
 	// +optional
 	Values *apiextensionsv1.JSON `json:"values,omitempty"`
+
+	// ValuesFrom specifies the values from a Configmap or Secret
+	// +optional
+	ValuesFrom []ValuesFromSource `json:"valuesFrom,omitempty"`
 }
 
-type ModuleStateType string
+// ValuesFromSource identifies value overrides for a Module.
+type ValuesFromSource struct {
+
+	// ConfigMapRef is a selector for a ConfigMap containing override data.
+	// +optional
+	ConfigMapRef *corev1.ConfigMapKeySelector `json:"configMapRef,omitempty"`
+
+	// SecretRef is a selector for a Secret containing override data.
+	// +optional
+	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
+}
+
+type ModuleConditionType string
 
 const (
-	ModuleStateReady       = "Ready"
-	ModuleStateReconciling = "Reconciling"
+	ModuleConditionReady = "Ready"
 )
 
-// ModuleStatus defines the observed state of a Verrazzano Module resource.
+// ModuleStatus defines the action state of the Module resource.
 type ModuleStatus struct {
-	// State is the Module state
-	State ModuleStateType `json:"state,omitempty"`
-	// The latest available observations of an object's current state.
+	// Conditions are the list of conditions for the module.
 	Conditions []ModuleCondition `json:"conditions,omitempty"`
-	// ObservedGeneration is the actual generation that was reconciled
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-	// The version of module that is installed.
-	Version string `json:"version,omitempty"`
+
+	// LastSuccessfulVersion is the last version of the module that was successfully reconciled.
+	// +optional
+	LastSuccessfulVersion string `json:"lastSuccessfulVersion,omitempty"`
+
+	// LastSuccessfulGeneration is the last generation of the module that was successfully reconciled.
+	// +optional
+	LastSuccessfulGeneration int64 `json:"lastSuccessfulGeneration,omitempty"`
 }
 
-// ModuleCondition describes the current state of an installation.
+// ModuleCondition describes the current condition of the Module.
 type ModuleCondition struct {
-	// Last time the condition transitioned from one status to another.
-	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
-	// Human-readable message indicating details about the last transition.
+	// LastTransitionTime is the last time the condition transitioned from one status to another.
+	LastTransitionTime string `json:"lastTransitionTime"`
+
+	// Message is a human-readable message indicating details about the last transition.
 	Message string `json:"message,omitempty"`
+
 	// Status of the condition: one of `True`, `False`, or `Unknown`.
 	Status corev1.ConditionStatus `json:"status"`
+
 	// Type of condition.
-	Type LifecycleCondition `json:"type"`
+	Type ModuleConditionType `json:"type"`
+
+	// Reason for the condition.  This is a machine-readable one word value
+	Reason ModuleConditionReason `json:"reason"`
 }
 
-// ModuleClassType Identifies the lifecycle class used to manage a subset of Module types
+// ModuleClassType Identifies the class used to manage a set of Module types
 type ModuleClassType string
 
 const (
-	// HelmModuleClass defines the class name used by the Helm operator
+	// HelmModuleClass defines the class type used by the Helm operator
 	HelmModuleClass ModuleClassType = "helm"
 
-	// CalicoModuleClass defines the class name used by the Calico operator
+	// CalicoModuleClass defines the class type used by the Calico operator
 	CalicoModuleClass ModuleClassType = "calico"
-	CCMModuleClass    ModuleClassType = "oci-ccm"
+
+	// CCMModuleClass defines the class type used by the oci-ccm operator
+	CCMModuleClass ModuleClassType = "oci-ccm"
 )
 
-type LifecycleCondition string
+// ModuleConditionReason is the reason for the condition type
+type ModuleConditionReason string
 
 const (
-	ConditionArrayLimit = 5
-
-	CondPreInstall        LifecycleCondition = "PreInstall"
-	CondInstallStarted    LifecycleCondition = "InstallStarted"
-	CondInstallComplete   LifecycleCondition = "InstallComplete"
-	CondPreUninstall      LifecycleCondition = "PreUninstall"
-	CondUninstallStarted  LifecycleCondition = "UninstallStarted"
-	CondUninstallComplete LifecycleCondition = "UninstallComplete"
-	CondPreUpgrade        LifecycleCondition = "PreUpgrade"
-	CondUpgradeStarted    LifecycleCondition = "UpgradeStarted"
-	CondUpgradeComplete   LifecycleCondition = "UpgradeComplete"
+	ReadyReasonInstallStarted     ModuleConditionReason = "InstallStarted"
+	ReadyReasonInstallSucceeded   ModuleConditionReason = "InstallSucceeded"
+	ReadyReasonInstallFailed      ModuleConditionReason = "InstallFailed"
+	ReadyReasonUninstallStarted   ModuleConditionReason = "UninstallStarted"
+	ReadyReasonUninstallSucceeded ModuleConditionReason = "UninstallSucceeded"
+	ReadyReasonUninstallFailed    ModuleConditionReason = "UninstallFailed"
+	ReadyReasonUpdateStarted      ModuleConditionReason = "UpdateStarted"
+	ReadyReasonUpdateSucceeded    ModuleConditionReason = "UpdateSucceeded"
+	ReadyReasonUpdateFailed       ModuleConditionReason = "UpdateFailed"
+	ReadyReasonUpgradeStarted     ModuleConditionReason = "UpgradeStarted"
+	ReadyReasonUpgradeSucceeded   ModuleConditionReason = "UpgradeSucceeded"
+	ReadyReasonUpgradeFailed      ModuleConditionReason = "UpgradeFailed"
 )
 
 func init() {

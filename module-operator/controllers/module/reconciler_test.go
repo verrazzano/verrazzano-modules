@@ -26,10 +26,11 @@ const namespace = "testns"
 const name = "test"
 
 type handler struct {
-	statemachineError  bool
-	statemachineCalled bool
-	loadHelmInfoErr    string
-	smHandler          handlerspi.StateMachineHandler
+	statemachineError   bool
+	statemachineRequeue bool
+	statemachineCalled  bool
+	loadHelmInfoErr     string
+	smHandler           handlerspi.StateMachineHandler
 }
 
 var _ handlerspi.StateMachineHandler = &handler{}
@@ -44,6 +45,7 @@ func TestReconcileSuccess(t *testing.T) {
 	tests := []struct {
 		name                       string
 		statemachineError          bool
+		statemachineRequeue        bool
 		specVersion                string
 		statusVersion              string
 		statusGeneration           int64
@@ -65,13 +67,43 @@ func TestReconcileSuccess(t *testing.T) {
 			expectedError:              false,
 		},
 		{
+			name:                "test-install-started",
+			statemachineError:   false,
+			statemachineRequeue: true,
+			moduleInfo: handlerspi.ModuleHandlerInfo{
+				InstallActionHandler: &handler{},
+			},
+			conditions: []moduleapi.ModuleCondition{{
+				Type:   moduleapi.ModuleConditionReady,
+				Reason: moduleapi.ReadyReasonInstallStarted,
+			}},
+			expectedStatemachineCalled: true,
+			expectedRequeue:            true,
+			expectedError:              false,
+		},
+		{
+			name:              "test-install-failed",
+			statemachineError: false,
+			moduleInfo: handlerspi.ModuleHandlerInfo{
+				InstallActionHandler: &handler{},
+			},
+			conditions: []moduleapi.ModuleCondition{{
+				Type:   moduleapi.ModuleConditionReady,
+				Reason: moduleapi.ReadyReasonInstallFailed,
+			}},
+			expectedStatemachineCalled: true,
+			expectedRequeue:            false,
+			expectedError:              false,
+		},
+		{
 			name:              "test-update",
 			statemachineError: false,
 			moduleInfo: handlerspi.ModuleHandlerInfo{
 				UpdateActionHandler: &handler{},
 			},
 			conditions: []moduleapi.ModuleCondition{{
-				Type: moduleapi.CondInstallComplete,
+				Type:   moduleapi.ModuleConditionReady,
+				Reason: moduleapi.ReadyReasonInstallSucceeded,
 			}},
 			expectedStatemachineCalled: true,
 			expectedRequeue:            false,
@@ -86,7 +118,8 @@ func TestReconcileSuccess(t *testing.T) {
 				UpgradeActionHandler: &handler{},
 			},
 			conditions: []moduleapi.ModuleCondition{{
-				Type: moduleapi.CondInstallComplete,
+				Type:   moduleapi.ModuleConditionReady,
+				Reason: moduleapi.ReadyReasonInstallSucceeded,
 			}},
 			expectedStatemachineCalled: true,
 			expectedRequeue:            false,
@@ -96,7 +129,8 @@ func TestReconcileSuccess(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			h := &handler{
-				statemachineError: test.statemachineError,
+				statemachineError:   test.statemachineError,
+				statemachineRequeue: test.statemachineRequeue,
 			}
 			funcExecuteStateMachine = h.testExecuteStateMachine
 			defer func() { funcExecuteStateMachine = defaultExecuteStateMachine }()
@@ -118,9 +152,8 @@ func TestReconcileSuccess(t *testing.T) {
 					Version: test.specVersion,
 				},
 				Status: moduleapi.ModuleStatus{
-					Conditions:         test.conditions,
-					Version:            test.statusVersion,
-					ObservedGeneration: test.statusGeneration,
+					Conditions:            test.conditions,
+					LastSuccessfulVersion: test.statusVersion,
 				},
 			}
 
@@ -193,7 +226,8 @@ func TestReconcileErrors(t *testing.T) {
 			expectedError:              false,
 			expectNilHandler:           true,
 			conditions: []moduleapi.ModuleCondition{{
-				Type: moduleapi.CondInstallComplete,
+				Type:   moduleapi.ModuleConditionReady,
+				Reason: moduleapi.ReadyReasonInstallSucceeded,
 			}},
 		},
 		{
@@ -261,9 +295,9 @@ func TestReconcileErrors(t *testing.T) {
 					Version: test.specVersion,
 				},
 				Status: moduleapi.ModuleStatus{
-					Conditions:         test.conditions,
-					Version:            test.statusVersion,
-					ObservedGeneration: test.statusGeneration,
+					Conditions:               test.conditions,
+					LastSuccessfulVersion:    test.statusVersion,
+					LastSuccessfulGeneration: test.statusGeneration,
 				},
 			}
 
@@ -297,7 +331,7 @@ func initScheme() *runtime.Scheme {
 func (h *handler) testExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
 	h.statemachineCalled = true
 	h.smHandler = sm.Handler
-	if h.statemachineError {
+	if h.statemachineError || h.statemachineRequeue {
 		return util.NewRequeueWithShortDelay()
 	}
 	return ctrl.Result{}
