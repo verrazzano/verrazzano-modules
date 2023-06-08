@@ -4,7 +4,7 @@
 package vzlog
 
 import (
-	vzctrl "github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"os"
 	"time"
 
@@ -13,7 +13,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/log"
 	kzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const timeFormat = "2006-01-02T15:04:05.000Z"
@@ -86,16 +85,16 @@ func ResultErrorsWithLog(message string, errors []error, log *zap.SugaredLogger)
 
 // IgnoreConflictWithLog ignores conflict error and logs a message
 // Returned is a result and an error
-func IgnoreConflictWithLog(message string, err error, log *zap.SugaredLogger) (reconcile.Result, error) {
+func IgnoreConflictWithLog(message string, err error, log *zap.SugaredLogger) (result.Result, error) {
 	if err == nil {
-		return reconcile.Result{}, nil
+		return result.NewResult(), nil
 	}
 	if k8serrors.IsConflict(err) {
 		log.Debugf("%s: %v", message, err)
 	} else {
 		log.Errorf("%s: %v", message, err)
 	}
-	return vzctrl.NewRequeueWithDelay(2, 3, time.Second).GetControllerResult(), nil
+	return result.NewRequeueWithDelay(2, 3, time.Second), nil
 }
 
 // BuildZapInfoLogger initializes a zap logger at info level

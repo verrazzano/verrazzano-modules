@@ -11,7 +11,7 @@ import (
 
 type Result interface {
 	ShouldRequeue() bool
-	GetControllerResult() ctrl.Result
+	GetCtrlRuntimeResult() ctrl.Result
 	GetError() error
 	IsError() bool
 }
@@ -49,7 +49,7 @@ func (r controllerResult) ShouldRequeue() bool {
 	return r.result.Requeue
 }
 
-func (r controllerResult) GetControllerResult() ctrl.Result {
+func (r controllerResult) GetCtrlRuntimeResult() ctrl.Result {
 	return r.result
 }
 
