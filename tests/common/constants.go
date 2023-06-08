@@ -16,4 +16,18 @@ const (
 	TEST_HELM_MODULE_VERSION_011 = "0.1.1"
 	// DEFAULT_NS is default namespace.
 	DEFAULT_NS = "default"
+	// TEST_HELM_MODULE_OVERRIDE_010_2 is the name of manifest file containing a overrides for 0.1.0 version of helm module.
+	TEST_HELM_MODULE_OVERRIDE_010_2 = "vz_test_module_overrides_010_2.yaml"
+	// TEST_HELM_MODULE_OVERRIDE_010_3 is the name of manifest file containing a overrides for 0.1.0 version of helm module.
+	TEST_HELM_MODULE_OVERRIDE_010_3 = "vz_test_module_overrides_010_3.yaml"
+	// TEST_HELM_MODULE_OVERRIDE_010_4 is the name of manifest file containing a overrides for 0.1.0 version of helm module.
+	TEST_HELM_MODULE_OVERRIDE_010_4 = "vz_test_module_overrides_010_4.yaml"
+	// TEST_HELM_MODULE_OVERRIDE_010_5 is the name of manifest file containing a overrides for 0.1.0 version of helm module.
+	TEST_HELM_MODULE_OVERRIDE_010_5 = "vz_test_module_overrides_010_5.yaml"
+	// TEST_HELM_MODULE_OVERRIDE_010_6 is the name of manifest file containing a overrides for 0.1.0 version of helm module.
+	TEST_HELM_MODULE_OVERRIDE_010_6 = "vz_test_module_overrides_010_6.yaml"
+	// TEST_HELM_MODULE_OVERRIDE_011_1 is the name of manifest file containing a overrides for 0.1.1 version of helm module.
+	TEST_HELM_MODULE_OVERRIDE_011_1 = "vz_test_module_overrides_011_1.yaml"
+	// TEST_HELM_MODULE_OVERRIDE_011_2 is the name of manifest file containing a overrides for 0.1.1 version of helm module.
+	TEST_HELM_MODULE_OVERRIDE_011_2 = "vz_test_module_overrides_011_2.yaml"
 )
