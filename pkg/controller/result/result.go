@@ -4,7 +4,6 @@
 package result
 
 import (
-	"k8s.io/apimachinery/pkg/util/rand"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 )
@@ -23,26 +22,27 @@ type controllerResult struct {
 
 var _ Result = controllerResult{}
 
-func NewRequeueWithShortDelay() Result {
-	return NewRequeueWithDelay(1, 2, time.Second)
-}
-
-func NewRequeueWithShortDelayError(err error) Result {
-	res := NewRequeueWithDelay(1, 2, time.Second)
-	cr := res.(controllerResult)
-	cr.err = err
-	return cr
-}
-
 func NewResult() Result {
 	return controllerResult{}
 }
 
-// NewRequeueWithDelay returns a new Result that will cause requeue after a short delay
-func NewRequeueWithDelay(min int, max int, units time.Duration) Result {
-	var random = rand.IntnRange(min, max)
-	delayNanos := time.Duration(random) * units
-	return controllerResult{result: ctrl.Result{Requeue: true, RequeueAfter: delayNanos}}
+// NewResultShortRequeueDelay returns a new Result that will cause requeue after a short delay
+func NewResultShortRequeueDelay() Result {
+	return NewBuilder().ShortDelay().Build()
+}
+
+// NewResultRequeueDelay returns a new Result that will cause requeue after the specified delay
+func NewResultRequeueDelay(min int, max int, units time.Duration) Result {
+	return NewBuilder().Delay(min, max, units).Build()
+}
+
+// NewResultShortRequeueDelayIfError returns a new Result that will cause requeue after a short delay if there is an error
+func NewResultShortRequeueDelayIfError(err error) Result {
+	b := NewBuilder()
+	if err != nil {
+		b.Error(err).ShortDelay()
+	}
+	return b.Build()
 }
 
 func (r controllerResult) ShouldRequeue() bool {

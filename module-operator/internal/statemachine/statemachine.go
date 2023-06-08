@@ -138,7 +138,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 				return res
 			}
 			if !done {
-				return result.NewRequeueWithShortDelay()
+				return result.NewResultShortRequeueDelay()
 			}
 			tracker.state = statePostWorkUpdateStatus
 

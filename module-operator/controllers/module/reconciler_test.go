@@ -331,7 +331,7 @@ func (h *handler) testExecuteStateMachine(ctx handlerspi.HandlerContext, sm stat
 	h.statemachineCalled = true
 	h.smHandler = sm.Handler
 	if h.statemachineError || h.statemachineRequeue {
-		return result.NewRequeueWithShortDelay()
+		return result.NewResultShortRequeueDelay()
 	}
 	return result.NewResult()
 }

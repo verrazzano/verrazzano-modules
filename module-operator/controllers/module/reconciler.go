@@ -41,7 +41,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return res
 	}
 	if handler == nil {
-		return result.NewRequeueWithShortDelay()
+		return result.NewResultShortRequeueDelay()
 	}
 
 	return r.reconcileAction(spictx, cr, handler)
@@ -58,10 +58,10 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 	if err != nil {
 		if strings.Contains(err.Error(), "FileNotFound") {
 			spictx.Log.Errorf("Failed loading file information: %v", err)
-			return result.NewRequeueWithDelay(10, 15, time.Second)
+			return result.NewResultRequeueDelay(10, 15, time.Second)
 		}
 		err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
-		return result.NewRequeueWithShortDelayError(err)
+		return result.NewResultShortRequeueDelayIfError(err)
 	}
 
 	// Initialize the handler context
@@ -85,7 +85,7 @@ func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *modulea
 	upgradeNeeded, err := funcIsUpgradeNeeded(cr.Spec.Version, cr.Status.LastSuccessfulVersion)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Failed checking if upgrade needed for Module %s/%s failed with error: %v\n", cr.Namespace, cr.Name, err)
-		return nil, result.NewRequeueWithShortDelay()
+		return nil, result.NewResultShortRequeueDelay()
 	}
 	if upgradeNeeded {
 		return r.HandlerInfo.UpgradeActionHandler, result.NewResult()

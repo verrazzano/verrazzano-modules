@@ -72,10 +72,10 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) result.Result {
 		// Update spec version to match chart, always requeue to get ModuleCR with version
 		module.Spec.Version = ctx.ChartInfo.Version
 		if err := ctx.Client.Update(context.TODO(), module); err != nil {
-			return result.NewRequeueWithShortDelay()
+			return result.NewResultShortRequeueDelay()
 		}
 		// ALways reconcile so that we get a new tracker with the latest ModuleCR
-		return result.NewRequeueWithDelay(1, 2, time.Second)
+		return result.NewResultRequeueDelay(1, 2, time.Second)
 	}
 
 	return result.NewResult()

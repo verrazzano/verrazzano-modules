@@ -124,7 +124,7 @@ func TestEachStateRequeue(t *testing.T) {
 			Handler: h,
 		}
 		b := h.behaviorMap[s]
-		b.Result = result.NewRequeueWithShortDelay()
+		b.Result = result.NewResultShortRequeueDelay()
 
 		res := sm.Execute(ctx)
 		asserts.True(res.ShouldRequeue())

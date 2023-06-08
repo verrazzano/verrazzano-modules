@@ -61,7 +61,7 @@ func updateReadyCondition(ctx handlerspi.HandlerContext, module *moduleapi.Modul
 	// Always get the latest module from the controller-runtime cache to try and avoid conflict error
 	latestModule := &moduleapi.Module{}
 	if err := ctx.Client.Get(context.TODO(), types.NamespacedName{Namespace: module.Namespace, Name: module.Name}, latestModule); err != nil {
-		return result.NewRequeueWithShortDelay()
+		return result.NewResultShortRequeueDelay()
 	}
 	latestModule.Status.LastSuccessfulVersion = module.Status.LastSuccessfulVersion
 	latestModule.Status.LastSuccessfulGeneration = module.Status.LastSuccessfulGeneration
@@ -75,7 +75,7 @@ func updateReadyCondition(ctx handlerspi.HandlerContext, module *moduleapi.Modul
 	appendCondition(latestModule, cond)
 
 	if err := ctx.Client.Status().Update(context.TODO(), latestModule); err != nil {
-		return result.NewRequeueWithShortDelay()
+		return result.NewResultShortRequeueDelay()
 	}
 	return result.NewResult()
 }

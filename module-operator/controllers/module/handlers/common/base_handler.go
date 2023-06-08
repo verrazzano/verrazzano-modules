@@ -46,7 +46,7 @@ func (h BaseHandler) HelmUpgradeOrInstall(ctx handlerspi.HandlerContext) result.
 		Overrides:    helmOverrides,
 	}
 	_, err = upgradeFunc(ctx.Log, opts, false, ctx.DryRun)
-	return result.NewResult()
+	return result.NewResultShortRequeueDelayIfError(err)
 }
 
 // CheckReleaseDeployedAndReady checks if the Helm release is deployed and ready
@@ -62,12 +62,12 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 		return false, result.NewResult()
 	}
 	if !deployed {
-		return false, result.NewRequeueWithShortDelay()
+		return false, result.NewResultShortRequeueDelay()
 	}
 
 	// Check if the workload pods are ready
 	ready, err := CheckWorkLoadsReady(ctx, ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
-	return ready, result.NewResult()
+	return ready, result.NewResultShortRequeueDelayIfError(err)
 }
 
 // buildOverrides builds the Helm value overrides in the correct precedence order, where values has the highest precedence.

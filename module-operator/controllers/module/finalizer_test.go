@@ -168,7 +168,7 @@ func (h *finalizerHandler) fakeExecuteStateMachine(ctx handlerspi.HandlerContext
 	h.statemachineCalled = true
 	h.smHandler = sm.Handler
 	if h.statemachineError {
-		return result.NewRequeueWithShortDelay()
+		return result.NewResultShortRequeueDelay()
 	}
 	return result.NewResult()
 }
