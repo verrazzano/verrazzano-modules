@@ -1,5 +1,6 @@
 // Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 package v1alpha1
 
 import (
@@ -16,7 +17,7 @@ import (
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[:].status",description="True if the Module is ready"
 // +genclient
 
-// Module specifies a Verrazzano Module instance
+// Module specifies a Verrazzano Module instance.
 type Module struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -34,56 +35,59 @@ type ModuleList struct {
 	Items           []Module `json:"items"`
 }
 
-// ModuleSpec defines the attributes for a Verrazzano Module instance
+// ModuleSpec defines the specification for a Verrazzano Module instance.
 type ModuleSpec struct {
-	// Module name is the well-known Module name
+	// Module name is the well-known Module name.
 	ModuleName string `json:"moduleName,omitempty"`
 
-	// Version is the desired version of the Module
+	// Version is the desired version of the Module.
 	// +optional
 	Version string `json:"version,omitempty"`
 
-	// TargetNamespace is the namespace where the Module will be installed
+	// TargetNamespace is the namespace where the Module will be installed.
 	// +optional
 	TargetNamespace string `json:"targetNamespace,omitempty"`
 
-	// Values specifies overrides using inline YAML.  Values have precedence over ValuesFrom
+	// Values specifies configuration values using inline YAML.
+	// Values have precedence over ValuesFrom.
 	// +optional
 	Values *apiextensionsv1.JSON `json:"values,omitempty"`
 
-	// ValuesFrom specifies the values from a Configmap or Secret
+	// ValuesFrom specifies the values from a Configmap or Secret.
+	// Each entry in the list has precedence over all previous entries in the list.
 	// +optional
 	ValuesFrom []ValuesFromSource `json:"valuesFrom,omitempty"`
 }
 
-// ValuesFromSource identifies value overrides for a Module.
+// ValuesFromSource specifies value overrides for a Module.
 type ValuesFromSource struct {
-
-	// ConfigMapRef is a selector for a ConfigMap containing override data.
+	// ConfigMapRef is a selector for a ConfigMap containing values data.
 	// +optional
 	ConfigMapRef *corev1.ConfigMapKeySelector `json:"configMapRef,omitempty"`
 
-	// SecretRef is a selector for a Secret containing override data.
+	// SecretRef is a selector for a Secret containing values data.
 	// +optional
 	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
 }
 
+// ModuleConditionType is the condition type.
 type ModuleConditionType string
 
 const (
+	// ModuleConditionReady is the Ready condition type
 	ModuleConditionReady = "Ready"
 )
 
 // ModuleStatus defines the action state of the Module resource.
 type ModuleStatus struct {
-	// Conditions are the list of conditions for the module.
+	// Conditions are the list of conditions for the Module.
 	Conditions []ModuleCondition `json:"conditions,omitempty"`
 
-	// LastSuccessfulVersion is the last version of the module that was successfully reconciled.
+	// LastSuccessfulVersion is the last version of the Module that was successfully reconciled.
 	// +optional
 	LastSuccessfulVersion string `json:"lastSuccessfulVersion,omitempty"`
 
-	// LastSuccessfulGeneration is the last generation of the module that was successfully reconciled.
+	// LastSuccessfulGeneration is the last generation of the Module that was successfully reconciled.
 	// +optional
 	LastSuccessfulGeneration int64 `json:"lastSuccessfulGeneration,omitempty"`
 }
@@ -102,25 +106,25 @@ type ModuleCondition struct {
 	// Type of condition.
 	Type ModuleConditionType `json:"type"`
 
-	// Reason for the condition.  This is a machine-readable one word value
+	// Reason for the condition.  This is a machine-readable one word value.
 	Reason ModuleConditionReason `json:"reason"`
 }
 
-// ModuleClassType Identifies the class used to manage a set of Module types
+// ModuleClassType Identifies the class used to manage a set of Module types.
 type ModuleClassType string
 
 const (
-	// HelmModuleClass defines the class type used by the Helm operator
+	// HelmModuleClass defines the class type used by the Helm operator.
 	HelmModuleClass ModuleClassType = "helm"
 
-	// CalicoModuleClass defines the class type used by the Calico operator
+	// CalicoModuleClass defines the class type used by the Calico operator.
 	CalicoModuleClass ModuleClassType = "calico"
 
-	// CCMModuleClass defines the class type used by the oci-ccm operator
+	// CCMModuleClass defines the class type used by the oci-ccm operator.
 	CCMModuleClass ModuleClassType = "oci-ccm"
 )
 
-// ModuleConditionReason is the reason for the condition type
+// ModuleConditionReason is the reason for the condition type.
 type ModuleConditionReason string
 
 const (
