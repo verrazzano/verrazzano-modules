@@ -132,7 +132,7 @@ func TestPreWork(t *testing.T) {
 
 	res := handler.PreWork(ctx)
 	asserts.NoError(res.GetError())
-	asserts.Equal(ctrl.Result{Requeue: true, RequeueAfter: 1000000000}, res)
+	asserts.Equal(ctrl.Result{Requeue: true, RequeueAfter: 1000000000}, res.GetControllerResult())
 
 	// fetch the Module and validate that the spec version has been set
 	err := cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)

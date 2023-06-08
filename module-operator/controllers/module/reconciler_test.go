@@ -247,7 +247,7 @@ func TestReconcileErrors(t *testing.T) {
 			},
 			expectedStatemachineCalled: false,
 			expectedRequeue:            true,
-			expectedError:              true,
+			expectedError:              false,
 			expectNilHandler:           true,
 		},
 		{
@@ -312,7 +312,7 @@ func TestReconcileErrors(t *testing.T) {
 			res := r.Reconcile(rctx, &unstructured.Unstructured{Object: uObj})
 
 			asserts.Equal(test.expectedStatemachineCalled, h.statemachineCalled)
-			asserts.Equal(test.expectedError, err != nil)
+			asserts.Equal(test.expectedError, res.IsError())
 			asserts.Equal(test.expectedRequeue, res.ShouldRequeue())
 			asserts.Equal(test.expectNilHandler, h.smHandler == nil)
 		})

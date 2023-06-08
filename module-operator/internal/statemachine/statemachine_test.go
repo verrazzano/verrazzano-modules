@@ -213,7 +213,7 @@ func TestNotDone(t *testing.T) {
 func getBehaviorMap() behaviorMap {
 	m := make(map[string]*behavior)
 	for _, s := range getStatesInOrder() {
-		m[s] = &behavior{boolResult: true, methodName: s}
+		m[s] = &behavior{boolResult: true, methodName: s, Result: result.NewResult()}
 	}
 	return m
 }

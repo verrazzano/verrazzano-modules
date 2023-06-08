@@ -27,11 +27,11 @@ func NewRequeueWithShortDelay() Result {
 	return NewRequeueWithDelay(1, 2, time.Second)
 }
 
-func NewResultRequeueIfError(err error) Result {
-	if err != nil {
-		return NewRequeueWithShortDelay()
-	}
-	return controllerResult{}
+func NewRequeueWithShortDelayError(err error) Result {
+	res := NewRequeueWithDelay(1, 2, time.Second)
+	cr := res.(controllerResult)
+	cr.err = err
+	return cr
 }
 
 func NewResult() Result {
@@ -58,5 +58,5 @@ func (r controllerResult) GetError() error {
 }
 
 func (r controllerResult) IsError() bool {
-	return r.err.Error() != ""
+	return r.err != nil
 }

@@ -60,8 +60,8 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 			spictx.Log.Errorf("Failed loading file information: %v", err)
 			return result.NewRequeueWithDelay(10, 15, time.Second)
 		}
-		spictx.Log.Errorf("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
-		return result.NewRequeueWithShortDelay()
+		err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
+		return result.NewRequeueWithShortDelayError(err)
 	}
 
 	// Initialize the handler context
