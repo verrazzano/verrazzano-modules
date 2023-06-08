@@ -179,10 +179,6 @@ func (h finalizerHandler) GetWorkName() string {
 	return "install"
 }
 
-func (h finalizerHandler) Init(context handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
-}
-
 func (h finalizerHandler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
 	return true, ctrl.Result{}, nil
 }

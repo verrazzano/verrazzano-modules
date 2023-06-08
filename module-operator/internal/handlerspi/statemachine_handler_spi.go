@@ -4,24 +4,13 @@
 package handlerspi
 
 import (
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
-
-// StateMachineHandlerConfig contains configuration data needed by the handlers
-type StateMachineHandlerConfig struct {
-	HelmInfo
-	CR     interface{}
-	Scheme *runtime.Scheme
-}
 
 // StateMachineHandler is the interface called by the state machine to do module related work
 type StateMachineHandler interface {
 	// GetWorkName returns the work name
 	GetWorkName() string
-
-	// Init initializes the component Helm information
-	Init(context HandlerContext, config StateMachineHandlerConfig) (ctrl.Result, error)
 
 	// IsWorkNeeded returns true if work is needed for the Module
 	IsWorkNeeded(context HandlerContext) (bool, ctrl.Result, error)

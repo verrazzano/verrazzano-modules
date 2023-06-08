@@ -118,12 +118,9 @@ func (suite *HelmModuleLifecycleTestSuite) cleanup() {
 }
 
 func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, overridesFile string, update bool, otherOverrides ...*api.Overrides) (*api.Module, *apiextensionsv1.JSON) {
-	var err error
 	op := "create"
 	if update {
 		op = "update"
-		module, err = c.Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
-		suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}
 
 	logger.log("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
@@ -133,18 +130,19 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 			Values: overrides,
 		},
 	}
-
 	for _, toAppend := range otherOverrides {
 		module.Spec.Overrides = append(module.Spec.Overrides, *toAppend)
 	}
+	suite.gomega.Eventually(func() error {
+		var err error
+		if update {
+			module, err = c.Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
+		} else {
+			module, err = c.Modules(module.GetNamespace()).Create(context.TODO(), module, v1.CreateOptions{})
+		}
+		return err
+	}, shortWaitTimeout, shortPollingInterval).ShouldNot(gomega.HaveOccurred())
 
-	if update {
-		module, err = c.Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
-	} else {
-		module, err = c.Modules(module.GetNamespace()).Create(context.TODO(), module, v1.CreateOptions{})
-	}
-
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	return module, overrides
 }
 
@@ -232,15 +230,15 @@ func (suite *HelmModuleLifecycleTestSuite) deleteNamespace(ns string) bool {
 func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeReady(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module) *api.Module {
 	var deployedModule *api.Module
 	var err error
-	suite.gomega.Eventually(func() bool {
+	suite.gomega.Eventually(func() (api.ModuleStateType, error) {
 		deployedModule, err = c.Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
 		if err != nil {
 			logger.log("error while fetching module %s/%s, %v", module.GetNamespace(), module.GetName(), err.Error())
-			return false
+			return "", err
 		}
 
-		return deployedModule.Status.State == api.ModuleStateReady
-	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
+		return deployedModule.Status.State, nil
+	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeEquivalentTo(api.ModuleStateReady))
 	return deployedModule
 }
 

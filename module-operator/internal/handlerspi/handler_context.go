@@ -13,4 +13,6 @@ type HandlerContext struct {
 	ctrlclient.Client
 	Log    vzlog.VerrazzanoLogger
 	DryRun bool
+	CR     interface{}
+	HelmInfo
 }

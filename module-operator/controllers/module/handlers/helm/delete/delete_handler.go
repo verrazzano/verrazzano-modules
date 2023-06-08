@@ -23,11 +23,6 @@ func NewHandler() handlerspi.StateMachineHandler {
 	return &HelmHandler{}
 }
 
-// Init initializes the handler with Helm chart information
-func (h *HelmHandler) Init(ctx handlerspi.HandlerContext, config handlerspi.StateMachineHandlerConfig) (ctrl.Result, error) {
-	return h.BaseHandler.InitHandler(ctx, config)
-}
-
 // GetWorkName returns the work name
 func (h HelmHandler) GetWorkName() string {
 	return "uninstall"
@@ -54,30 +49,30 @@ func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) (ctrl.Res
 }
 
 // DoWork uninstalls the module using Helm
-func (h HelmHandler) DoWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	installed, err := helm.IsReleaseInstalled(h.HelmRelease.Name, h.HelmRelease.Namespace)
+func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) (ctrl.Result, error) {
+	installed, err := helm.IsReleaseInstalled(ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	if err != nil {
-		context.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", h.HelmRelease.Namespace, h.HelmRelease.Name)
+		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", ctx.HelmRelease.Namespace, ctx.HelmRelease.Name)
 		return ctrl.Result{}, err
 	}
 	if !installed {
 		return ctrl.Result{}, err
 	}
 
-	err = helm.Uninstall(context.Log, h.HelmRelease.Name, h.HelmRelease.Namespace, context.DryRun)
+	err = helm.Uninstall(ctx.Log, ctx.HelmRelease.Name, ctx.HelmRelease.Namespace, ctx.DryRun)
 	return ctrl.Result{}, err
 }
 
 // IsWorkDone Indicates whether a module is uninstalled
-func (h HelmHandler) IsWorkDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	if context.DryRun {
-		context.Log.Debugf("IsReady() dry run for %s", h.HelmRelease.Name)
+func (h HelmHandler) IsWorkDone(ctx handlerspi.HandlerContext) (bool, ctrl.Result, error) {
+	if ctx.DryRun {
+		ctx.Log.Debugf("IsReady() dry run for %s", ctx.HelmRelease.Name)
 		return true, ctrl.Result{}, nil
 	}
 
-	deployed, err := helm.IsReleaseDeployed(h.HelmRelease.Name, h.HelmRelease.Namespace)
+	deployed, err := helm.IsReleaseDeployed(ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	if err != nil {
-		context.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
+		ctx.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
 		return false, ctrl.Result{}, err
 	}
 
