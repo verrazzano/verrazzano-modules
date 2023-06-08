@@ -22,8 +22,7 @@ package statemachine
 import (
 	"fmt"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -81,7 +80,7 @@ type StateMachine struct {
 // During state machine execution, a result may be returned to indicate that the
 // controller-runtime should requeue after a delay.  This is done when a handler is
 // waiting for a resource or some other condition.
-func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) ctrl.Result {
+func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.Result {
 	tracker := ensureTracker(s.CR, stateInit)
 
 	workerName := s.Handler.GetWorkName()
@@ -93,9 +92,9 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) ctrl.Re
 			tracker.state = stateCheckWorkNeeded
 
 		case stateCheckWorkNeeded:
-			needed, res, err := s.Handler.IsWorkNeeded(handlerContext)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2
+			needed, res := s.Handler.IsWorkNeeded(handlerContext)
+			if res.ShouldRequeue() {
+				return res
 			}
 			if !needed {
 				tracker.state = stateEnd
@@ -104,67 +103,67 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) ctrl.Re
 			}
 
 		case statePreWorkUpdateStatus:
-			res, err := s.Handler.PreWorkUpdateStatus(handlerContext)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2
+			res := s.Handler.PreWorkUpdateStatus(handlerContext)
+			if res.ShouldRequeue() {
+				return res
 			}
 			tracker.state = statePreWork
 
 		case statePreWork:
 			handlerContext.Log.Progressf("Doing pre-%s for %s", workerName, nsn)
-			res, err := s.Handler.PreWork(handlerContext)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2
+			res := s.Handler.PreWork(handlerContext)
+			if res.ShouldRequeue() {
+				return res
 			}
 			tracker.state = stateWorkUpdateStatus
 
 		case stateWorkUpdateStatus:
-			res, err := s.Handler.DoWorkUpdateStatus(handlerContext)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2
+			res := s.Handler.DoWorkUpdateStatus(handlerContext)
+			if res.ShouldRequeue() {
+				return res
 			}
 			tracker.state = stateWork
 
 		case stateWork:
 			handlerContext.Log.Progressf("Doing %s for %s", workerName, nsn)
-			res, err := s.Handler.DoWork(handlerContext)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2
+			res := s.Handler.DoWork(handlerContext)
+			if res.ShouldRequeue() {
+				return res
 			}
 			tracker.state = stateWorkWaitDone
 
 		case stateWorkWaitDone:
-			done, res, err := s.Handler.IsWorkDone(handlerContext)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2
+			done, res := s.Handler.IsWorkDone(handlerContext)
+			if res.ShouldRequeue() {
+				return res
 			}
 			if !done {
-				return util.NewRequeueWithShortDelay()
+				return result.NewRequeueWithShortDelay()
 			}
 			tracker.state = statePostWorkUpdateStatus
 
 		case statePostWorkUpdateStatus:
-			res, err := s.Handler.PostWorkUpdateStatus(handlerContext)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2
+			res := s.Handler.PostWorkUpdateStatus(handlerContext)
+			if res.ShouldRequeue() {
+				return res
 			}
 			tracker.state = statePostWork
 
 		case statePostWork:
 			handlerContext.Log.Progressf("Doing post-%s for %s", workerName, nsn)
-			res, err := s.Handler.PostWork(handlerContext)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2
+			res := s.Handler.PostWork(handlerContext)
+			if res.ShouldRequeue() {
+				return res
 			}
 			tracker.state = stateCompleteUpdateStatus
 
 		case stateCompleteUpdateStatus:
-			res, err := s.Handler.WorkCompletedUpdateStatus(handlerContext)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2
+			res := s.Handler.WorkCompletedUpdateStatus(handlerContext)
+			if res.ShouldRequeue() {
+				return res
 			}
 			tracker.state = stateEnd
 		}
 	}
-	return ctrl.Result{}
+	return result.ControllerResult{}
 }

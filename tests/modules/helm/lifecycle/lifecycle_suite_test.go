@@ -130,7 +130,6 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 
 	// Build the values and valuesFrom
 	values := suite.generateOverridesFromFile(overridesFile)
-	module.Spec.Values = values
 	var valuesFrom []api.ValuesFromSource
 	for _, toAppend := range otherOverrides {
 		valuesFrom = append(valuesFrom, *toAppend)

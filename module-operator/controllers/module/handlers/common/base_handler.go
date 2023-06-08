@@ -6,7 +6,7 @@ package common
 import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"helm.sh/helm/v3/pkg/release"
@@ -63,7 +63,7 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 		return false, ctrl.Result{}, err
 	}
 	if !deployed {
-		return false, util.NewRequeueWithShortDelay(), nil
+		return false, result.NewRequeueWithShortDelay(), nil
 	}
 
 	// Check if the workload pods are ready

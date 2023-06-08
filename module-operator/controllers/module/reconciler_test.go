@@ -11,7 +11,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -332,7 +332,7 @@ func (h *handler) testExecuteStateMachine(ctx handlerspi.HandlerContext, sm stat
 	h.statemachineCalled = true
 	h.smHandler = sm.Handler
 	if h.statemachineError || h.statemachineRequeue {
-		return util.NewRequeueWithShortDelay()
+		return result.NewRequeueWithShortDelay()
 	}
 	return ctrl.Result{}
 }

@@ -8,8 +8,9 @@ import (
 	"fmt"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 )
@@ -58,16 +59,24 @@ func UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, module *moduleapi
 
 // updateReadyCondition updates the Ready condition
 func updateReadyCondition(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, status corev1.ConditionStatus, msg string) (ctrl.Result, error) {
+	// Always get the latest module from the controller-runtime cache to try and avoid conflict error
+	latestModule := &moduleapi.Module{}
+	if err := ctx.Client.Get(context.TODO(), types.NamespacedName{Namespace: module.Namespace, Name: module.Name}, latestModule); err != nil {
+		return result.NewRequeueWithShortDelay(), nil
+	}
+	latestModule.Status.LastSuccessfulVersion = module.Status.LastSuccessfulVersion
+	latestModule.Status.LastSuccessfulGeneration = module.Status.LastSuccessfulGeneration
+
 	cond := moduleapi.ModuleCondition{
 		Type:    moduleapi.ModuleConditionReady,
 		Reason:  reason,
 		Status:  status,
 		Message: msg,
 	}
-	appendCondition(module, cond)
+	appendCondition(latestModule, cond)
 
-	if err := ctx.Client.Status().Update(context.TODO(), module); err != nil {
-		return util.NewRequeueWithShortDelay(), nil
+	if err := ctx.Client.Status().Update(context.TODO(), latestModule); err != nil {
+		return result.NewRequeueWithShortDelay(), nil
 	}
 	return ctrl.Result{}, nil
 }

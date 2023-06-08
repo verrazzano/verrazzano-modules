@@ -8,10 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
 )
 
@@ -19,7 +18,7 @@ type behavior struct {
 	methodName string
 	visited    bool
 	boolResult bool
-	ctrl.Result
+	result.Result
 }
 
 type behaviorMap map[string]*behavior
@@ -84,7 +83,7 @@ func TestAllStatesSucceed(t *testing.T) {
 	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger(), HelmInfo: handlerspi.HelmInfo{}}
 
 	res := sm.Execute(ctx)
-	asserts.False(res.Requeue)
+	asserts.False(res.ShouldRequeue())
 
 	// Make sure all the states were visited, check in order
 	for _, s := range getStatesInOrder() {
@@ -125,10 +124,10 @@ func TestEachStateRequeue(t *testing.T) {
 			Handler: h,
 		}
 		b := h.behaviorMap[s]
-		b.Result = util.NewRequeueWithShortDelay()
+		b.Result = result.NewRequeueWithShortDelay()
 
 		res := sm.Execute(ctx)
-		asserts.True(res.Requeue)
+		asserts.True(res.ShouldRequeue())
 
 		// Make sure all the states were visited only up to the one that requeued, check in order
 		expectedVisited := true
@@ -138,7 +137,7 @@ func TestEachStateRequeue(t *testing.T) {
 			}
 			b := h.behaviorMap[s]
 			asserts.Equal(expectedVisited, b.visited, fmt.Sprintf("State %s visited wrong, should be %v", s, b.visited))
-			if b.Requeue {
+			if b.ShouldRequeue() {
 				expectedVisited = false
 			}
 		}
@@ -193,7 +192,7 @@ func TestNotDone(t *testing.T) {
 			b.boolResult = false
 
 			res := sm.Execute(ctx)
-			asserts.Equal(test.expectRequeue, res.Requeue, fmt.Sprintf("State %s should cause requeue", test.stateNotDone))
+			asserts.Equal(test.expectRequeue, res.ShouldRequeue(), fmt.Sprintf("State %s should cause requeue", test.stateNotDone))
 
 			// Make sure all the states were visited only up to the one that requeued, check in order
 			expectedVisited := true
@@ -226,50 +225,50 @@ func (h handler) GetWorkName() string {
 	return "install"
 }
 
-func (h handler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, result.Result) {
 	return h.procHandlerBool(isWorkNeeded)
 }
 
-func (h handler) PreWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PreWork(context handlerspi.HandlerContext) result.Result {
 	return h.procHandlerCall(preWork)
 }
 
-func (h handler) PreWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PreWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return h.procHandlerCall(preWorkUpdateStatus)
 }
 
-func (h handler) DoWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) DoWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return h.procHandlerCall(workUpdateStatus)
 }
 
-func (h handler) DoWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) DoWork(context handlerspi.HandlerContext) result.Result {
 	return h.procHandlerCall(doWork)
 }
 
-func (h handler) IsWorkDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
+func (h handler) IsWorkDone(context handlerspi.HandlerContext) (bool, result.Result) {
 	return h.procHandlerBool(isWorkDone)
 }
 
-func (h handler) PostWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PostWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return h.procHandlerCall(postWorkUpdateStatus)
 }
 
-func (h handler) PostWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) PostWork(context handlerspi.HandlerContext) result.Result {
 	return h.procHandlerCall(postWork)
 }
 
-func (h handler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
+func (h handler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return h.procHandlerCall(completedWorkUpdateStatus)
 }
 
-func (h handler) procHandlerCall(name string) (ctrl.Result, error) {
+func (h handler) procHandlerCall(name string) result.Result {
 	b := h.behaviorMap[name]
 	b.visited = true
-	return b.Result, nil
+	return b.Result
 }
 
-func (h handler) procHandlerBool(name string) (bool, ctrl.Result, error) {
+func (h handler) procHandlerBool(name string) (bool, result.Result) {
 	b := h.behaviorMap[name]
 	b.visited = true
-	return b.boolResult, b.Result, nil
+	return b.boolResult, b.Result
 }

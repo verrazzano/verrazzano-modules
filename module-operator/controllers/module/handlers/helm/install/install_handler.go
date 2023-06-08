@@ -6,13 +6,13 @@ package install
 import (
 	"context"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"time"
 
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/constants"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
 	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -73,10 +73,10 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) (ctrl.Result, error)
 		// Update spec version to match chart, always requeue to get ModuleCR with version
 		module.Spec.Version = ctx.ChartInfo.Version
 		if err := ctx.Client.Update(context.TODO(), module); err != nil {
-			return util.NewRequeueWithShortDelay(), nil
+			return result.NewRequeueWithShortDelay(), nil
 		}
 		// ALways reconcile so that we get a new tracker with the latest ModuleCR
-		return util.NewRequeueWithDelay(1, 2, time.Second), nil
+		return result.NewRequeueWithDelay(1, 2, time.Second), nil
 	}
 
 	return ctrl.Result{}, nil

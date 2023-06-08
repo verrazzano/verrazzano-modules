@@ -4,7 +4,7 @@
 package vzlog
 
 import (
-	vzctrl "github.com/verrazzano/verrazzano-modules/pkg/controller/util"
+	vzctrl "github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"os"
 	"time"
 
