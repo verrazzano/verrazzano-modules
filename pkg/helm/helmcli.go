@@ -264,6 +264,8 @@ func IsReleaseInstalled(releaseName string, namespace string) (found bool, err e
 
 	client := action.NewStatus(actionConfig)
 	helmRelease, err := client.Run(releaseName)
+	log := zap.S()
+	log.Infof("[DEBUG] IsReleaseInstalled() releaseName=%s,namespace=%s,helmRelease=%v", releaseName, namespace, helmRelease)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return false, nil
