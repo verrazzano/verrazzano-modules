@@ -131,28 +131,30 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 	// Build the values and valuesFrom
 	values := suite.generateOverridesFromFile(overridesFile)
 	module.Spec.Values = values
-	valuesFrom := []api.ValuesFromSource{}
+	var valuesFrom []api.ValuesFromSource
 	for _, toAppend := range otherOverrides {
-		valuesFrom = append(module.Spec.ValuesFrom, *toAppend)
+		valuesFrom = append(valuesFrom, *toAppend)
 	}
 	suite.gomega.Eventually(func() error {
 		var err error
 
-		// Get the latest
+		// Get the latest Module or else the code will never resolve conflicts
 		if op != "create" {
 			module, err = c.Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
 			if err != nil {
 				return err
 			}
 		}
-
-		// Set the module values and valuesFrom
-		module.Spec.Values = values
-		module.Spec.ValuesFrom = valuesFrom
+		// Update the version
 		if version != "" {
 			module.Spec.Version = version
 		}
 
+		// Set the module values and valuesFrom
+		module.Spec.Values = values
+		module.Spec.ValuesFrom = valuesFrom
+
+		// Do the create or update
 		if update {
 			module, err = c.Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
 		} else {
