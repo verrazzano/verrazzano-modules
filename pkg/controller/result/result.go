@@ -15,32 +15,43 @@ type Result interface {
 	GetError() error
 }
 
-type ControllerResult struct {
+type controllerResult struct {
 	result ctrl.Result
 	err    error
 }
 
-var _ Result = ControllerResult{}
+var _ Result = controllerResult{}
 
 func NewRequeueWithShortDelay() Result {
 	return NewRequeueWithDelay(1, 2, time.Second)
 }
 
-// NewRequeueWithDelay returns a new Result that will cause requeue after a short delay
-func NewRequeueWithDelay(min int, max int, units time.Duration) ControllerResult {
-	var random = rand.IntnRange(min, max)
-	delayNanos := time.Duration(random) * units
-	return ControllerResult{result: ctrl.Result{Requeue: true, RequeueAfter: delayNanos}}
+func NewResultRequeueIfError(err error) Result {
+	if err != nil {
+		return NewRequeueWithShortDelay()
+	}
+	return controllerResult{}
 }
 
-func (r ControllerResult) ShouldRequeue() bool {
+func NewResult() Result {
+	return controllerResult{}
+}
+
+// NewRequeueWithDelay returns a new Result that will cause requeue after a short delay
+func NewRequeueWithDelay(min int, max int, units time.Duration) Result {
+	var random = rand.IntnRange(min, max)
+	delayNanos := time.Duration(random) * units
+	return controllerResult{result: ctrl.Result{Requeue: true, RequeueAfter: delayNanos}}
+}
+
+func (r controllerResult) ShouldRequeue() bool {
 	return r.result.Requeue
 }
 
-func (r ControllerResult) GetControllerResult() ctrl.Result {
+func (r controllerResult) GetControllerResult() ctrl.Result {
 	return r.result
 }
 
-func (r ControllerResult) GetError() error {
+func (r controllerResult) GetError() error {
 	return r.err
 }
