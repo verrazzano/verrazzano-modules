@@ -127,25 +127,34 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 	version := module.Spec.Version
 
 	logger.log("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
-	overrides := suite.generateOverridesFromFile(overridesFile)
-	module.Spec.Values = overrides
+
+	// Build the values and valuesFrom
+	values := suite.generateOverridesFromFile(overridesFile)
+	module.Spec.Values = values
+	var valuesFrom []api.ValuesFromSource
 	for _, toAppend := range otherOverrides {
-		module.Spec.ValuesFrom = append(module.Spec.ValuesFrom, *toAppend)
+		valuesFrom = append(valuesFrom, *toAppend)
 	}
 	suite.gomega.Eventually(func() error {
 		var err error
+
+		// Get the latest Module or else the code will never resolve conflicts
 		if op != "create" {
 			module, err = c.Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
 			if err != nil {
 				return err
 			}
 		}
-
-		module.Spec.Values = overrides
+		// Update the version
 		if version != "" {
 			module.Spec.Version = version
 		}
 
+		// Set the module values and valuesFrom
+		module.Spec.Values = values
+		module.Spec.ValuesFrom = valuesFrom
+
+		// Do the create or update
 		if update {
 			module, err = c.Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
 		} else {
@@ -155,7 +164,7 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(logger testLogge
 		return err
 	}, shortWaitTimeout, shortPollingInterval).ShouldNot(gomega.HaveOccurred())
 
-	return module, overrides
+	return module, values
 }
 
 func (suite *HelmModuleLifecycleTestSuite) verifyModule(logger testLogger, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, overrides *apiextensionsv1.JSON, otherOverrides ...*map[string]interface{}) *api.Module {
