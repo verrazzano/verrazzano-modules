@@ -11,12 +11,11 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	fakes "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
 )
@@ -111,11 +110,11 @@ func TestPreRemoveFinalizer(t *testing.T) {
 			}
 			uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 			asserts.NoError(err)
-			res, err := r.PreRemoveFinalizer(rctx, &unstructured.Unstructured{Object: uObj})
+			res := r.PreRemoveFinalizer(rctx, &unstructured.Unstructured{Object: uObj})
 
 			asserts.Equal(test.expectedStatemachineCalled, h.statemachineCalled)
 			asserts.Equal(test.expectedError, err != nil)
-			asserts.Equal(test.expectedRequeue, res.Requeue)
+			asserts.Equal(test.expectedRequeue, res.ShouldRequeue())
 			asserts.NotNil(h.smHandler)
 		})
 	}
@@ -165,61 +164,61 @@ func TestGetName(t *testing.T) {
 	asserts.Equal(expectedName, Reconciler{}.GetName())
 }
 
-func (h *finalizerHandler) fakeExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
+func (h *finalizerHandler) fakeExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) result.Result {
 	h.statemachineCalled = true
 	h.smHandler = sm.Handler
 	if h.statemachineError {
-		return util.NewRequeueWithShortDelay()
+		return result.NewResultShortRequeueDelay()
 	}
-	return ctrl.Result{}
+	return result.NewResult()
 }
 
 func (h finalizerHandler) GetWorkName() string {
 	return "install"
 }
 
-func (h finalizerHandler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
+func (h finalizerHandler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, result.Result) {
+	return true, result.NewResult()
 }
 
-func (h finalizerHandler) PreWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h finalizerHandler) PreWork(context handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
 }
 
-func (h finalizerHandler) PreWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h finalizerHandler) PreWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
 }
 
-func (h finalizerHandler) IsPreActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
+func (h finalizerHandler) IsPreActionDone(context handlerspi.HandlerContext) (bool, result.Result) {
+	return true, result.NewResult()
 }
 
-func (h finalizerHandler) DoWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h finalizerHandler) DoWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
 }
 
-func (h finalizerHandler) DoWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h finalizerHandler) DoWork(context handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
 }
 
-func (h finalizerHandler) IsWorkDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
+func (h finalizerHandler) IsWorkDone(context handlerspi.HandlerContext) (bool, result.Result) {
+	return true, result.NewResult()
 }
 
-func (h finalizerHandler) PostWorkUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h finalizerHandler) PostWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
 }
 
-func (h finalizerHandler) PostWork(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h finalizerHandler) PostWork(context handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
 }
 
-func (h finalizerHandler) IsPostActionDone(context handlerspi.HandlerContext) (bool, ctrl.Result, error) {
-	return true, ctrl.Result{}, nil
+func (h finalizerHandler) IsPostActionDone(context handlerspi.HandlerContext) (bool, result.Result) {
+	return true, result.NewResult()
 }
 
-func (h finalizerHandler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func (h finalizerHandler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
 }
 
 func (h finalizerHandler) fakeLoadHelmInfo(cr *moduleapi.Module) (handlerspi.HelmInfo, error) {

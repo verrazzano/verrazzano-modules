@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -405,13 +406,13 @@ func (r *ReconcilerImpl) GetReconcileObject() client.Object {
 }
 
 // Reconcile reconciles the ModuleAction ModuleCR
-func (r *ReconcilerImpl) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (r *ReconcilerImpl) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) result.Result {
 	r.reconcileCalled = true
 	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
-		return ctrl.Result{}, err
+		return result.NewResult()
 	}
-	return ctrl.Result{}, nil
+	return result.NewResult()
 }
 
 // GetWatchDescriptors returns the list of object kinds being watched
@@ -428,16 +429,16 @@ func (f *FinalizerImpl) GetName() string {
 	return finalizerName
 }
 
-func (f *FinalizerImpl) PreRemoveFinalizer(reconcileContext controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (f *FinalizerImpl) PreRemoveFinalizer(reconcileContext controllerspi.ReconcileContext, u *unstructured.Unstructured) result.Result {
 	f.preCleanupCalled = true
-	return ctrl.Result{}, nil
+	return result.NewResult()
 }
 
 func (f *FinalizerImpl) PostRemoveFinalizer(reconcileContext controllerspi.ReconcileContext, u *unstructured.Unstructured) {
 	f.postCleanupCalled = true
 }
 
-func (f fakeController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (f fakeController) Reconcile(ctx context.Context, request reconcile.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 

@@ -74,7 +74,7 @@ func TestIgnoreConflictWithLog(t *testing.T) {
 	// No Error
 	result, err = IgnoreConflictWithLog("test-message", nil, zap.S())
 	assert.Nil(t, err)
-	assert.Equal(t, result, reconcile.Result{})
+	assert.Equal(t, result.GetCtrlRuntimeResult(), reconcile.Result{})
 }
 
 func TestBuildZapperLog(t *testing.T) {
