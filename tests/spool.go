@@ -1,3 +1,6 @@
+// Copyright (c) 2023, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 package main
 
 import (
@@ -23,17 +26,14 @@ type LogMessage struct {
 }
 
 type Writer struct {
-	// Out is the writer to write to
 	Out       io.Writer
 	buf       bytes.Buffer
 	mtx       *sync.Mutex
 	lineCount int
 }
 
-// ESC is the ASCII code for escape character
 const ESC = 27
 
-// clear the line and move the cursor up
 var clear = fmt.Sprintf("%c[%dA%c[2K", ESC, 1, ESC)
 
 func (w *Writer) clearLines() {
@@ -44,7 +44,6 @@ func (w *Writer) Flush() error {
 	w.mtx.Lock()
 	defer w.mtx.Unlock()
 
-	// do nothing if buffer is empty
 	if len(w.buf.Bytes()) == 0 {
 		return nil
 	}
@@ -62,7 +61,6 @@ func (w *Writer) Flush() error {
 	return err
 }
 
-// New returns a new Writer with defaults
 func New() *Writer {
 	return &Writer{
 		Out: io.Writer(os.Stdout),
