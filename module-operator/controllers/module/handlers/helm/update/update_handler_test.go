@@ -274,12 +274,12 @@ func TestIsWorkNeeded(t *testing.T) {
 
 	// GIVEN an update handler and a Helm release that is not installed
 	// WHEN the IsWorkNeeded function is called
-	// THEN no error occurs and the function returns false and an empty ctrl.Result
+	// THEN no error occurs and the function returns true and an empty ctrl.Result
 	vzhelm.SetActionConfigFunction(testActionConfigWithNoRelease)
 
 	needed, res = handler.IsWorkNeeded(ctx)
 	asserts.NoError(res.GetError())
-	asserts.False(needed)
+	asserts.True(needed)
 	asserts.Equal(result.NewResult(), res)
 }
 

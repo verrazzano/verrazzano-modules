@@ -9,7 +9,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
-	helm2 "github.com/verrazzano/verrazzano-modules/pkg/helm"
 )
 
 type HelmHandler struct {
@@ -31,14 +30,7 @@ func (h HelmHandler) GetWorkName() string {
 
 // IsWorkNeeded returns true if update is needed
 func (h HelmHandler) IsWorkNeeded(ctx handlerspi.HandlerContext) (bool, result.Result) {
-	module := ctx.CR.(*moduleapi.Module)
-
-	installed, err := helm2.IsReleaseInstalled(ctx.HelmRelease.Name, module.Spec.TargetNamespace)
-	if err != nil {
-		ctx.Log.ErrorfThrottled("Error checking if Helm release installed for %s/%s", ctx.HelmRelease.Namespace, ctx.HelmRelease.Name)
-		return true, result.NewResultShortRequeueDelayWithError(err)
-	}
-	return installed, result.NewResult()
+	return true, result.NewResult()
 }
 
 // PreWorkUpdateStatus updates the status for the pre-work state
