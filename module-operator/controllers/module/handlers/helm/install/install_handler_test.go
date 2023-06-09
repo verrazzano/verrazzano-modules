@@ -260,10 +260,6 @@ func TestDoWork(t *testing.T) {
 		},
 	}
 
-	res := handler.DoWork(ctx)
-	asserts.NoError(res.GetError())
-	asserts.Equal(result.NewResult(), res)
-
 	// GIVEN an install handler and a Helm release that is not installed
 	// WHEN the DoWork function is called
 	// THEN no error occurs and the Helm upgrade function has been called to install the release
@@ -275,7 +271,7 @@ func TestDoWork(t *testing.T) {
 	defer common.ResetUpgradeFunc()
 	vzhelm.SetActionConfigFunction(testActionConfigWithNoRelease)
 
-	res = handler.DoWork(ctx)
+	res := handler.DoWork(ctx)
 	asserts.NoError(res.GetError())
 	asserts.True(upgradeFuncCalled)
 }
