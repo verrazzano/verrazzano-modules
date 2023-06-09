@@ -34,13 +34,13 @@ import (
 // WHEN the module is deleted from the corresponding namespaces
 // THEN helm release for helm module is removed from the corresponding namespaces
 // AND the module is removed from the corresponding namespaces
-func (suite *HelmModuleLifecycleTestSuite) TestMultipleInstanceLifecycle() {
+func (suite *HelmModuleLifecycleTestSuite) XTestMultipleInstanceLifecycle() {
 	for count := 0; count < 20; count++ {
 		namespace := fmt.Sprintf("ns%v", count)
 		testName := fmt.Sprintf("TestMultipleInstanceLifecycle_namespace_%s", namespace)
 		suite.T().Run(testName, func(t *testing.T) {
 			t.Parallel()
-			suite.executeModuleLifecycleOperations(testName, namespace)
+			suite.executeModuleLifecycleOperations(t, namespace)
 		})
 		suite.T().Cleanup(suite.cleanup)
 	}

@@ -47,4 +47,8 @@ if [ -n "${TEST_ARGS}" ]; then
 fi
 
 set -x
-go test ${GO_TEST_ARGS} ${TEST_ROOT}/${TEST_SUITES} ${TEST_ARGS}
+SPOOL_LOG="${TEST_ROOT}/spool.log"
+rm -rf ${SPOOL_LOG}
+SPOOL_LOG="${SPOOL_LOG}" go run ${TEST_ROOT}/spool.go &
+go test ${GO_TEST_ARGS} ${TEST_ROOT}/${TEST_SUITES} ${TEST_ARGS} -json >>${SPOOL_LOG}
+echo "END SPOOL" >>${SPOOL_LOG}

@@ -39,7 +39,7 @@ func (suite *HelmModuleLifecycleTestSuite) TestSingleInstanceLifecycle() {
 	testName := "TestSingleInstanceLifecycle_namespace_default"
 	suite.T().Run(testName, func(t *testing.T) {
 		t.Parallel()
-		suite.executeModuleLifecycleOperations(testName, common.DEFAULT_NS)
+		suite.executeModuleLifecycleOperations(t, common.DEFAULT_NS)
 	})
 	suite.T().Cleanup(suite.cleanup)
 }

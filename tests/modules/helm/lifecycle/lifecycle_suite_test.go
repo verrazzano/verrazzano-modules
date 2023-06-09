@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -20,6 +19,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/k8sutil"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"github.com/verrazzano/verrazzano-modules/tests/common"
+	"go.uber.org/zap"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	api "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -37,10 +37,14 @@ type HelmModuleLifecycleTestSuite struct {
 
 type testLogger struct {
 	testName string
+	logger   *zap.SugaredLogger
+	t        *testing.T
 }
 
 func (logger *testLogger) log(format string, args ...any) {
-	fmt.Printf(fmt.Sprintf("%s: ", logger.testName)+format+"\n", args...)
+	//logger.logger.(fmt.Sprintf("%s: ", logger.testName)+format+"\n", args...)
+	//logger.logger.Sync()
+	logger.t.Logf(format, args...)
 }
 
 var testNamespaces = make(map[string][]string)
@@ -58,8 +62,8 @@ func TestHelmModuleLifecycleTestSuite(t *testing.T) {
 	suite.Run(t, helmModuleLifecyclreTestingSuite)
 }
 
-func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(testName string, namespace string) {
-	logger := testLogger{testName: testName}
+func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(t *testing.T, namespace string) {
+	logger := testLogger{testName: t.Name(), logger: common.GetLogger(), t: t}
 	err := suite.waitForNamespaceCreated(logger, namespace)
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	module := &api.Module{}

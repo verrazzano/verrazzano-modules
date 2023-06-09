@@ -1,6 +1,6 @@
 # Copyright (C) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-export GO_TEST_ARGS ?= -v
+#export GO_TEST_ARGS ?= -v=true -test.v=true 
 
 run-test: export RANDOMIZE_TESTS ?= true
 run-test: export RUN_PARALLEL ?= true
