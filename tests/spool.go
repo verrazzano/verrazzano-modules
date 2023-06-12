@@ -132,7 +132,7 @@ func main() {
 		if logMessage.Test == "" && logMessage.Output != "" {
 			dateTime, err := time.Parse(time.RFC3339Nano, logMessage.Time)
 			if err != nil {
-				os.Exit(1)
+				handleError(err)
 			}
 
 			packageLogMessages[dateTime] = logMessage.Output
@@ -160,7 +160,7 @@ func main() {
 				if len(parts) == 1 && logMessage.Output != "" {
 					dateTime, err := time.Parse(time.RFC3339Nano, logMessage.Time)
 					if err != nil {
-						os.Exit(1)
+						handleError(err)
 					}
 
 					suiteLogMessages[dateTime] = logMessage.Output
@@ -184,7 +184,7 @@ func main() {
 			if logMessage.Output != "" {
 				dateTime, err := time.Parse(time.RFC3339Nano, logMessage.Time)
 				if err != nil {
-					os.Exit(1)
+					handleError(err)
 				}
 
 				testLogMessages[dateTime] = logMessage.Output
@@ -207,7 +207,11 @@ func main() {
 
 				sort.Strings(suites)
 				for _, suite := range suites {
-					w.write("\t" + suite + "\n")
+					_, err := w.write("\t" + suite + "\n")
+					if err != nil {
+						handleError(err)
+					}
+
 					if suiteTests, ok := suiteTestMap[suite]; ok {
 						tests := make([]string, 0, len(suiteTests))
 						for testNameKey := range suiteTests {
@@ -217,9 +221,12 @@ func main() {
 						sort.Strings(tests)
 
 						for _, test := range tests {
-							w.write("\t\t" + test + "\n")
-							if testMessages, ok := logMessageTestMap[test]; ok {
+							_, err := w.write("\t\t" + test + "\n")
+							if err != nil {
+								handleError(err)
+							}
 
+							if testMessages, ok := logMessageTestMap[test]; ok {
 								testKeys := make([]time.Time, 0, len(testMessages))
 								for testKey := range testMessages {
 									testKeys = append(testKeys, testKey)
@@ -286,5 +293,6 @@ func main() {
 func handleError(err error) {
 	if err != nil {
 		fmt.Printf("error while spooling logs, error: %v", err.Error())
+		os.Exit(1)
 	}
 }
