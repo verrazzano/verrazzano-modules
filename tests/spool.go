@@ -106,7 +106,11 @@ func main() {
 		}
 
 		logMessage := &logMessage{}
-		json.Unmarshal([]byte(line), logMessage)
+		err = json.Unmarshal([]byte(line), logMessage)
+		if err != nil {
+			handleError(err)
+		}
+
 		if logMessage.Elapsed != "" {
 			continue
 		}
@@ -198,7 +202,7 @@ func main() {
 
 		sort.Strings(packageNameKeys)
 		for _, packageName := range packageNameKeys {
-			w.write(packageName + "\n")
+			w.write(fmt.Sprintf("%s\n", packageName))
 			if packageSuites, ok := packageSuiteMap[packageName]; ok {
 				suites := make([]string, 0, len(packageSuites))
 				for suiteNameKey := range packageSuites {
@@ -207,7 +211,7 @@ func main() {
 
 				sort.Strings(suites)
 				for _, suite := range suites {
-					_, err := w.write("\t" + suite + "\n")
+					_, err := w.write(fmt.Sprintf("\t%s\n", suite))
 					if err != nil {
 						handleError(err)
 					}
@@ -221,7 +225,7 @@ func main() {
 						sort.Strings(tests)
 
 						for _, test := range tests {
-							_, err := w.write("\t\t" + test + "\n")
+							_, err := w.write(fmt.Sprintf("\t\t:%s\n", test))
 							if err != nil {
 								handleError(err)
 							}
@@ -238,7 +242,7 @@ func main() {
 								})
 
 								for _, timeKey := range testKeys {
-									_, err := w.write("\t\t\t" + timeKey.Format(time.RFC3339Nano) + ": " + testMessages[timeKey])
+									_, err := w.write(fmt.Sprintf("\t\t\t%s: %s", timeKey.Format(time.RFC3339Nano), testMessages[timeKey]))
 									if err != nil {
 										handleError(err)
 									}
@@ -259,7 +263,7 @@ func main() {
 						})
 
 						for _, timeKey := range suiteKeys {
-							_, err := w.write("\t\t" + timeKey.Format(time.RFC3339Nano) + ": " + suiteMessages[timeKey])
+							_, err := w.write(fmt.Sprintf("\t\t%s: %s", timeKey.Format(time.RFC3339Nano), suiteMessages[timeKey]))
 							if err != nil {
 								handleError(err)
 							}
@@ -280,7 +284,7 @@ func main() {
 			})
 
 			for _, timeKey := range packageKeys {
-				_, err := w.write("\t" + timeKey.Format(time.RFC3339Nano) + ": " + packageMessages[timeKey])
+				_, err := w.write(fmt.Sprintf("\t%s: %s", timeKey.Format(time.RFC3339Nano), packageMessages[timeKey]))
 				if err != nil {
 					handleError(err)
 				}
