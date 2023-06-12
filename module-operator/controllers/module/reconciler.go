@@ -4,14 +4,14 @@
 package module
 
 import (
+	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 	"time"
 
@@ -23,40 +23,45 @@ var funcLoadHelmInfo = loadHelmInfo
 var funcIsUpgradeNeeded = IsUpgradeNeeded
 
 // Reconcile reconciles the Module CR
-func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) (ctrl.Result, error) {
+func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) result.Result {
 	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
-		return ctrl.Result{}, err
+		spictx.Log.ErrorfThrottled(err.Error())
+		// This is a fatal error, don't requeue
+		return result.NewResult()
 	}
 
-	// TODO - there needs to be a check if a watch caused this to reconcile, the generation will be the same
-	if cr.Status.ObservedGeneration == cr.Generation {
-		return ctrl.Result{}, nil
+	if cr.Generation == cr.Status.LastSuccessfulGeneration {
+		return result.NewResult()
 	}
 
 	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 	handler, res := r.getActionHandler(ctx, cr)
-	if res.Requeue {
-		return res, nil
+	if res.ShouldRequeue() {
+		return res
 	}
 	if handler == nil {
-		return util.NewRequeueWithShortDelay(), nil
+		return result.NewResultShortRequeueDelay()
 	}
 
 	return r.reconcileAction(spictx, cr, handler)
 }
 
 // reconcileAction reconciles the Module CR for a particular action
-func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler handlerspi.StateMachineHandler) (ctrl.Result, error) {
+func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler handlerspi.StateMachineHandler) result.Result {
+	if cr.Spec.TargetNamespace == "" {
+		cr.Spec.TargetNamespace = cr.Namespace
+	}
+
 	// Load the helm information needed by the handler
 	helmInfo, err := funcLoadHelmInfo(cr)
 	if err != nil {
 		if strings.Contains(err.Error(), "FileNotFound") {
-			err := spictx.Log.ErrorfNewErr("Failed loading file information: %v", err)
-			return util.NewRequeueWithDelay(10, 15, time.Second), err
+			spictx.Log.Errorf("Failed loading file information: %v", err)
+			return result.NewResultRequeueDelay(10, 15, time.Second)
 		}
 		err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
-		return util.NewRequeueWithShortDelay(), err
+		return result.NewResultShortRequeueDelayIfError(err)
 	}
 
 	// Initialize the handler context
@@ -67,36 +72,26 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 		Handler: handler,
 		CR:      cr,
 	}
-	res := funcExecuteStateMachine(ctx, sm)
-	return res, nil
+	return funcExecuteStateMachine(ctx, sm)
 }
 
 // getActionHandler must return one of the Module action handlers.
-func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, ctrl.Result) {
-	if !hasInstalledCondition(ctx, cr) {
-		return r.HandlerInfo.InstallActionHandler, ctrl.Result{}
+func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, result.Result) {
+	if !status.IsInstalled(cr) {
+		return r.HandlerInfo.InstallActionHandler, result.NewResult()
 	}
 
 	// return UpgradeAction only when the desired version is different from current
-	upgradeNeeded, err := funcIsUpgradeNeeded(cr.Spec.Version, cr.Status.Version)
+	upgradeNeeded, err := funcIsUpgradeNeeded(cr.Spec.Version, cr.Status.LastSuccessfulVersion)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Failed checking if upgrade needed for Module %s/%s failed with error: %v\n", cr.Namespace, cr.Name, err)
-		return nil, util.NewRequeueWithShortDelay()
+		return nil, result.NewResultShortRequeueDelay()
 	}
 	if upgradeNeeded {
-		return r.HandlerInfo.UpgradeActionHandler, ctrl.Result{}
+		return r.HandlerInfo.UpgradeActionHandler, result.NewResult()
 	}
-	return r.HandlerInfo.UpdateActionHandler, ctrl.Result{}
+	return r.HandlerInfo.UpdateActionHandler, result.NewResult()
 
-}
-
-func hasInstalledCondition(ctx handlerspi.HandlerContext, cr *moduleapi.Module) bool {
-	for _, cond := range cr.Status.Conditions {
-		if cond.Type == moduleapi.CondInstallComplete {
-			return true
-		}
-	}
-	return false
 }
 
 // IsUpgradeNeeded returns true if upgrade is needed
@@ -115,6 +110,6 @@ func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
 	return installedSemver.IsLessThan(desiredSemver), nil
 }
 
-func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) ctrl.Result {
+func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) result.Result {
 	return sm.Execute(ctx)
 }

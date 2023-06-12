@@ -5,6 +5,7 @@ package delete
 
 import (
 	"context"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -53,10 +53,10 @@ func TestIsWorkNeeded(t *testing.T) {
 	// GIVEN a delete handler
 	// WHEN the IsWorkNeeded function is called
 	// THEN no error occurs and the function returns true and an empty ctrl.Result
-	needed, result, err := handler.IsWorkNeeded(handlerspi.HandlerContext{})
-	asserts.NoError(err)
+	needed, res := handler.IsWorkNeeded(handlerspi.HandlerContext{})
+	asserts.NoError(res.GetError())
 	asserts.True(needed)
-	asserts.Equal(ctrl.Result{}, result)
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPreWorkUpdateStatus tests the delete handler PreWorkUpdateStatus function
@@ -80,17 +80,17 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
-	result, err := handler.PreWorkUpdateStatus(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
-
-	// fetch the Module and validate that the condition and state are set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
-	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondPreUninstall, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReconciling, string(module.Status.State))
+	res := handler.PreWorkUpdateStatus(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPreWork tests the delete handler PreWork function
@@ -101,9 +101,9 @@ func TestPreWork(t *testing.T) {
 	// GIVEN a delete handler
 	// WHEN the PreWork function is called
 	// THEN no error occurs and the function returns true and an empty ctrl.Result
-	result, err := handler.PreWork(handlerspi.HandlerContext{})
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.PreWork(handlerspi.HandlerContext{})
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestDoWorkUpdateStatus tests the delete handler DoWorkUpdateStatus function
@@ -127,17 +127,22 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
-	result, err := handler.DoWorkUpdateStatus(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.DoWorkUpdateStatus(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 
 	// fetch the Module and validate that the condition and state are set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
+	err := cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondUninstallStarted, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReconciling, string(module.Status.State))
+	asserts.Equal(v1alpha1.ReadyReasonUninstallStarted, module.Status.Conditions[0].Reason)
 }
 
 func getChart() *chart.Chart {
@@ -209,17 +214,17 @@ func TestDoWork(t *testing.T) {
 		},
 	}
 
-	result, err := handler.DoWork(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.DoWork(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 
 	// GIVEN a delete handler and a Helm release that is installed
 	// WHEN the DoWork function is called
 	// THEN no error occurs
 	vzhelm.SetActionConfigFunction(testActionConfigWithRelease)
 
-	_, err = handler.DoWork(ctx)
-	asserts.NoError(err)
+	res = handler.DoWork(ctx)
+	asserts.NoError(res.GetError())
 }
 
 // TestIsWorkDone tests the delete handler IsWorkDone function
@@ -247,20 +252,20 @@ func TestIsWorkDone(t *testing.T) {
 		CR: &v1alpha1.Module{},
 	}
 
-	done, result, err := handler.IsWorkDone(ctx)
-	asserts.NoError(err)
+	done, res := handler.IsWorkDone(ctx)
+	asserts.NoError(res.GetError())
 	asserts.False(done)
-	asserts.Equal(ctrl.Result{}, result)
+	asserts.Equal(result.NewResult(), res)
 
 	// GIVEN a delete handler and the release is not installed
 	// WHEN the IsWorkDone function is called
 	// THEN no error occurs and the function returns true and an empty ctrl.Result
 	vzhelm.SetActionConfigFunction(testActionConfigWithNoRelease)
 
-	done, result, err = handler.IsWorkDone(ctx)
-	asserts.NoError(err)
+	done, res = handler.IsWorkDone(ctx)
+	asserts.NoError(res.GetError())
 	asserts.True(done)
-	asserts.Equal(ctrl.Result{}, result)
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPostWorkUpdateStatus tests the delete handler PostWorkUpdateStatus function
@@ -272,9 +277,9 @@ func TestPostWorkUpdateStatus(t *testing.T) {
 	// GIVEN a delete handler
 	// WHEN the PostWorkUpdateStatus function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	result, err := handler.PostWorkUpdateStatus(handlerspi.HandlerContext{})
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.PostWorkUpdateStatus(handlerspi.HandlerContext{})
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPostWork tests the delete handler PostWork function
@@ -286,9 +291,9 @@ func TestPostWork(t *testing.T) {
 	// GIVEN a delete handler
 	// WHEN the PostWork function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	result, err := handler.PostWork(handlerspi.HandlerContext{})
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.PostWork(handlerspi.HandlerContext{})
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestWorkCompletedUpdateStatus tests the delete handler WorkCompletedUpdateStatus function
@@ -312,17 +317,22 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
-	result, err := handler.WorkCompletedUpdateStatus(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.WorkCompletedUpdateStatus(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 
 	// fetch the Module and validate that the condition and state are set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
+	err := cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondUninstallComplete, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReady, string(module.Status.State))
+	asserts.Equal(v1alpha1.ReadyReasonUninstallSucceeded, module.Status.Conditions[0].Reason)
 }
 
 func newScheme() *runtime.Scheme {

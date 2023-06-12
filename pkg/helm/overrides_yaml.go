@@ -5,7 +5,6 @@ package helm
 
 import (
 	"context"
-	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -16,8 +15,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// getInstallOverridesYAML takes the list of Overrides and returns a string array of YAMLs
-func getInstallOverridesYAML(log vzlog.VerrazzanoLogger, client client.Client, overrides []moduleapi.Overrides,
+// getInstallOverridesYAML takes the list of ValuesFrom and returns a string array of YAMLs
+func getInstallOverridesYAML(log vzlog.VerrazzanoLogger, client client.Client, overrides []ValueOverrides,
 	mlcNamespace string) ([]string, error) {
 	var overrideStrings []string
 	for _, override := range overrides {

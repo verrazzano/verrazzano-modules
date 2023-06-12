@@ -5,11 +5,11 @@ package common
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"time"
 
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -36,19 +36,13 @@ func UnmarshalTestFile(filePath string, element interface{}) error {
 	return yaml.Unmarshal(data, element)
 }
 
-func GetLogger() *zap.SugaredLogger {
-	loggerMgr := initZapLog()
-	// Make logger avaible everywhere
-	zap.ReplaceGlobals(loggerMgr)
-	return loggerMgr.Sugar()
-}
-
-// initZapLog is delegated to initialize a new 'log manager'
-func initZapLog() *zap.Logger {
-	config := zap.NewDevelopmentConfig()
-	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	config.EncoderConfig.TimeKey = "timestamp"
-	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	logger, _ := config.Build()
-	return logger
+// GetRandomNamespace generates a random namespace name of given length.
+func GetRandomNamespace(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	chars := "abcdefghijklmnopqrstuvwxyz123456789"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = chars[rand.Int63()%int64(len(chars))]
+	}
+	return string(b)
 }

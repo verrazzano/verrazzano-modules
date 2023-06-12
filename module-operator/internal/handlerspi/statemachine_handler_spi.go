@@ -4,7 +4,7 @@
 package handlerspi
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 )
 
 // StateMachineHandler is the interface called by the state machine to do module related work
@@ -13,29 +13,29 @@ type StateMachineHandler interface {
 	GetWorkName() string
 
 	// IsWorkNeeded returns true if work is needed for the Module
-	IsWorkNeeded(context HandlerContext) (bool, ctrl.Result, error)
+	IsWorkNeeded(context HandlerContext) (bool, result.Result)
 
 	// PreWorkUpdateStatus does the pre-work status update
-	PreWorkUpdateStatus(context HandlerContext) (ctrl.Result, error)
+	PreWorkUpdateStatus(context HandlerContext) result.Result
 
 	// PreWork does pre-work
-	PreWork(context HandlerContext) (ctrl.Result, error)
+	PreWork(context HandlerContext) result.Result
 
 	// DoWorkUpdateStatus does the work status update
-	DoWorkUpdateStatus(context HandlerContext) (ctrl.Result, error)
+	DoWorkUpdateStatus(context HandlerContext) result.Result
 
 	// DoWork does the work
-	DoWork(context HandlerContext) (ctrl.Result, error)
+	DoWork(context HandlerContext) result.Result
 
 	// IsWorkDone returns true if work is done
-	IsWorkDone(context HandlerContext) (bool, ctrl.Result, error)
+	IsWorkDone(context HandlerContext) (bool, result.Result)
 
 	// PostWorkUpdateStatus does the post-work status update
-	PostWorkUpdateStatus(context HandlerContext) (ctrl.Result, error)
+	PostWorkUpdateStatus(context HandlerContext) result.Result
 
 	// PostWork does  post-work
-	PostWork(context HandlerContext) (ctrl.Result, error)
+	PostWork(context HandlerContext) result.Result
 
 	// WorkCompletedUpdateStatus does the completed work status update
-	WorkCompletedUpdateStatus(context HandlerContext) (ctrl.Result, error)
+	WorkCompletedUpdateStatus(context HandlerContext) result.Result
 }

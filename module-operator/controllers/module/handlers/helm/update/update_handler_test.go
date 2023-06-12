@@ -5,6 +5,7 @@ package update
 
 import (
 	"context"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -67,17 +67,17 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
-	result, err := handler.PreWorkUpdateStatus(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
-
-	// fetch the Module and validate that the condition and state are set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
-	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondPreInstall, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReconciling, string(module.Status.State))
+	res := handler.PreWorkUpdateStatus(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPreWork tests the update handler PreWork function
@@ -88,9 +88,9 @@ func TestPreWork(t *testing.T) {
 	// GIVEN an update handler
 	// WHEN the PreWork function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	result, err := handler.PreWork(handlerspi.HandlerContext{})
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.PreWork(handlerspi.HandlerContext{})
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestDoWorkUpdateStatus tests the update handler DoWorkUpdateStatus function
@@ -114,17 +114,22 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
-	result, err := handler.DoWorkUpdateStatus(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.DoWorkUpdateStatus(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 
 	// fetch the Module and validate that the condition and state are set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
+	err := cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondInstallStarted, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReconciling, string(module.Status.State))
+	asserts.Equal(v1alpha1.ReadyReasonUpdateStarted, module.Status.Conditions[0].Reason)
 }
 
 func getChart() *chart.Chart {
@@ -200,9 +205,9 @@ func TestDoWork(t *testing.T) {
 	})
 	defer common.ResetUpgradeFunc()
 
-	result, err := handler.DoWork(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.DoWork(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 	asserts.True(upgradeFuncCalled)
 }
 
@@ -231,10 +236,10 @@ func TestIsWorkDone(t *testing.T) {
 		},
 	}
 
-	done, result, err := handler.IsWorkDone(ctx)
-	asserts.NoError(err)
+	done, res := handler.IsWorkDone(ctx)
+	asserts.NoError(res.GetError())
 	asserts.True(done)
-	asserts.Equal(ctrl.Result{}, result)
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestIsWorkNeeded tests the update handler IsWorkNeeded function
@@ -262,20 +267,20 @@ func TestIsWorkNeeded(t *testing.T) {
 		},
 	}
 
-	needed, result, err := handler.IsWorkNeeded(ctx)
-	asserts.NoError(err)
+	needed, res := handler.IsWorkNeeded(ctx)
+	asserts.NoError(res.GetError())
 	asserts.True(needed)
-	asserts.Equal(ctrl.Result{}, result)
+	asserts.Equal(result.NewResult(), res)
 
 	// GIVEN an update handler and a Helm release that is not installed
 	// WHEN the IsWorkNeeded function is called
-	// THEN no error occurs and the function returns false and an empty ctrl.Result
+	// THEN no error occurs and the function returns true and an empty ctrl.Result
 	vzhelm.SetActionConfigFunction(testActionConfigWithNoRelease)
 
-	needed, result, err = handler.IsWorkNeeded(ctx)
-	asserts.NoError(err)
-	asserts.False(needed)
-	asserts.Equal(ctrl.Result{}, result)
+	needed, res = handler.IsWorkNeeded(ctx)
+	asserts.NoError(res.GetError())
+	asserts.True(needed)
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPostWorkUpdateStatus tests the update handler PostWorkUpdateStatus function
@@ -287,9 +292,9 @@ func TestPostWorkUpdateStatus(t *testing.T) {
 	// GIVEN an update handler
 	// WHEN the PostWorkUpdateStatus function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	result, err := handler.PostWorkUpdateStatus(handlerspi.HandlerContext{})
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.PostWorkUpdateStatus(handlerspi.HandlerContext{})
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestPostWork tests the update handler PostWork function
@@ -301,9 +306,9 @@ func TestPostWork(t *testing.T) {
 	// GIVEN an update handler
 	// WHEN the PostWork function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	result, err := handler.PostWork(handlerspi.HandlerContext{})
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.PostWork(handlerspi.HandlerContext{})
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 }
 
 // TestWorkCompletedUpdateStatus tests the update handler WorkCompletedUpdateStatus function
@@ -327,17 +332,22 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
+		HelmInfo: handlerspi.HelmInfo{
+			HelmRelease: &handlerspi.HelmRelease{
+				Name:      releaseName,
+				Namespace: namespace,
+			},
+		},
 	}
 
-	result, err := handler.WorkCompletedUpdateStatus(ctx)
-	asserts.NoError(err)
-	asserts.Equal(ctrl.Result{}, result)
+	res := handler.WorkCompletedUpdateStatus(ctx)
+	asserts.NoError(res.GetError())
+	asserts.Equal(result.NewResult(), res)
 
 	// fetch the Module and validate that the condition and state are set
-	err = cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
+	err := cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)
 	asserts.NoError(err)
-	asserts.Equal(v1alpha1.CondInstallComplete, module.Status.Conditions[0].Type)
-	asserts.Equal(v1alpha1.ModuleStateReady, string(module.Status.State))
+	asserts.Equal(v1alpha1.ReadyReasonUpdateSucceeded, module.Status.Conditions[0].Reason)
 }
 
 func newScheme() *runtime.Scheme {

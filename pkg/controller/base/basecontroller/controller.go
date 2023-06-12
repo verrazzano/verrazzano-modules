@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/util"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	vzstring "github.com/verrazzano/verrazzano-modules/pkg/string"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"go.uber.org/zap"
@@ -26,18 +26,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if r.Reconciler == nil {
 		err := errors.New("Failed, Reconciler interface in ControllerConfig must be implemented")
 		zap.S().Error(err)
-		return util.NewRequeueWithShortDelay(), err
+		return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), err
 	}
 	ro := r.GetReconcileObject()
 	if ro == nil {
 		err := errors.New("Failed, Reconciler.GetReconcileObject returns nil")
 		zap.S().Error(err)
-		return util.NewRequeueWithShortDelay(), err
+		return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), err
 	}
 	gvk, _, err := r.Scheme.ObjectKinds(ro)
 	if err != nil {
 		zap.S().Errorf("Failed to get object GVK for %v: %v", r.GetReconcileObject(), err)
-		return util.NewRequeueWithShortDelay(), nil
+		return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), nil
 	}
 
 	// Get the CR as unstructured
@@ -51,7 +51,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return reconcile.Result{}, nil
 		}
 		zap.S().Errorf("Failed to fetch resource %v: %v", req.NamespacedName, err)
-		return util.NewRequeueWithShortDelay(), nil
+		return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), nil
 	}
 
 	log, err := vzlog.EnsureResourceLogger(&vzlog.ResourceConfig{
@@ -63,14 +63,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	})
 	if err != nil {
 		zap.S().Errorf("Failed to create controller logger for DNS controller", err)
-		return util.NewRequeueWithShortDelay(), nil
+		return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), nil
 	}
 
 	log.Progressf("Reconciling resource %v, GVK %v, generation %v", req.NamespacedName, gvk, cr.GetGeneration())
 
 	// Create a new context for this reconcile loop
 	rctx := controllerspi.ReconcileContext{
-		Log:       vzlog.DefaultLogger(),
+		Log:       log,
 		ClientCtx: ctx,
 	}
 
@@ -78,18 +78,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if r.Finalizer != nil {
 		// Make sure the ModuleCR has a finalizer
 		if cr.GetDeletionTimestamp().IsZero() {
-			if res := r.ensureFinalizer(log, cr); res.Requeue {
-				return res, nil
+			if res := r.ensureFinalizer(log, cr); res.ShouldRequeue() {
+				return res.GetCtrlRuntimeResult(), nil
 			}
 		} else {
 			// ModuleCR is being deleted
-			res, err := r.PreRemoveFinalizer(rctx, cr)
-			if res2 := util.DeriveResult(res, err); res2.Requeue {
-				return res2, nil
+			res := r.PreRemoveFinalizer(rctx, cr)
+			if res.ShouldRequeue() {
+				return res.GetCtrlRuntimeResult(), nil
 			}
 
 			if err := r.deleteFinalizer(log, cr); err != nil {
-				return util.NewRequeueWithShortDelay(), nil
+				return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), nil
 			}
 
 			// all done, ModuleCR will be deleted from etcd
@@ -105,17 +105,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.addControllerResource(req.NamespacedName)
 
 		if err := r.initWatches(log, req.NamespacedName); err != nil {
-			return util.NewRequeueWithShortDelay(), nil
+			return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), nil
 		}
 	}
 
 	// Call the layered controller to reconcile.
-	res, err := r.Reconciler.Reconcile(rctx, cr)
+	res := r.Reconciler.Reconcile(rctx, cr)
 	if err != nil {
-		return util.NewRequeueWithShortDelay(), nil
+		return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), nil
 	}
-	if util.ShouldRequeue(res) {
-		return res, nil
+	if res.ShouldRequeue() {
+		return res.GetCtrlRuntimeResult(), nil
 	}
 
 	// The resource has been reconciled.
@@ -152,21 +152,21 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, nsn types.Namespace
 }
 
 // ensureFinalizer ensures that a finalizer exists and updates the ModuleCR if it doesn't
-func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) ctrl.Result {
+func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) result.Result {
 	finalizerName := r.Finalizer.GetName()
 	finalizers := u.GetFinalizers()
 	if vzstring.SliceContainsString(finalizers, finalizerName) {
-		return ctrl.Result{}
+		return result.NewResult()
 	}
 
 	log.Debugf("Adding finalizer %s", finalizerName)
 	finalizers = append(finalizers, finalizerName)
 	u.SetFinalizers(finalizers)
 	if err := r.Update(context.TODO(), u); err != nil {
-		return util.NewRequeueWithShortDelay()
+		return result.NewResultShortRequeueDelay()
 	}
 	// Always requeue to make sure we don't reconcile until the status is finalizer is present
-	return util.NewRequeueWithShortDelay()
+	return result.NewResultShortRequeueDelay()
 }
 
 // deleteFinalizer deletes the finalizer

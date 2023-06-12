@@ -5,9 +5,9 @@ package controllerspi
 
 import (
 	"context"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -47,7 +47,7 @@ type ReconcileContext struct {
 // Reconciler is an interface used by controllers to reconcile a resource
 type Reconciler interface {
 	// Reconcile reconciles the resource
-	Reconcile(ReconcileContext, *unstructured.Unstructured) (ctrl.Result, error)
+	Reconcile(ReconcileContext, *unstructured.Unstructured) result.Result
 
 	// GetReconcileObject returns the client object being reconciled
 	GetReconcileObject() client.Object
@@ -73,7 +73,7 @@ type Finalizer interface {
 
 	// PreRemoveFinalizer is called when the resource is being deleted, before the finalizer
 	// is removed.  Use this method to delete Kubernetes resources, etc.
-	PreRemoveFinalizer(ReconcileContext, *unstructured.Unstructured) (ctrl.Result, error)
+	PreRemoveFinalizer(ReconcileContext, *unstructured.Unstructured) result.Result
 
 	// PostRemoveFinalizer is called after the finalizer is successfully removed.
 	// This method does garbage collection and other tasks that can never return an error

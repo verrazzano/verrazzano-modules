@@ -5,14 +5,28 @@ package helm
 
 import (
 	"fmt"
-	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	vzos "github.com/verrazzano/verrazzano-modules/pkg/os"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
+	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// ValueOverrides identifies overrides for a Helm release.
+type ValueOverrides struct {
+	// Selector for ConfigMap containing override data.
+	// +optional
+	ConfigMapRef *corev1.ConfigMapKeySelector `json:"configMapRef,omitempty"`
+	// Selector for Secret containing override data.
+	// +optional
+	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
+	// Configure overrides using inline YAML.
+	// +optional
+	Values *apiextensionsv1.JSON `json:"values,omitempty"`
+}
+
 // LoadOverrideFiles loads the helm overrides into a set of files for a release.  Return a list of Helm overrides which contain the filenames
-func LoadOverrideFiles(log vzlog.VerrazzanoLogger, client ctrlclient.Client, releaseName string, mlcNamespace string, moduleOverrides []moduleapi.Overrides) ([]HelmOverrides, error) {
+func LoadOverrideFiles(log vzlog.VerrazzanoLogger, client ctrlclient.Client, releaseName string, mlcNamespace string, moduleOverrides []ValueOverrides) ([]HelmOverrides, error) {
 	if len(moduleOverrides) == 0 {
 		return nil, nil
 	}

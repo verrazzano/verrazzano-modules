@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: ghcr.io/oracle/oraclelinux8-nginx:latest
+          image:  {{ .Values.image }}
           command:
             [
               "/bin/sh",
