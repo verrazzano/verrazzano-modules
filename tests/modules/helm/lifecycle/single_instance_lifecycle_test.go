@@ -5,6 +5,7 @@ package helm_module_lifecycle_test
 import (
 	"testing"
 
+	"github.com/onsi/gomega"
 	"github.com/verrazzano/verrazzano-modules/tests/common"
 )
 
@@ -39,7 +40,8 @@ func (suite *HelmModuleLifecycleTestSuite) TestSingleInstanceLifecycle() {
 	testName := "TestSingleInstanceLifecycle_namespace_default"
 	suite.T().Run(testName, func(t *testing.T) {
 		t.Parallel()
-		suite.executeModuleLifecycleOperations(t, common.DEFAULT_NS)
+		gomegaWithT := gomega.NewWithT(t)
+		suite.executeModuleLifecycleOperations(t, gomegaWithT, common.DEFAULT_NS)
 	})
 	suite.T().Cleanup(suite.cleanup)
 }

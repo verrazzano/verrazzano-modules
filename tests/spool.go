@@ -17,42 +17,43 @@ import (
 )
 
 type logMessage struct {
-	Time    string `json:"Time,omitempty"`
-	Action  string `json:"Action,omitempty"`
-	Package string `json:"Package,omitempty"`
-	Test    string `json:"Test,omitempty"`
-	Output  string `json:"Output,omitempty"`
-	Elapsed string `json:"Elapsed,omitempty"`
+	Time    string  `json:"Time,omitempty"`
+	Action  string  `json:"Action,omitempty"`
+	Package string  `json:"Package,omitempty"`
+	Test    string  `json:"Test,omitempty"`
+	Output  string  `json:"Output,omitempty"`
+	Elapsed float64 `json:"Elapsed,omitempty"`
 }
 
 type writer struct {
-	Out io.Writer
-	buf bytes.Buffer
-	mtx *sync.Mutex
+	out       io.Writer
+	buf       bytes.Buffer
+	mtx       *sync.Mutex
+	lineCount int
 }
 
 func (w *writer) flush() error {
 	w.mtx.Lock()
 	defer w.mtx.Unlock()
-	spoolLogFile := os.Getenv("SPOOL_LOG_FORMATTED")
-	err := os.Truncate(spoolLogFile, int64(0))
-	if err != nil {
-		return fmt.Errorf("error while truncating spool log file %s", spoolLogFile)
-	}
-
-	file, err := os.OpenFile(spoolLogFile, os.O_RDWR, 0644)
-	if err != nil {
-		return fmt.Errorf("error while truncating spool log file %s", spoolLogFile)
-	}
-
-	defer file.Close()
-	w.Out = io.Writer(file)
 
 	if len(w.buf.Bytes()) == 0 {
 		return nil
 	}
+	w.clearLines()
 
-	_, err = w.Out.Write(w.buf.Bytes())
+	lines := 0
+	var currentLine bytes.Buffer
+	for _, b := range w.buf.Bytes() {
+		if b == '\n' {
+			lines++
+			currentLine.Reset()
+		} else {
+			currentLine.Write([]byte{b})
+		}
+	}
+	w.lineCount = lines
+
+	_, err := w.out.Write(w.buf.Bytes())
 	if err != nil {
 		return err
 	}
@@ -61,9 +62,13 @@ func (w *writer) flush() error {
 	return nil
 
 }
+func (w *writer) clearLines() {
+	_, _ = fmt.Fprint(w.out, strings.Repeat(fmt.Sprintf("%c[%dA%c[2K", 27, 1, 27), w.lineCount))
+}
 
 func newWriter() *writer {
 	return &writer{
+		out: io.Writer(os.Stdout),
 		mtx: &sync.Mutex{},
 	}
 }
@@ -101,8 +106,8 @@ func main() {
 		}
 
 		if strings.Contains(line, "END SPOOL") {
-			file.Close()
 			os.Exit(0)
+			break
 		}
 
 		logMessage := &logMessage{}
@@ -111,7 +116,7 @@ func main() {
 			handleError(err)
 		}
 
-		if logMessage.Elapsed != "" {
+		if logMessage.Elapsed != float64(0) {
 			continue
 		}
 
@@ -228,7 +233,7 @@ func main() {
 						sort.Strings(tests)
 
 						for _, test := range tests {
-							_, err := w.write(fmt.Sprintf("\t\t:%s\n", test))
+							_, err := w.write(fmt.Sprintf("\t\t%s\n", test))
 							if err != nil {
 								handleError(err)
 							}

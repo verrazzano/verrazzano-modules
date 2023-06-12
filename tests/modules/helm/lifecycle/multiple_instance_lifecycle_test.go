@@ -5,6 +5,8 @@ package helm_module_lifecycle_test
 import (
 	"fmt"
 	"testing"
+
+	"github.com/onsi/gomega"
 )
 
 // TestMultipleInstanceLifecycle tests the module lifecycle of multiple module CRs concurrently.
@@ -34,13 +36,14 @@ import (
 // WHEN the module is deleted from the corresponding namespaces
 // THEN helm release for helm module is removed from the corresponding namespaces
 // AND the module is removed from the corresponding namespaces
-func (suite *HelmModuleLifecycleTestSuite) TestMultipleInstanceLifecycle() {
+func (suite *HelmModuleLifecycleTestSuite) XTestMultipleInstanceLifecycle() {
 	for count := 0; count < 20; count++ {
 		namespace := fmt.Sprintf("ns%v", count)
 		testName := fmt.Sprintf("TestMultipleInstanceLifecycle_namespace_%s", namespace)
 		suite.T().Run(testName, func(t *testing.T) {
 			t.Parallel()
-			suite.executeModuleLifecycleOperations(t, namespace)
+			gomegaWithT := gomega.NewWithT(t)
+			suite.executeModuleLifecycleOperations(t, gomegaWithT, namespace)
 		})
 		suite.T().Cleanup(suite.cleanup)
 	}

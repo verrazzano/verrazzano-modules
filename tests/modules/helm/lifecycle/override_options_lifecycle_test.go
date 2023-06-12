@@ -49,22 +49,22 @@ func (suite *HelmModuleLifecycleTestSuite) TestOverrideOptionsLifecycle() {
 	testName := "TestOverrideOptionsLifecycle_namespace_" + namespace
 	suite.T().Run(testName, func(t *testing.T) {
 		t.Parallel()
-		exec(t, namespace, suite)
+		exec(t, gomega.NewWithT(t), namespace, suite)
 	})
 	suite.T().Cleanup(suite.cleanup)
 }
 
-func exec(t *testing.T, namespace string, suite *HelmModuleLifecycleTestSuite) {
+func exec(t *testing.T, gomegaWithT *gomega.WithT, namespace string, suite *HelmModuleLifecycleTestSuite) {
 	secretName := "override-secret"
 	secretKey := "override-key"
 	cmName := "override-cm"
 	cmKey := "override-key"
-	err := suite.waitForNamespaceCreated(t, namespace)
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	err := suite.waitForNamespaceCreated(t, gomegaWithT, namespace)
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 
 	module := &api.Module{}
 	err = common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 	module.SetNamespace(namespace)
 
 	testNamespacesMutex.Lock()
@@ -100,43 +100,43 @@ func exec(t *testing.T, namespace string, suite *HelmModuleLifecycleTestSuite) {
 			},
 		},
 	}
-	c := suite.getModuleClient()
+	c := suite.getModuleClient(gomegaWithT)
 	corev1Client, err := k8sutil.GetCoreV1Client()
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	secret, cm, module = mutateAndVerifyModule(suite, corev1Client, c, module, common.TEST_HELM_MODULE_OVERRIDE_010_3, secret, common.TEST_HELM_MODULE_OVERRIDE_010_1, cm, common.TEST_HELM_MODULE_OVERRIDE_010_2, t, overrides, false, false)
-	secret, cm, module = mutateAndVerifyModule(suite, corev1Client, c, module, common.TEST_HELM_MODULE_OVERRIDE_010_4, secret, common.TEST_HELM_MODULE_OVERRIDE_010_6, cm, common.TEST_HELM_MODULE_OVERRIDE_010_5, t, overrides, true, false)
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+	secret, cm, module = mutateAndVerifyModule(suite, gomegaWithT, corev1Client, c, module, common.TEST_HELM_MODULE_OVERRIDE_010_3, secret, common.TEST_HELM_MODULE_OVERRIDE_010_1, cm, common.TEST_HELM_MODULE_OVERRIDE_010_2, t, overrides, false, false)
+	secret, cm, module = mutateAndVerifyModule(suite, gomegaWithT, corev1Client, c, module, common.TEST_HELM_MODULE_OVERRIDE_010_4, secret, common.TEST_HELM_MODULE_OVERRIDE_010_6, cm, common.TEST_HELM_MODULE_OVERRIDE_010_5, t, overrides, true, false)
 
 	module.Spec.Version = common.TEST_HELM_MODULE_VERSION_011
-	secret, cm, module = mutateAndVerifyModule(suite, corev1Client, c, module, common.TEST_HELM_MODULE_OVERRIDE_011, secret, common.TEST_HELM_MODULE_OVERRIDE_011_1, cm, common.TEST_HELM_MODULE_OVERRIDE_011_2, t, overrides, true, true)
+	secret, cm, module = mutateAndVerifyModule(suite, gomegaWithT, corev1Client, c, module, common.TEST_HELM_MODULE_OVERRIDE_011, secret, common.TEST_HELM_MODULE_OVERRIDE_011_1, cm, common.TEST_HELM_MODULE_OVERRIDE_011_2, t, overrides, true, true)
 
 	err = corev1Client.Secrets(module.GetNamespace()).Delete(context.TODO(), secret.GetName(), v1.DeleteOptions{})
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 	err = corev1Client.ConfigMaps(module.GetNamespace()).Delete(context.TODO(), cm.GetName(), v1.DeleteOptions{})
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	suite.removeModuleAndNamespace(t, c, module)
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+	suite.removeModuleAndNamespace(t, gomegaWithT, c, module)
 }
 
-func mutateAndVerifyModule(suite *HelmModuleLifecycleTestSuite, corev1Client coreclientv1.CoreV1Interface, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, moduleOverrideFile string, secret *corev1.Secret, secretOverrideFile string, cm *corev1.ConfigMap, cmOverrideFile string, t *testing.T, overrides []*api.ValuesFromSource, update bool, upgrade bool) (*corev1.Secret, *corev1.ConfigMap, *api.Module) {
+func mutateAndVerifyModule(suite *HelmModuleLifecycleTestSuite, gomegaWithT *gomega.WithT, corev1Client coreclientv1.CoreV1Interface, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, moduleOverrideFile string, secret *corev1.Secret, secretOverrideFile string, cm *corev1.ConfigMap, cmOverrideFile string, t *testing.T, overrides []*api.ValuesFromSource, update bool, upgrade bool) (*corev1.Secret, *corev1.ConfigMap, *api.Module) {
 	secretData, err := common.LoadTestFile(secretOverrideFile)
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 	secret.Data = map[string][]byte{
 		overrides[0].SecretRef.Key: secretData,
 	}
 
 	cmData, err := common.LoadTestFile(cmOverrideFile)
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 	cm.Data = map[string]string{
 		overrides[1].ConfigMapRef.Key: string(cmData),
 	}
 
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 	if update {
 		secret, err = corev1Client.Secrets(module.GetNamespace()).Update(context.TODO(), secret, v1.UpdateOptions{})
 	} else {
 		secret, err = corev1Client.Secrets(module.GetNamespace()).Create(context.TODO(), secret, v1.CreateOptions{})
 	}
 
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 
 	if update {
 		cm, err = corev1Client.ConfigMaps(module.GetNamespace()).Update(context.TODO(), cm, v1.UpdateOptions{})
@@ -144,19 +144,19 @@ func mutateAndVerifyModule(suite *HelmModuleLifecycleTestSuite, corev1Client cor
 		cm, err = corev1Client.ConfigMaps(module.GetNamespace()).Create(context.TODO(), cm, v1.CreateOptions{})
 	}
 
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 
-	module, overridesFileJSON := suite.createOrUpdateModule(t, c, module, moduleOverrideFile, update, overrides...)
+	module, overridesFileJSON := suite.createOrUpdateModule(t, gomegaWithT, c, module, moduleOverrideFile, update, overrides...)
 
 	var secretOverrideMap, cmOverrideMap map[string]interface{}
 	err = yaml.Unmarshal(secretData, &secretOverrideMap)
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 	err = yaml.Unmarshal(cmData, &cmOverrideMap)
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 
 	if upgrade {
-		module = suite.waitForModuleToBeUpgraded(t, c, module)
+		module = suite.waitForModuleToBeUpgraded(t, gomegaWithT, c, module)
 	}
 
-	return secret, cm, suite.verifyModule(t, c, module, overridesFileJSON, &secretOverrideMap, &cmOverrideMap)
+	return secret, cm, suite.verifyModule(t, gomegaWithT, c, module, overridesFileJSON, &secretOverrideMap, &cmOverrideMap)
 }
