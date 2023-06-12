@@ -12,6 +12,10 @@ import (
 	"testing"
 )
 
+// TestSetLastAppliedConfigurationAnnotation tests setting last applied configuration annotation to the CR
+// GIVEN a sample module CR
+// WHEN SetLastAppliedConfigurationAnnotation is called
+// THEN CR should be modified to match with expected
 func TestSetLastAppliedConfigurationAnnotation(t *testing.T) {
 	vz := &v1alpha1.Module{
 		ObjectMeta: metav1.ObjectMeta{},
