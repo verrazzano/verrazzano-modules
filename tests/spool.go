@@ -202,7 +202,10 @@ func main() {
 
 		sort.Strings(packageNameKeys)
 		for _, packageName := range packageNameKeys {
-			w.write(fmt.Sprintf("%s\n", packageName))
+			_, err := w.write(fmt.Sprintf("%s\n", packageName))
+			if err != nil {
+				handleError(err)
+			}
 			if packageSuites, ok := packageSuiteMap[packageName]; ok {
 				suites := make([]string, 0, len(packageSuites))
 				for suiteNameKey := range packageSuites {
