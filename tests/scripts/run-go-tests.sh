@@ -48,7 +48,20 @@ fi
 
 set -x
 SPOOL_LOG="${TEST_ROOT}/spool.log"
+SPOOL_LOG_FORMATTED="${TEST_ROOT}/spool_out.log"
 rm -rf ${SPOOL_LOG}
-SPOOL_LOG="${SPOOL_LOG}" go run ${TEST_ROOT}/spool.go &
+rm -rf ${SPOOL_LOG_FORMATTED}
+touch ${SPOOL_LOG_FORMATTED}
+
+while [ 1 ]; do
+  clear
+  cat ${SPOOL_LOG_FORMATTED}
+  sleep 0.1
+done &
+pid=$!
+SPOOL_LOG="${SPOOL_LOG}" SPOOL_LOG_FORMATTED="${SPOOL_LOG_FORMATTED}" go run ${TEST_ROOT}/spool.go &
 go test ${GO_TEST_ARGS} ${TEST_ROOT}/${TEST_SUITES} ${TEST_ARGS} -json >>${SPOOL_LOG}
 echo "END SPOOL" >>${SPOOL_LOG}
+echo -ne '\n'
+sleep 1
+kill -9 $pid

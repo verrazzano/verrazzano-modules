@@ -14,7 +14,7 @@ import (
 // GIVEN an installation of module-operator in a cluster
 // WHEN the status of ready replicas for the module-operator are checked
 // THEN 1 replica is found to be ready.
-func (suite *OperatorTestSuite) XTestOperatorRunning() {
+func (suite *OperatorTestSuite) TestOperatorRunning() {
 	client, err := k8sutil.GetKubernetesClientset()
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	deployment, err := client.AppsV1().Deployments("verrazzano-install").Get(context.TODO(), "verrazzano-module-operator", v1.GetOptions{})
@@ -26,7 +26,7 @@ func (suite *OperatorTestSuite) XTestOperatorRunning() {
 // GIVEN an installation of module-operator in a cluster
 // WHEN the status of installtion of module crd is checked
 // THEN module crd is found to be installed.
-func (suite *OperatorTestSuite) XTestCRDsInstalled() {
+func (suite *OperatorTestSuite) TestCRDsInstalled() {
 	crdInstalled, err := k8sutil.CheckCRDsExist([]string{"modules.platform.verrazzano.io"})
 	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	suite.gomega.Expect(crdInstalled).To(gomega.BeTrue())

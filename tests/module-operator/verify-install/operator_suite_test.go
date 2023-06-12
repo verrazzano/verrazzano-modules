@@ -17,7 +17,7 @@ type OperatorTestSuite struct {
 }
 
 // TestOperatorTestSuite is the driver test for module-operator tests.
-func XTestOperatorTestSuite(t *testing.T) {
+func TestOperatorTestSuite(t *testing.T) {
 	operatorTestingSuite := new(OperatorTestSuite)
 	operatorTestingSuite.gomega = gomega.NewGomegaWithT(t)
 	suite.Run(t, operatorTestingSuite)
