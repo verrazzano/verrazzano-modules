@@ -14,8 +14,10 @@ import (
 
 // upgradeFuncSig is a function needed for unit test override
 type upgradeFuncSig func(log vzlog.VerrazzanoLogger, releaseOpts *helm2.HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error)
+type checkWorkloadsReadyFuncSig func(ctx handlerspi.HandlerContext, releaseName string, namespace string) (bool, error)
 
 var upgradeFunc upgradeFuncSig = helm2.UpgradeRelease
+var checkWorkloadsReadyFunc checkWorkloadsReadyFuncSig = CheckWorkLoadsReady
 
 type BaseHandler struct{}
 
@@ -25,6 +27,14 @@ func SetUpgradeFunc(f upgradeFuncSig) {
 
 func ResetUpgradeFunc() {
 	upgradeFunc = helm2.UpgradeRelease
+}
+
+func SetCheckReadyFunc(f checkWorkloadsReadyFuncSig) {
+	checkWorkloadsReadyFunc = f
+}
+
+func ResetCheckReadyFunc() {
+	checkWorkloadsReadyFunc = CheckWorkLoadsReady
 }
 
 // HelmUpgradeOrInstall does a Helm upgrade --install of the chart
@@ -59,14 +69,14 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 	deployed, err := helm2.IsReleaseDeployed(ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
-		return false, result.NewResult()
+		return false, result.NewResultShortRequeueDelayWithError(err)
 	}
 	if !deployed {
 		return false, result.NewResultShortRequeueDelay()
 	}
 
 	// Check if the workload pods are ready
-	ready, err := CheckWorkLoadsReady(ctx, ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
+	ready, err := checkWorkloadsReadyFunc(ctx, ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	return ready, result.NewResultShortRequeueDelayIfError(err)
 }
 
