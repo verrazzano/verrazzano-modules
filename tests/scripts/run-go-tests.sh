@@ -48,6 +48,19 @@ fi
 
 SPOOL_LOG="${TEST_ROOT}/spool.log"
 rm -rf ${SPOOL_LOG}
-SPOOL_LOG="${SPOOL_LOG}" go run ${TEST_ROOT}/spool.go &
+
+if [ "${TEST_ENV}" == "JENKINS" ]; then
+  SPOOL_LOG_SUMMARY="${TEST_ROOT}/spool_summary.log"
+  rm -rf ${SPOOL_LOG_SUMMARY}
+  SPOOL_LOG="${SPOOL_LOG}" SPOOL_LOG_SUMMARY="${SPOOL_LOG_SUMMARY}" go run ${TEST_ROOT}/spool.go &
+else
+  SPOOL_LOG="${SPOOL_LOG}" go run ${TEST_ROOT}/spool.go &
+fi
 go test ${GO_TEST_ARGS} ${TEST_ROOT}/${TEST_SUITES} ${TEST_ARGS} -json >>${SPOOL_LOG}
 echo "END SPOOL" >>${SPOOL_LOG}
+if [ "${TEST_ENV}" == "JENKINS" ]; then
+  echo ""
+  echo "##Test Summary##"
+  echo ""
+  cat ${SPOOL_LOG_SUMMARY}
+fi

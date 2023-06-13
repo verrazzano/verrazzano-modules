@@ -26,10 +26,12 @@ type logMessage struct {
 }
 
 type writer struct {
-	out       io.Writer
-	buf       bytes.Buffer
-	mtx       *sync.Mutex
-	lineCount int
+	out                 io.Writer
+	buf                 bytes.Buffer
+	mtx                 *sync.Mutex
+	lineCount           int
+	spoolLogSummaryFile string
+	stdout              io.Writer
 }
 
 func (w *writer) flush() error {
@@ -67,20 +69,48 @@ func (w *writer) clearLines() {
 }
 
 func newWriter() *writer {
-	return &writer{
-		out: io.Writer(os.Stdout),
+	w := &writer{
 		mtx: &sync.Mutex{},
+	}
+	w.spoolLogSummaryFile = os.Getenv("SPOOL_LOG_SUMMARY")
+	if w.spoolLogSummaryFile != "" {
+		file, err := os.Create(w.spoolLogSummaryFile)
+		if err != nil {
+			handleError(err)
+		}
+
+		w.out = io.Writer(file)
+		w.stdout = io.Writer(os.Stdout)
+	} else {
+		w.out = io.Writer(os.Stdout)
+	}
+	return w
+}
+
+func (w *writer) write(line string) {
+	w.mtx.Lock()
+	defer w.mtx.Unlock()
+	_, err := w.buf.Write([]byte(line))
+	if err != nil {
+		handleError(err)
 	}
 }
 
-func (w *writer) write(line string) (n int, err error) {
+func (w *writer) print(line string) {
 	w.mtx.Lock()
 	defer w.mtx.Unlock()
-	return w.buf.Write([]byte(line))
+	_, err := w.stdout.Write([]byte(line))
+	if err != nil {
+		handleError(err)
+	}
 }
 
 func main() {
 	file, err := os.Open(os.Getenv("SPOOL_LOG"))
+	if err != nil {
+		handleError(err)
+	}
+
 	logMessagePackageMap := make(map[string]map[time.Time]string)
 	logMessageSuiteMap := make(map[string]map[time.Time]string)
 	logMessageTestMap := make(map[string]map[time.Time]string)
@@ -89,9 +119,6 @@ func main() {
 	suiteTestMap := make(map[string]map[string]string)
 	w := newWriter()
 
-	if err != nil {
-		return
-	}
 	defer file.Close()
 	reader := bufio.NewReader(file)
 
@@ -145,25 +172,29 @@ func main() {
 			}
 
 			packageLogMessages[dateTime] = logMessage.Output
+			if w.stdout != nil {
+				w.print(fmt.Sprintf("%s\n", logMessage.Package))
+				w.print(fmt.Sprintf("\t%s: %s", dateTime.Format(time.RFC3339Nano), logMessage.Output))
+			}
 		}
 
+		currentSuite := ""
 		if logMessage.Test != "" {
 			testName := logMessage.Test
 			parts := strings.Split(testName, "/")
 			if strings.Contains(parts[0], "Suite") {
-				suite := parts[0]
-				packageSuites[suite] = ""
-
-				suiteLogMessages, ok := logMessageSuiteMap[suite]
+				currentSuite = parts[0]
+				packageSuites[currentSuite] = ""
+				suiteLogMessages, ok := logMessageSuiteMap[currentSuite]
 				if !ok {
 					suiteLogMessages = make(map[time.Time]string)
-					logMessageSuiteMap[suite] = suiteLogMessages
+					logMessageSuiteMap[currentSuite] = suiteLogMessages
 				}
 
-				suiteTests, ok := suiteTestMap[suite]
+				suiteTests, ok := suiteTestMap[currentSuite]
 				if !ok {
 					suiteTests = make(map[string]string)
-					suiteTestMap[suite] = suiteTests
+					suiteTestMap[currentSuite] = suiteTests
 				}
 
 				if len(parts) == 1 && logMessage.Output != "" {
@@ -173,6 +204,11 @@ func main() {
 					}
 
 					suiteLogMessages[dateTime] = logMessage.Output
+					if w.stdout != nil {
+						w.print(fmt.Sprintf("%s\n", logMessage.Package))
+						w.print(fmt.Sprintf("\t%s\n", currentSuite))
+						w.print(fmt.Sprintf("\t\t%s: %s", dateTime.Format(time.RFC3339Nano), logMessage.Output))
+					}
 				}
 
 				if len(parts) > 1 {
@@ -197,6 +233,18 @@ func main() {
 				}
 
 				testLogMessages[dateTime] = logMessage.Output
+				if w.stdout != nil {
+					if currentSuite != "" {
+						w.print(fmt.Sprintf("%s\n", logMessage.Package))
+						w.print(fmt.Sprintf("\t%s\n", currentSuite))
+						w.print(fmt.Sprintf("\t\t%s\n", testName))
+						w.print(fmt.Sprintf("\t\t\t%s: %s", dateTime.Format(time.RFC3339Nano), logMessage.Output))
+					} else {
+						w.print(fmt.Sprintf("%s\n", logMessage.Package))
+						w.print(fmt.Sprintf("\t\t%s\n", testName))
+						w.print(fmt.Sprintf("\t\t%s: %s", dateTime.Format(time.RFC3339Nano), logMessage.Output))
+					}
+				}
 			}
 		}
 
@@ -207,96 +255,37 @@ func main() {
 
 		sort.Strings(packageNameKeys)
 		for _, packageName := range packageNameKeys {
-			_, err := w.write(fmt.Sprintf("%s\n", packageName))
-			if err != nil {
-				handleError(err)
-			}
+			w.write(fmt.Sprintf("%s\n", packageName))
 			if packageSuites, ok := packageSuiteMap[packageName]; ok {
-				suites := make([]string, 0, len(packageSuites))
-				for suiteNameKey := range packageSuites {
-					suites = append(suites, suiteNameKey)
-				}
-
-				sort.Strings(suites)
+				suites := w.sortMapKeys(packageSuites)
 				for _, suite := range suites {
-					_, err := w.write(fmt.Sprintf("\t%s\n", suite))
-					if err != nil {
-						handleError(err)
-					}
-
+					w.write(fmt.Sprintf("\t%s\n", suite))
 					if suiteTests, ok := suiteTestMap[suite]; ok {
-						tests := make([]string, 0, len(suiteTests))
-						for testNameKey := range suiteTests {
-							tests = append(tests, testNameKey)
-						}
-
-						sort.Strings(tests)
-
+						tests := w.sortMapKeys(suiteTests)
 						for _, test := range tests {
-							_, err := w.write(fmt.Sprintf("\t\t%s\n", test))
-							if err != nil {
-								handleError(err)
-							}
-
+							w.write(fmt.Sprintf("\t\t%s\n", test))
 							if testMessages, ok := logMessageTestMap[test]; ok {
-								testKeys := make([]time.Time, 0, len(testMessages))
-								for testKey := range testMessages {
-									testKeys = append(testKeys, testKey)
-
-								}
-
-								sort.Slice(testKeys, func(i, j int) bool {
-									return testKeys[i].Before(testKeys[j])
-								})
-
-								for _, timeKey := range testKeys {
-									_, err := w.write(fmt.Sprintf("\t\t\t%s: %s", timeKey.Format(time.RFC3339Nano), testMessages[timeKey]))
-									if err != nil {
-										handleError(err)
-									}
-								}
+								w.sortAndWriteMessages(testMessages, 3)
 							}
 						}
 					}
 
 					if suiteMessages, ok := logMessageSuiteMap[suite]; ok {
-						suiteKeys := make([]time.Time, 0, len(suiteMessages))
-						for suiteKey := range suiteMessages {
-							suiteKeys = append(suiteKeys, suiteKey)
-
-						}
-
-						sort.Slice(suiteKeys, func(i, j int) bool {
-							return suiteKeys[i].Before(suiteKeys[j])
-						})
-
-						for _, timeKey := range suiteKeys {
-							_, err := w.write(fmt.Sprintf("\t\t%s: %s", timeKey.Format(time.RFC3339Nano), suiteMessages[timeKey]))
-							if err != nil {
-								handleError(err)
-							}
-						}
+						w.sortAndWriteMessages(suiteMessages, 2)
 					}
 				}
 			}
 
-			packageMessages := logMessagePackageMap[packageName]
-			packageKeys := make([]time.Time, 0, len(packageMessages))
-			for packageKey := range packageMessages {
-				packageKeys = append(packageKeys, packageKey)
-
-			}
-
-			sort.Slice(packageKeys, func(i, j int) bool {
-				return packageKeys[i].Before(packageKeys[j])
-			})
-
-			for _, timeKey := range packageKeys {
-				_, err := w.write(fmt.Sprintf("\t%s: %s", timeKey.Format(time.RFC3339Nano), packageMessages[timeKey]))
-				if err != nil {
-					handleError(err)
+			if packageTests, ok := packageTestMap[packageName]; ok {
+				tests := w.sortMapKeys(packageTests)
+				for _, test := range tests {
+					w.write(fmt.Sprintf("\t%s\n", test))
+					if testMessages, ok := logMessageTestMap[test]; ok {
+						w.sortAndWriteMessages(testMessages, 2)
+					}
 				}
 			}
+			w.sortAndWriteMessages(logMessagePackageMap[packageName], 1)
 		}
 		handleError(w.flush())
 	}
@@ -307,4 +296,30 @@ func handleError(err error) {
 		fmt.Printf("error while spooling logs, error: %v", err.Error())
 		os.Exit(1)
 	}
+}
+
+func (w *writer) sortAndWriteMessages(messages map[time.Time]string, numTabs int) {
+	messageKeys := make([]time.Time, 0, len(messages))
+	for messageKey := range messages {
+		messageKeys = append(messageKeys, messageKey)
+
+	}
+
+	sort.Slice(messageKeys, func(i, j int) bool {
+		return messageKeys[i].Before(messageKeys[j])
+	})
+
+	for _, timeKey := range messageKeys {
+		w.write(fmt.Sprintf("%s%s: %s", strings.Repeat("\t", numTabs), timeKey.Format(time.RFC3339Nano), messages[timeKey]))
+	}
+}
+
+func (w *writer) sortMapKeys(elements map[string]string) []string {
+	keys := make([]string, 0, len(elements))
+	for key := range elements {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+	return keys
 }
