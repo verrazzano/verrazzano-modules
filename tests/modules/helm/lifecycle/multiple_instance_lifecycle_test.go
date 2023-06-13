@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/onsi/gomega"
+	"github.com/verrazzano/verrazzano-modules/tests/common"
 )
 
 // TestMultipleInstanceLifecycle tests the module lifecycle of multiple module CRs concurrently.
@@ -42,8 +42,7 @@ func (suite *HelmModuleLifecycleTestSuite) TestMultipleInstanceLifecycle() {
 		testName := fmt.Sprintf("TestMultipleInstanceLifecycle_namespace_%s", namespace)
 		suite.T().Run(testName, func(t *testing.T) {
 			t.Parallel()
-			gomegaWithT := gomega.NewWithT(t)
-			suite.executeModuleLifecycleOperations(t, gomegaWithT, namespace)
+			suite.executeModuleLifecycleOperations(common.NewTestContext(t), namespace)
 		})
 		suite.T().Cleanup(suite.cleanup)
 	}

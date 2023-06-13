@@ -12,7 +12,6 @@ import (
 
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/suite"
-	"github.com/verrazzano/verrazzano-modules/module-operator/clientset/versioned/typed/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/k8sutil"
@@ -47,65 +46,59 @@ func TestHelmModuleLifecycleTestSuite(t *testing.T) {
 	suite.Run(t, helmModuleLifecyclreTestingSuite)
 }
 
-func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(t *testing.T, gomegaWithT *gomega.WithT, namespace string) {
-	err := suite.waitForNamespaceCreated(t, gomegaWithT, namespace)
-	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+func (suite *HelmModuleLifecycleTestSuite) executeModuleLifecycleOperations(ctx *common.TestContext, namespace string) {
+	suite.waitForNamespaceCreated(ctx, namespace)
 	module := &api.Module{}
-	err = common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
-	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+	err := common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
+	ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 
 	testNamespacesMutex.Lock()
 	testNamespaces[namespace] = []string{module.GetName()}
 	testNamespacesMutex.Unlock()
 
-	c := suite.getModuleClient(gomegaWithT)
-
 	module.SetNamespace(namespace)
 	module.Spec.TargetNamespace = namespace
-	module, overrides := suite.createOrUpdateModule(t, gomegaWithT, c, module, common.TEST_HELM_MODULE_OVERRIDE_010, false)
-	module = suite.verifyModule(t, gomegaWithT, c, module, overrides)
+	module, overrides := suite.createOrUpdateModule(ctx, module, common.TEST_HELM_MODULE_OVERRIDE_010, false)
+	module = suite.verifyModule(ctx, module, overrides)
 
-	module, overrides = suite.createOrUpdateModule(t, gomegaWithT, c, module, common.TEST_HELM_MODULE_OVERRIDE_010_1, true)
-	module = suite.verifyModule(t, gomegaWithT, c, module, overrides)
+	module, overrides = suite.createOrUpdateModule(ctx, module, common.TEST_HELM_MODULE_OVERRIDE_010_1, true)
+	module = suite.verifyModule(ctx, module, overrides)
 
 	module.Spec.Version = common.TEST_HELM_MODULE_VERSION_011
-	module, overrides = suite.createOrUpdateModule(t, gomegaWithT, c, module, common.TEST_HELM_MODULE_OVERRIDE_011, true)
-	module = suite.waitForModuleToBeUpgraded(t, gomegaWithT, c, module)
-	module = suite.verifyModule(t, gomegaWithT, c, module, overrides)
-	suite.removeModuleAndNamespace(t, gomegaWithT, c, module)
+	module, overrides = suite.createOrUpdateModule(ctx, module, common.TEST_HELM_MODULE_OVERRIDE_011, true)
+	module = suite.waitForModuleToBeUpgraded(ctx, module)
+	module = suite.verifyModule(ctx, module, overrides)
+	suite.removeModuleAndNamespace(ctx, module)
 }
 
 func (suite *HelmModuleLifecycleTestSuite) cleanup() {
-	corev1client, err := k8sutil.GetCoreV1Client()
-	gomegaWithT := gomega.NewWithT(suite.T())
-	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
-	c := suite.getModuleClient(gomegaWithT)
+	ctx := common.NewTestContext(suite.T())
 	for namespace, modules := range testNamespaces {
 		if suite.deleteNamespace(namespace) {
-			err = corev1client.Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
+			err := ctx.CoreV1Client().Namespaces().Delete(context.TODO(), namespace, v1.DeleteOptions{})
 			if kerrs.IsNotFound(err) {
 				continue
 			}
 
-			gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
-			err = suite.waitForNamespaceDeleted(suite.T(), gomegaWithT, namespace)
-			gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+			ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+			suite.waitForNamespaceDeleted(ctx, namespace)
+			ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 		} else {
 			for _, moduleName := range modules {
-				err = c.Modules(namespace).Delete(context.TODO(), moduleName, v1.DeleteOptions{})
+				err := ctx.ModuleClient().Modules(namespace).Delete(context.TODO(), moduleName, v1.DeleteOptions{})
 				if kerrs.IsNotFound(err) {
 					continue
 				}
 
-				gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
-				suite.waitForModuleToBeDeleted(suite.T(), gomegaWithT, c, namespace, moduleName)
+				ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+				suite.waitForModuleToBeDeleted(ctx, namespace, moduleName)
 			}
 		}
 
 	}
 }
 
-func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(t *testing.T, gomegaWithT *gomega.WithT, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, overridesFile string, update bool, otherOverrides ...*api.ValuesFromSource) (*api.Module, *apiextensionsv1.JSON) {
+func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(ctx *common.TestContext, module *api.Module, overridesFile string, update bool, otherOverrides ...*api.ValuesFromSource) (*api.Module, *apiextensionsv1.JSON) {
 	op := "create"
 	if update {
 		op = "update"
@@ -114,20 +107,20 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(t *testing.T, go
 	namespace := module.Namespace
 	version := module.Spec.Version
 
-	t.Logf("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
+	ctx.T.Logf("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
 
 	// Build the values and valuesFrom
-	values := suite.generateOverridesFromFile(gomegaWithT, overridesFile)
+	values := suite.generateOverridesFromFile(ctx, overridesFile)
 	var valuesFrom []api.ValuesFromSource
 	for _, toAppend := range otherOverrides {
 		valuesFrom = append(valuesFrom, *toAppend)
 	}
-	gomegaWithT.Eventually(func() error {
+	ctx.GomegaWithT.Eventually(func() error {
 		var err error
 
 		// Get the latest Module or else the code will never resolve conflicts
 		if op != "create" {
-			module, err = c.Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
+			module, err = ctx.ModuleClient().Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -143,9 +136,9 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(t *testing.T, go
 
 		// Do the create or update
 		if update {
-			module, err = c.Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
+			module, err = ctx.ModuleClient().Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
 		} else {
-			module, err = c.Modules(module.GetNamespace()).Create(context.TODO(), module, v1.CreateOptions{})
+			module, err = ctx.ModuleClient().Modules(module.GetNamespace()).Create(context.TODO(), module, v1.CreateOptions{})
 		}
 
 		return err
@@ -154,53 +147,53 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(t *testing.T, go
 	return module, values
 }
 
-func (suite *HelmModuleLifecycleTestSuite) verifyModule(t *testing.T, gomegaWithT *gomega.WithT, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, overrides *apiextensionsv1.JSON, otherOverrides ...*map[string]interface{}) *api.Module {
-	deployedModule := suite.verifyModuleIsReady(t, gomegaWithT, c, module)
-	suite.verifyHelmReleaseStatus(gomegaWithT, c, module, deployedModule)
-	suite.verifyHelmValues(t, gomegaWithT, c, module, deployedModule, overrides, otherOverrides...)
-	deployedModule, err := c.Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
-	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+func (suite *HelmModuleLifecycleTestSuite) verifyModule(ctx *common.TestContext, module *api.Module, overrides *apiextensionsv1.JSON, otherOverrides ...*map[string]interface{}) *api.Module {
+	deployedModule := suite.verifyModuleIsReady(ctx, module)
+	suite.verifyHelmReleaseStatus(ctx, module, deployedModule)
+	suite.verifyHelmValues(ctx, module, deployedModule, overrides, otherOverrides...)
+	deployedModule, err := ctx.ModuleClient().Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
+	ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 	return deployedModule
 }
 
-func (suite *HelmModuleLifecycleTestSuite) verifyModuleIsReady(t *testing.T, gomegaWithT *gomega.WithT, c *v1alpha1.PlatformV1alpha1Client, module *api.Module) *api.Module {
-	deployedModule := suite.waitForModuleToBeReady(t, gomegaWithT, c, module)
-	gomegaWithT.Expect(deployedModule.Status.LastSuccessfulVersion).To(gomega.Equal(module.Spec.Version))
+func (suite *HelmModuleLifecycleTestSuite) verifyModuleIsReady(ctx *common.TestContext, module *api.Module) *api.Module {
+	deployedModule := suite.waitForModuleToBeReady(ctx, module)
+	ctx.GomegaWithT.Expect(deployedModule.Status.LastSuccessfulVersion).To(gomega.Equal(module.Spec.Version))
 	return deployedModule
 }
 
-func (suite *HelmModuleLifecycleTestSuite) verifyHelmReleaseStatus(gomegaWithT *gomega.WithT, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, deployedModule *api.Module) {
+func (suite *HelmModuleLifecycleTestSuite) verifyHelmReleaseStatus(ctx *common.TestContext, module *api.Module, deployedModule *api.Module) {
 	status, err := helm.GetHelmReleaseStatus(deployedModule.GetName(), deployedModule.GetNamespace())
-	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
-	gomegaWithT.Expect(status).To(gomega.Equal(helm.ReleaseStatusDeployed))
-	gomegaWithT.Expect(deployedModule.Status.LastSuccessfulVersion).To(gomega.Equal(module.Spec.Version))
+	ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+	ctx.GomegaWithT.Expect(status).To(gomega.Equal(helm.ReleaseStatusDeployed))
+	ctx.GomegaWithT.Expect(deployedModule.Status.LastSuccessfulVersion).To(gomega.Equal(module.Spec.Version))
 }
 
-func (suite *HelmModuleLifecycleTestSuite) verifyHelmValues(t *testing.T, gomegaWithT *gomega.WithT, c *v1alpha1.PlatformV1alpha1Client, module *api.Module, deployedModule *api.Module, overrides *apiextensionsv1.JSON, otherOverrides ...*map[string]interface{}) {
-	gomegaWithT.Eventually(func() bool {
+func (suite *HelmModuleLifecycleTestSuite) verifyHelmValues(ctx *common.TestContext, module *api.Module, deployedModule *api.Module, overrides *apiextensionsv1.JSON, otherOverrides ...*map[string]interface{}) {
+	ctx.GomegaWithT.Eventually(func() bool {
 		deployedValues, err := helm.GetValuesMap(vzlog.DefaultLogger(), deployedModule.GetName(), deployedModule.GetNamespace())
 		if err != nil {
-			t.Logf("error while fetching helm values from release %s/%s, %v", deployedModule.GetNamespace(), deployedModule.GetName(), err.Error())
+			ctx.T.Logf("error while fetching helm values from release %s/%s, %v", deployedModule.GetNamespace(), deployedModule.GetName(), err.Error())
 			return false
 		}
 
 		appliedValuesBytes, err := overrides.MarshalJSON()
 		if err != nil {
-			t.Logf("unable to marshal override values, error: %v", err.Error())
+			ctx.T.Logf("unable to marshal override values, error: %v", err.Error())
 			return false
 		}
 
 		var appliedValues map[string]interface{}
 		err = json.Unmarshal(appliedValuesBytes, &appliedValues)
 		if err != nil {
-			t.Logf("unable to unmarshal override values to map, error: %v", err.Error())
+			ctx.T.Logf("unable to unmarshal override values to map, error: %v", err.Error())
 			return false
 		}
 
 		for _, otherOverride := range otherOverrides {
 			err = yaml.MergeMaps(appliedValues, *otherOverride)
 			if err != nil {
-				t.Logf("unable to merge override values, error: %v", err.Error())
+				ctx.T.Logf("unable to merge override values, error: %v", err.Error())
 				return false
 			}
 		}
@@ -209,39 +202,31 @@ func (suite *HelmModuleLifecycleTestSuite) verifyHelmValues(t *testing.T, gomega
 	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
 }
 
-func (suite *HelmModuleLifecycleTestSuite) generateOverridesFromFile(gomegaWithT *gomega.WithT, overridesFile string) *apiextensionsv1.JSON {
+func (suite *HelmModuleLifecycleTestSuite) generateOverridesFromFile(ctx *common.TestContext, overridesFile string) *apiextensionsv1.JSON {
 	overrides := &apiextensionsv1.JSON{}
 	err := common.UnmarshalTestFile(overridesFile, overrides)
-	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+	ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 	return overrides
 }
 
-func (suite *HelmModuleLifecycleTestSuite) getModuleClient(gomegaWithT *gomega.WithT) *v1alpha1.PlatformV1alpha1Client {
-	config, err := k8sutil.GetKubeConfig()
-	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
-	c, err := v1alpha1.NewForConfig(config)
-	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
-	return c
-}
-
-func (suite *HelmModuleLifecycleTestSuite) verifyModuleDeleted(t *testing.T, gomegaWithT *gomega.WithT, c *v1alpha1.PlatformV1alpha1Client, module *api.Module) {
-	suite.waitForModuleToBeDeleted(t, gomegaWithT, c, module.GetNamespace(), module.GetName())
+func (suite *HelmModuleLifecycleTestSuite) verifyModuleDeleted(ctx *common.TestContext, module *api.Module) {
+	suite.waitForModuleToBeDeleted(ctx, module.GetNamespace(), module.GetName())
 	helmReleaseInstalled, err := helm.IsReleaseInstalled(module.GetName(), module.GetNamespace())
-	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
-	gomegaWithT.Expect(helmReleaseInstalled).To(gomega.BeFalse())
+	ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+	ctx.GomegaWithT.Expect(helmReleaseInstalled).To(gomega.BeFalse())
 }
 
 func (suite *HelmModuleLifecycleTestSuite) deleteNamespace(ns string) bool {
 	return ns != "default"
 }
 
-func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeReady(t *testing.T, gomegaWithT *gomega.WithT, c *v1alpha1.PlatformV1alpha1Client, module *api.Module) *api.Module {
+func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeReady(ctx *common.TestContext, module *api.Module) *api.Module {
 	var deployedModule *api.Module
 	var err error
-	gomegaWithT.Eventually(func() (bool, error) {
-		deployedModule, err = c.Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
+	ctx.GomegaWithT.Eventually(func() (bool, error) {
+		deployedModule, err = ctx.ModuleClient().Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
 		if err != nil {
-			t.Logf("error while fetching module %s/%s, %v", module.GetNamespace(), module.GetName(), err.Error())
+			ctx.T.Logf("error while fetching module %s/%s, %v", module.GetNamespace(), module.GetName(), err.Error())
 			return false, err
 		}
 
@@ -254,74 +239,62 @@ func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeReady(t *testing.T, 
 	return deployedModule
 }
 
-func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeDeleted(t *testing.T, gomegaWithT *gomega.WithT, c *v1alpha1.PlatformV1alpha1Client, namespace string, name string) {
-	gomegaWithT.Eventually(func() bool {
-		_, err := c.Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
+func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeDeleted(ctx *common.TestContext, namespace string, name string) {
+	ctx.GomegaWithT.Eventually(func() bool {
+		_, err := ctx.ModuleClient().Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
 		if err != nil {
 			if kerrs.IsNotFound(err) {
 				return true
 			}
-			t.Logf("error while fetching module %s/%s, %v", namespace, name, err.Error())
+			ctx.T.Logf("error while fetching module %s/%s, %v", namespace, name, err.Error())
 			return false
 		}
 		return false
 	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
 }
 
-func (suite *HelmModuleLifecycleTestSuite) waitForNamespaceDeleted(t *testing.T, gomegaWithT *gomega.WithT, namespace string) error {
-	c, err := k8sutil.GetCoreV1Client()
-	if err != nil {
-		return err
-	}
-
-	gomegaWithT.Eventually(func() bool {
-		_, err := c.Namespaces().Get(context.TODO(), namespace, v1.GetOptions{})
+func (suite *HelmModuleLifecycleTestSuite) waitForNamespaceDeleted(ctx *common.TestContext, namespace string) {
+	ctx.GomegaWithT.Eventually(func() bool {
+		_, err := ctx.CoreV1Client().Namespaces().Get(context.TODO(), namespace, v1.GetOptions{})
 		if err != nil {
 			if kerrs.IsNotFound(err) {
 				return true
 			}
-			t.Logf("error while fetching namespace %s, %v", namespace, err.Error())
+			ctx.T.Logf("error while fetching namespace %s, %v", namespace, err.Error())
 			return false
 		}
 
 		return false
 	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
-	return err
 }
 
-func (suite *HelmModuleLifecycleTestSuite) waitForNamespaceCreated(t *testing.T, gomegaWithT *gomega.WithT, namespace string) error {
-	c, err := k8sutil.GetCoreV1Client()
-	if err != nil {
-		return err
-	}
-
-	gomegaWithT.Eventually(func() bool {
-		_, err := c.Namespaces().Get(context.TODO(), namespace, v1.GetOptions{})
+func (suite *HelmModuleLifecycleTestSuite) waitForNamespaceCreated(ctx *common.TestContext, namespace string) {
+	ctx.GomegaWithT.Eventually(func() bool {
+		_, err := ctx.CoreV1Client().Namespaces().Get(context.TODO(), namespace, v1.GetOptions{})
 		if err != nil {
 			if kerrs.IsNotFound(err) {
-				_, err = c.Namespaces().Create(context.TODO(), &corev1.Namespace{ObjectMeta: v1.ObjectMeta{Name: namespace}}, v1.CreateOptions{})
+				_, err = ctx.CoreV1Client().Namespaces().Create(context.TODO(), &corev1.Namespace{ObjectMeta: v1.ObjectMeta{Name: namespace}}, v1.CreateOptions{})
 				if err != nil {
-					t.Logf("error while creating namespace %s, %v", namespace, err.Error())
+					ctx.T.Logf("error while creating namespace %s, %v", namespace, err.Error())
 				}
 
 				return false
 			}
-			t.Logf("error while fetching namespace %s, %v", namespace, err.Error())
+			ctx.T.Logf("error while fetching namespace %s, %v", namespace, err.Error())
 			return false
 		}
 
 		return true
 	}, shortWaitTimeout, shortPollingInterval).Should(gomega.BeTrue())
-	return err
 }
 
-func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeUpgraded(t *testing.T, gomegaWithT *gomega.WithT, c *v1alpha1.PlatformV1alpha1Client, module *api.Module) *api.Module {
+func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeUpgraded(ctx *common.TestContext, module *api.Module) *api.Module {
 	var deployedModule *api.Module
 	var err error
-	gomegaWithT.Eventually(func() bool {
-		deployedModule, err = c.Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
+	ctx.GomegaWithT.Eventually(func() bool {
+		deployedModule, err = ctx.ModuleClient().Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
 		if err != nil {
-			t.Logf("error while fetching module %s/%s, %v", module.GetNamespace(), module.GetName(), err.Error())
+			ctx.T.Logf("error while fetching module %s/%s, %v", module.GetNamespace(), module.GetName(), err.Error())
 			return false
 		}
 
@@ -335,15 +308,15 @@ func (suite *HelmModuleLifecycleTestSuite) waitForModuleToBeUpgraded(t *testing.
 	return deployedModule
 }
 
-func (suite *HelmModuleLifecycleTestSuite) removeModuleAndNamespace(t *testing.T, gomegaWithT *gomega.WithT, c *v1alpha1.PlatformV1alpha1Client, module *api.Module) {
-	t.Logf("delete module %s, version %s, namespace %s", module.GetName(), module.Spec.Version, module.GetNamespace())
-	err := c.Modules(module.GetNamespace()).Delete(context.TODO(), module.GetName(), v1.DeleteOptions{})
-	gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
-	suite.verifyModuleDeleted(t, gomegaWithT, c, module)
+func (suite *HelmModuleLifecycleTestSuite) removeModuleAndNamespace(ctx *common.TestContext, module *api.Module) {
+	ctx.T.Logf("delete module %s, version %s, namespace %s", module.GetName(), module.Spec.Version, module.GetNamespace())
+	err := ctx.ModuleClient().Modules(module.GetNamespace()).Delete(context.TODO(), module.GetName(), v1.DeleteOptions{})
+	ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+	suite.verifyModuleDeleted(ctx, module)
 	if suite.deleteNamespace(module.GetNamespace()) {
 		corev1client, err := k8sutil.GetCoreV1Client()
-		gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+		ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 		err = corev1client.Namespaces().Delete(context.TODO(), module.GetNamespace(), v1.DeleteOptions{})
-		gomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+		ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
 	}
 }

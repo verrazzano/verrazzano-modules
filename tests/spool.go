@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// logMessage represents the json record for a single log message.
 type logMessage struct {
 	Time    string  `json:"Time,omitempty"`
 	Action  string  `json:"Action,omitempty"`
@@ -25,6 +26,11 @@ type logMessage struct {
 	Elapsed float64 `json:"Elapsed,omitempty"`
 }
 
+// writer contains the buffer for writing formatted output and the Writers for
+// stdout and formatted output. JSON log messages are read from a test spool log
+// When spoolLogSummaryFile is defined, formatted and sorted messages are written to a sumamry file
+// and raw formatted messages are routed to stdout. Otherwise only formatted and sorted
+// messages are routed to stdout and no summary file is created.
 type writer struct {
 	out                 io.Writer
 	buf                 bytes.Buffer
@@ -34,6 +40,11 @@ type writer struct {
 	stdout              io.Writer
 }
 
+// flush rleases the contents of buffer to output.
+// when spoolLogSummaryFile is defined, it is truncated on every flush so that it always contains sorter and formatted
+// up-to-date messages.
+// when spoolLogSummaryFile is noyt defined, it is assumed that the test is being run from a terminal and
+// it attempts to replace the contents of terminal with latest sorted and formatted messages.
 func (w *writer) flush() error {
 	w.mtx.Lock()
 	defer w.mtx.Unlock()
@@ -41,7 +52,18 @@ func (w *writer) flush() error {
 	if len(w.buf.Bytes()) == 0 {
 		return nil
 	}
-	w.clearLines()
+
+	if w.spoolLogSummaryFile == "" {
+		w.clearLines()
+	} else {
+		file, err := os.Create(w.spoolLogSummaryFile)
+		if err != nil {
+			handleError(err)
+		}
+
+		w.out = io.Writer(file)
+		defer file.Close()
+	}
 
 	lines := 0
 	var currentLine bytes.Buffer
@@ -64,6 +86,8 @@ func (w *writer) flush() error {
 	return nil
 
 }
+
+// clears the terminal window, equivalent of clear command.
 func (w *writer) clearLines() {
 	_, _ = fmt.Fprint(w.out, strings.Repeat(fmt.Sprintf("%c[%dA%c[2K", 27, 1, 27), w.lineCount))
 }
@@ -74,12 +98,6 @@ func newWriter() *writer {
 	}
 	w.spoolLogSummaryFile = os.Getenv("SPOOL_LOG_SUMMARY")
 	if w.spoolLogSummaryFile != "" {
-		file, err := os.Create(w.spoolLogSummaryFile)
-		if err != nil {
-			handleError(err)
-		}
-
-		w.out = io.Writer(file)
 		w.stdout = io.Writer(os.Stdout)
 	} else {
 		w.out = io.Writer(os.Stdout)
@@ -105,6 +123,27 @@ func (w *writer) print(line string) {
 	}
 }
 
+// main reads the test log spool file that contains the log messages from test execution in json format.
+// on each such message, it extracts information of package, suite, test and the actual log message and
+// associates log messages to a test, suite or package and separately creates association between package and
+// their suites, suites and its tests or package with tests without suites.
+// When w.stdout is initialized, it prints the log messages on stdout as they are received in a contextual format i.e.
+// <package>
+//
+//	<message> | <suite> | <test>
+//					<message> | <test>
+//									<message>
+//
+// Apart from that, it also sorts the packages, suites and tests based on their names and messages based on their time
+// and summary information is sent to a buffer, which can further release that to a file or stdout. The representaion
+// is depicted below:
+// <package A, package paths are sorted lexicographically>
+//
+//	<any messages for package A, sorted by time>
+//	<suite A of package A, suite are sorted lexicographically>
+//		<any messages for suite A of package A, sorted by time>
+//		<test A of suite A of package A, test names are sorted lexicographically>
+//			<message m1 of test A received on time t1, messages are sorted based on time>
 func main() {
 	file, err := os.Open(os.Getenv("SPOOL_LOG"))
 	if err != nil {
@@ -165,7 +204,7 @@ func main() {
 			packageTestMap[logMessage.Package] = packageTests
 		}
 
-		if logMessage.Test == "" && logMessage.Output != "" {
+		if logMessage.Test == "" && logMessage.Output != "" && shouldBeLogged(logMessage.Output) {
 			dateTime, err := time.Parse(time.RFC3339Nano, logMessage.Time)
 			if err != nil {
 				handleError(err)
@@ -197,7 +236,7 @@ func main() {
 					suiteTestMap[currentSuite] = suiteTests
 				}
 
-				if len(parts) == 1 && logMessage.Output != "" {
+				if len(parts) == 1 && logMessage.Output != "" && shouldBeLogged(logMessage.Output) {
 					dateTime, err := time.Parse(time.RFC3339Nano, logMessage.Time)
 					if err != nil {
 						handleError(err)
@@ -226,7 +265,7 @@ func main() {
 				logMessageTestMap[testName] = testLogMessages
 			}
 
-			if logMessage.Output != "" {
+			if logMessage.Output != "" && shouldBeLogged(logMessage.Output) {
 				dateTime, err := time.Parse(time.RFC3339Nano, logMessage.Time)
 				if err != nil {
 					handleError(err)
@@ -322,4 +361,8 @@ func (w *writer) sortMapKeys(elements map[string]string) []string {
 
 	sort.Strings(keys)
 	return keys
+}
+
+func shouldBeLogged(message string) bool {
+	return !(strings.HasPrefix(message, "=== PAUSE") || strings.HasPrefix(message, "=== CONT"))
 }
