@@ -5,18 +5,16 @@ package interrupt
 import (
 	"testing"
 
-	"github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/suite"
 )
 
 type HelmModuleInterruptTestSuite struct {
 	suite.Suite
-	gomega types.Gomega
+	t *testing.T
 }
 
 // TestHelmModuleInterruptTestSuite runs the interrupt tests for the helm module.
 func TestHelmModuleInterruptTestSuite(t *testing.T) {
-	helmModuleInterruptTestSuite := &HelmModuleInterruptTestSuite{gomega: gomega.NewWithT(t)}
+	helmModuleInterruptTestSuite := &HelmModuleInterruptTestSuite{t: t}
 	suite.Run(t, helmModuleInterruptTestSuite)
 }

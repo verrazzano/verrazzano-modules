@@ -13,7 +13,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	api "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/clientset/versioned/typed/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
@@ -32,78 +31,70 @@ const (
 // TestUpdateWhileReconciling tests updating a Module while it's reconciling and validates that all updates
 // are applied correctly.
 func (suite *HelmModuleInterruptTestSuite) TestUpdateWhileReconciling() {
-	c, err := common.GetModuleClient()
-	suite.gomega.Expect(err).ShouldNot(HaveOccurred())
+	ctx := common.NewTestContext(suite.t)
 
 	module := &api.Module{}
-	err = common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
-	suite.gomega.Expect(err).ShouldNot(HaveOccurred())
+	err := common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
+	ctx.GomegaWithT.Expect(err).ShouldNot(HaveOccurred())
 
 	// GIVEN a Module resource is created and the Ready condition is false
 	// WHEN the Module values are updated
 	// THEN the Module Ready condition eventually is true and the installed Helm release has the expected values
 	module.Namespace = "default"
 	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(`{"deployment": {"delaySeconds": 10}}`)}
-	fmt.Printf("Installing module %s/%s\n", module.Namespace, module.Name)
-	suite.createModule(c, module)
+	suite.createModule(ctx, module)
 
-	fmt.Println("Waiting for ready condition false")
-	suite.waitForModuleReadyCondition(c, module, corev1.ConditionFalse)
+	suite.waitForModuleReadyCondition(ctx, module, corev1.ConditionFalse)
 
 	// Note that we modify the delaySeconds so that the deployment gets updated and pods are rolled out
 	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 11},"%s": "%s"}`, customKey, fredValue))}
-	fmt.Println("Updating module values")
-	suite.updateModule(c, module)
+	suite.updateModule(ctx, module)
 
-	fmt.Println("Waiting for ready condition true and verifying helm values")
-	version := suite.waitForModuleReadyCondition(c, module, corev1.ConditionTrue)
-	suite.verifyHelmValues(module.Name, module.Namespace, fredValue)
+	version := suite.waitForModuleReadyCondition(ctx, module, corev1.ConditionTrue)
+	suite.verifyHelmValues(ctx, module.Name, module.Namespace, fredValue)
 
 	// GIVEN a Module resource is updated and the Ready condition is false
 	// WHEN the Module values are updated again
 	// THEN the Module Ready condition eventually is true and the installed Helm release has the expected values
 	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 12},"%s": "barney"}`, customKey))}
-	fmt.Println("Updating module values")
-	suite.updateModule(c, module)
+	suite.updateModule(ctx, module)
 
-	fmt.Println("Waiting for ready condition false")
-	suite.waitForModuleReadyCondition(c, module, corev1.ConditionFalse)
+	suite.waitForModuleReadyCondition(ctx, module, corev1.ConditionFalse)
 
 	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 13},"%s": "%s"}`, customKey, dinoValue))}
-	fmt.Println("Updating module values")
-	suite.updateModule(c, module)
+	suite.updateModule(ctx, module)
 
-	fmt.Println("Waiting for ready condition true and verifying helm values")
-	newVersion := suite.waitForModuleReadyCondition(c, module, corev1.ConditionTrue)
-	suite.gomega.Expect(newVersion).Should(Equal(version), "Expected the module version to not have changed")
-	suite.verifyHelmValues(module.Name, module.Namespace, dinoValue)
+	newVersion := suite.waitForModuleReadyCondition(ctx, module, corev1.ConditionTrue)
+	ctx.GomegaWithT.Expect(newVersion).Should(Equal(version), "Expected the module version to not have changed")
+	suite.verifyHelmValues(ctx, module.Name, module.Namespace, dinoValue)
 
 	// GIVEN a Module resource
 	// WHEN the Module is deleted
 	// THEN the Module is removed from the cluster and the Helm release is uninstalled
-	fmt.Println("Deleting module")
-	suite.deleteModule(c, module)
-	suite.verifyModuleAndHelmReleaseDeleted(c, module)
+	suite.deleteModule(ctx, module)
+	suite.verifyModuleAndHelmReleaseDeleted(ctx, module)
 }
 
-func (suite *HelmModuleInterruptTestSuite) createModule(c *v1alpha1.PlatformV1alpha1Client, module *api.Module) {
-	suite.gomega.Eventually(func() error {
-		_, err := c.Modules(module.GetNamespace()).Create(context.TODO(), module, v1.CreateOptions{})
+func (suite *HelmModuleInterruptTestSuite) createModule(ctx *common.TestContext, module *api.Module) {
+	ctx.T.Logf("Installing module %s/%s", module.Namespace, module.Name)
+	ctx.GomegaWithT.Eventually(func() error {
+		_, err := ctx.ModuleClient().Modules(module.GetNamespace()).Create(context.TODO(), module, v1.CreateOptions{})
 		return err
 	}, shortWaitTimeout, shortPollingInterval).ShouldNot(HaveOccurred())
 }
 
-func (suite *HelmModuleInterruptTestSuite) updateModule(c *v1alpha1.PlatformV1alpha1Client, module *api.Module) {
+func (suite *HelmModuleInterruptTestSuite) updateModule(ctx *common.TestContext, module *api.Module) {
+	ctx.T.Log("Updating module values")
 	name := module.Name
 	namespace := module.Namespace
 	version := module.Spec.Version
 	values := module.Spec.Values
 
-	suite.gomega.Eventually(func() error {
+	ctx.GomegaWithT.Eventually(func() error {
 		var err error
 
 		// Get the latest Module or else the code will never resolve conflicts
-		module, err = c.Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
+		module, err = ctx.ModuleClient().Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -114,16 +105,17 @@ func (suite *HelmModuleInterruptTestSuite) updateModule(c *v1alpha1.PlatformV1al
 		}
 		module.Spec.Values = values
 
-		_, err = c.Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
+		_, err = ctx.ModuleClient().Modules(module.GetNamespace()).Update(context.TODO(), module, v1.UpdateOptions{})
 		return err
 	}, shortWaitTimeout, shortPollingInterval).ShouldNot(HaveOccurred())
 }
 
-func (suite *HelmModuleInterruptTestSuite) waitForModuleReadyCondition(c *v1alpha1.PlatformV1alpha1Client, module *api.Module, expectedStatus corev1.ConditionStatus) string {
+func (suite *HelmModuleInterruptTestSuite) waitForModuleReadyCondition(ctx *common.TestContext, module *api.Module, expectedStatus corev1.ConditionStatus) string {
 	var version string
 
-	suite.gomega.Eventually(func() (corev1.ConditionStatus, error) {
-		module, err := c.Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
+	ctx.T.Logf("Waiting for module ready condition to be: %v", expectedStatus)
+	ctx.GomegaWithT.Eventually(func() (corev1.ConditionStatus, error) {
+		module, err := ctx.ModuleClient().Modules(module.GetNamespace()).Get(context.TODO(), module.GetName(), v1.GetOptions{})
 		if err != nil {
 			return "", err
 		}
@@ -139,28 +131,31 @@ func (suite *HelmModuleInterruptTestSuite) waitForModuleReadyCondition(c *v1alph
 	return version
 }
 
-func (suite *HelmModuleInterruptTestSuite) verifyHelmValues(releaseName, releaseNamespace, value string) {
+func (suite *HelmModuleInterruptTestSuite) verifyHelmValues(ctx *common.TestContext, releaseName, releaseNamespace, value string) {
+	ctx.T.Log("Verifying helm release values")
 	deployedValues, err := helm.GetValuesMap(vzlog.DefaultLogger(), releaseName, releaseNamespace)
-	suite.gomega.Expect(err).ShouldNot(HaveOccurred())
-	suite.gomega.Expect(deployedValues[customKey]).To(BeEquivalentTo(value))
+	ctx.GomegaWithT.Expect(err).ShouldNot(HaveOccurred())
+	ctx.GomegaWithT.Expect(deployedValues[customKey]).To(BeEquivalentTo(value))
 }
 
-func (suite *HelmModuleInterruptTestSuite) deleteModule(c *v1alpha1.PlatformV1alpha1Client, module *api.Module) {
-	suite.gomega.Eventually(func() error {
-		return c.Modules(module.Namespace).Delete(context.TODO(), module.Name, v1.DeleteOptions{})
+func (suite *HelmModuleInterruptTestSuite) deleteModule(ctx *common.TestContext, module *api.Module) {
+	ctx.T.Logf("Deleting module %s/%s", module.Namespace, module.Name)
+	ctx.GomegaWithT.Eventually(func() error {
+		return ctx.ModuleClient().Modules(module.Namespace).Delete(context.TODO(), module.Name, v1.DeleteOptions{})
 	}, shortWaitTimeout, shortPollingInterval).ShouldNot(HaveOccurred())
 }
 
-func (suite *HelmModuleInterruptTestSuite) verifyModuleAndHelmReleaseDeleted(c *v1alpha1.PlatformV1alpha1Client, module *api.Module) {
-	suite.waitForModuleToBeDeleted(c, module.GetNamespace(), module.GetName())
+func (suite *HelmModuleInterruptTestSuite) verifyModuleAndHelmReleaseDeleted(ctx *common.TestContext, module *api.Module) {
+	suite.waitForModuleToBeDeleted(ctx, module.GetNamespace(), module.GetName())
 	helmReleaseInstalled, err := helm.IsReleaseInstalled(module.GetName(), module.GetNamespace())
-	suite.gomega.Expect(err).ShouldNot(HaveOccurred())
-	suite.gomega.Expect(helmReleaseInstalled).To(BeFalse())
+	ctx.GomegaWithT.Expect(err).ShouldNot(HaveOccurred())
+	ctx.GomegaWithT.Expect(helmReleaseInstalled).To(BeFalse())
 }
 
-func (suite *HelmModuleInterruptTestSuite) waitForModuleToBeDeleted(c *v1alpha1.PlatformV1alpha1Client, namespace string, name string) {
-	suite.gomega.Eventually(func() error {
-		_, err := c.Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
+func (suite *HelmModuleInterruptTestSuite) waitForModuleToBeDeleted(ctx *common.TestContext, namespace string, name string) {
+	ctx.T.Log("Waiting for module to be deleted")
+	ctx.GomegaWithT.Eventually(func() error {
+		_, err := ctx.ModuleClient().Modules(namespace).Get(context.TODO(), name, v1.GetOptions{})
 		return err
 	}, shortWaitTimeout, shortPollingInterval).Should(MatchError(MatchRegexp("not found")))
 }
