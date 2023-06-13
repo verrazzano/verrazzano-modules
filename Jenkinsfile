@@ -238,7 +238,9 @@ pipeline {
                         echo "cleanup kind cluster"
                         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
                         make cleanup
+                        cp tests/test_summary.out ${WORKSPACE}
                     """
+                     archiveArtifacts artifacts: '**/test_summary.out', allowEmptyArchive: true
                 }
             }
         }

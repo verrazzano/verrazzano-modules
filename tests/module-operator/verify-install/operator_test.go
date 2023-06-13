@@ -7,6 +7,7 @@ import (
 
 	"github.com/onsi/gomega"
 	"github.com/verrazzano/verrazzano-modules/pkg/k8sutil"
+	"github.com/verrazzano/verrazzano-modules/tests/common"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -15,11 +16,10 @@ import (
 // WHEN the status of ready replicas for the module-operator are checked
 // THEN 1 replica is found to be ready.
 func (suite *OperatorTestSuite) TestOperatorRunning() {
-	client, err := k8sutil.GetKubernetesClientset()
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	deployment, err := client.AppsV1().Deployments("verrazzano-install").Get(context.TODO(), "verrazzano-module-operator", v1.GetOptions{})
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	suite.gomega.Expect(int(deployment.Status.ReadyReplicas)).To(gomega.Equal(1))
+	ctx := common.NewTestContext(suite.T())
+	deployment, err := ctx.Client().AppsV1().Deployments("verrazzano-install").Get(context.TODO(), "verrazzano-module-operator", v1.GetOptions{})
+	ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+	ctx.GomegaWithT.Expect(int(deployment.Status.ReadyReplicas)).To(gomega.Equal(1))
 }
 
 // TestCRDsInstalled tests the installation status of modules crds.
@@ -27,7 +27,8 @@ func (suite *OperatorTestSuite) TestOperatorRunning() {
 // WHEN the status of installtion of module crd is checked
 // THEN module crd is found to be installed.
 func (suite *OperatorTestSuite) TestCRDsInstalled() {
+	ctx := common.NewTestContext(suite.T())
 	crdInstalled, err := k8sutil.CheckCRDsExist([]string{"modules.platform.verrazzano.io"})
-	suite.gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	suite.gomega.Expect(crdInstalled).To(gomega.BeTrue())
+	ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
+	ctx.GomegaWithT.Expect(crdInstalled).To(gomega.BeTrue())
 }

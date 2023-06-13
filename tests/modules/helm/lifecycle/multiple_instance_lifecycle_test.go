@@ -5,6 +5,8 @@ package helm_module_lifecycle_test
 import (
 	"fmt"
 	"testing"
+
+	"github.com/verrazzano/verrazzano-modules/tests/common"
 )
 
 // TestMultipleInstanceLifecycle tests the module lifecycle of multiple module CRs concurrently.
@@ -40,7 +42,7 @@ func (suite *HelmModuleLifecycleTestSuite) TestMultipleInstanceLifecycle() {
 		testName := fmt.Sprintf("TestMultipleInstanceLifecycle_namespace_%s", namespace)
 		suite.T().Run(testName, func(t *testing.T) {
 			t.Parallel()
-			suite.executeModuleLifecycleOperations(testName, namespace)
+			suite.executeModuleLifecycleOperations(common.NewTestContext(t), namespace)
 		})
 		suite.T().Cleanup(suite.cleanup)
 	}
