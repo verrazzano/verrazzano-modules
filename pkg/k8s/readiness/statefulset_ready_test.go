@@ -309,6 +309,32 @@ func TestDoStatefulsetsExist(t *testing.T) {
 	}
 }
 
+// TestStatefulSetGenerationMismatch tests a statefulset generation ready status check
+// GIVEN a call validate StatefulSetsAreReady
+// WHEN the generation does not match the observed generation
+// THEN false is returned
+func TestStatefulSetGenerationMismatch(t *testing.T) {
+	namespacedName := []types.NamespacedName{
+		{
+			Name:      "foo",
+			Namespace: "bar",
+		},
+	}
+	fakeClient := fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(
+		&appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:  "bar",
+				Name:       "foo",
+				Generation: 4,
+			},
+			Status: appsv1.StatefulSetStatus{
+				ObservedGeneration: 3,
+			},
+		}).Build()
+
+	assert.False(t, StatefulSetsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
+}
+
 func int32val(i int) *int32 {
 	var v int32 = int32(i)
 	return &v

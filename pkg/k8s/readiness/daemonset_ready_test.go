@@ -266,3 +266,29 @@ func TestDaemonSetsReady(t *testing.T) {
 		})
 	}
 }
+
+// TestDaemonSetGenerationMismatch tests a daemonset generation ready status check
+// GIVEN a call validate DaemonSetsAreReady
+// WHEN the generation does not match the observed generation
+// THEN false is returned
+func TestDaemonSetGenerationMismatch(t *testing.T) {
+	namespacedName := []types.NamespacedName{
+		{
+			Name:      "foo",
+			Namespace: "bar",
+		},
+	}
+	fakeClient := fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(
+		&appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:  "bar",
+				Name:       "foo",
+				Generation: 4,
+			},
+			Status: appsv1.DaemonSetStatus{
+				ObservedGeneration: 3,
+			},
+		}).Build()
+
+	assert.False(t, DaemonSetsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
+}

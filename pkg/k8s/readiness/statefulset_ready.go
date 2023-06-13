@@ -31,6 +31,11 @@ func StatefulSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, name
 			log.Errorf("Failed getting statefulset %v: %v", namespacedName, err)
 			return false
 		}
+		if statefulset.Generation != statefulset.Status.ObservedGeneration {
+			log.Progressf("%s is waiting for statefulset %s observedGeneration %d to match current generation %d", prefix, namespacedName,
+				statefulset.Status.ObservedGeneration, statefulset.Generation)
+			return false
+		}
 		var expectedReplicas int32
 		if statefulset.Spec.Replicas != nil {
 			expectedReplicas = *statefulset.Spec.Replicas

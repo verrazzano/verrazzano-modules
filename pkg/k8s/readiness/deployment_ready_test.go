@@ -654,3 +654,29 @@ func TestDoDeploymentsExist(t *testing.T) {
 		})
 	}
 }
+
+// TestDeploymentGenerationMismatch tests a deployment generation ready status check
+// GIVEN a call validate DeploymentsAreReady
+// WHEN the generation does not match the observed generation
+// THEN false is returned
+func TestDeploymentGenerationMismatch(t *testing.T) {
+	namespacedName := []types.NamespacedName{
+		{
+			Name:      "foo",
+			Namespace: "bar",
+		},
+	}
+	fakeClient := fake.NewClientBuilder().WithScheme(k8scheme.Scheme).WithObjects(
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:  "bar",
+				Name:       "foo",
+				Generation: 4,
+			},
+			Status: appsv1.DeploymentStatus{
+				ObservedGeneration: 3,
+			},
+		}).Build()
+
+	assert.False(t, DeploymentsAreReady(vzlog.DefaultLogger(), fakeClient, namespacedName, ""))
+}
