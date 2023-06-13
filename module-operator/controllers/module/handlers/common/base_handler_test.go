@@ -271,7 +271,6 @@ func TestBuildOverrides(t *testing.T) {
 			// Assert values is last
 			if test.values != nil {
 				asserts.Equal(ov[i].Values, test.values)
-				i++
 			}
 
 		})
