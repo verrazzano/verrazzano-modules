@@ -208,7 +208,7 @@ func TestBuildOverrides(t *testing.T) {
 
 	asserts := assert.New(t)
 	valJSON := &apiextensionsv1.JSON{
-		Raw: []byte("key:val"),
+		Raw: []byte(`{"key":"val"}`),
 	}
 	tests := []struct {
 		name              string
