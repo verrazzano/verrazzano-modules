@@ -110,9 +110,7 @@ func (suite *HelmModuleLifecycleTestSuite) createOrUpdateModule(ctx *common.Test
 	ctx.T.Logf("%s module %s, version %s, namespace %s", op, module.GetName(), module.Spec.Version, module.GetNamespace())
 
 	// Build the values and valuesFrom
-	values, err := common.GenerateOverridesFromFile(overridesFile)
-	ctx.GomegaWithT.Expect(err).NotTo(gomega.HaveOccurred())
-
+	values := suite.generateOverridesFromFile(ctx, overridesFile)
 	var valuesFrom []api.ValuesFromSource
 	for _, toAppend := range otherOverrides {
 		valuesFrom = append(valuesFrom, *toAppend)

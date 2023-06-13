@@ -10,9 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/verrazzano/verrazzano-modules/module-operator/clientset/versioned/typed/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/pkg/k8sutil"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -48,23 +45,4 @@ func GetRandomNamespace(length int) string {
 		b[i] = chars[rand.Int63()%int64(len(chars))]
 	}
 	return string(b)
-}
-
-// GenerateOverridesFromFile reads overrides from a file and returns the values as JSON.
-func GenerateOverridesFromFile(overridesFile string) (*apiextensionsv1.JSON, error) {
-	overrides := &apiextensionsv1.JSON{}
-	err := UnmarshalTestFile(overridesFile, overrides)
-	return overrides, err
-}
-
-func GetModuleClient() (*v1alpha1.PlatformV1alpha1Client, error) {
-	config, err := k8sutil.GetKubeConfig()
-	if err != nil {
-		return nil, err
-	}
-	c, err := v1alpha1.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-	return c, nil
 }
