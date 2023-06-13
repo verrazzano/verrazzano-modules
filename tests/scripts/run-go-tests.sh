@@ -50,7 +50,7 @@ SPOOL_LOG="${TEST_ROOT}/spool.log"
 rm -rf ${SPOOL_LOG}
 
 if [ "${TEST_ENV}" == "JENKINS" ]; then
-  SPOOL_LOG_SUMMARY="${TEST_ROOT}/spool_summary.log"
+  SPOOL_LOG_SUMMARY="${TEST_ROOT}/test_summary.out"
   rm -rf ${SPOOL_LOG_SUMMARY}
   SPOOL_LOG="${SPOOL_LOG}" SPOOL_LOG_SUMMARY="${SPOOL_LOG_SUMMARY}" go run ${TEST_ROOT}/spool.go &
 else

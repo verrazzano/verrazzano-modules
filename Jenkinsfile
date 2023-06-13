@@ -239,6 +239,7 @@ pipeline {
                         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
                         make cleanup
                     """
+                     archiveArtifacts artifacts: '**/tests/test_summary.out', allowEmptyArchive: true
                 }
             }
         }
