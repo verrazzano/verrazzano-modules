@@ -9,13 +9,14 @@ import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	vzhelm "github.com/verrazzano/verrazzano-modules/pkg/helm"
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/time"
-
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v3/pkg/time"
+	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakes "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
@@ -117,9 +118,6 @@ func TestHelmUpgradeOrInstall(t *testing.T) {
 // WHEN CheckReleaseDeployedAndReady is called
 // THEN ensure that correct result is returned
 func TestCheckReleaseDeployedAndReady(t *testing.T) {
-	vzhelm.SetActionConfigFunction(testActionConfigWithRelease)
-	defer vzhelm.SetDefaultActionConfigFunction()
-
 	asserts := assert.New(t)
 	tests := []struct {
 		name             string
@@ -127,18 +125,21 @@ func TestCheckReleaseDeployedAndReady(t *testing.T) {
 		releaseNamespace string
 		err              error
 		ready            bool
+		actionFunc       vzhelm.ActionConfigFnType
 	}{
 		{
 			name:             "test-ready",
 			releaseName:      releaseName,
 			releaseNamespace: releaseNamespace,
 			ready:            true,
+			actionFunc:       testActionConfigWithRelease,
 		},
 		{
 			name:             "test-not-ready",
 			releaseName:      releaseName,
 			releaseNamespace: releaseNamespace,
 			ready:            false,
+			actionFunc:       testActionConfigWithRelease,
 		},
 		{
 			name:             "test-err",
@@ -146,10 +147,15 @@ func TestCheckReleaseDeployedAndReady(t *testing.T) {
 			releaseNamespace: releaseNamespace,
 			ready:            false,
 			err:              fmt.Errorf("fake-err"),
+			actionFunc:       testActionConfigWithNoRelease,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+
+			vzhelm.SetActionConfigFunction(testActionConfigWithRelease)
+			defer vzhelm.SetDefaultActionConfigFunction()
+
 			cli := fakes.NewClientBuilder().WithScheme(newScheme()).WithObjects().Build()
 			rctx := handlerspi.HandlerContext{
 				Client: cli,
@@ -169,6 +175,89 @@ func TestCheckReleaseDeployedAndReady(t *testing.T) {
 			ready, result := h.CheckReleaseDeployedAndReady(rctx)
 			asserts.Equal(test.err, result.GetError())
 			asserts.Equal(test.ready, ready)
+		})
+	}
+}
+
+// TestBuildOverrides tests the Helm overricdes
+// GIVEN module overrides
+// WHEN buildOverrides is called
+// THEN ensure that correct result is returned
+func TestBuildOverrides(t *testing.T) {
+	cmRef := &corev1.ConfigMapKeySelector{}
+	secretRef := &corev1.SecretKeySelector{}
+
+	cmRef2 := &corev1.ConfigMapKeySelector{}
+	secretRef2 := &corev1.SecretKeySelector{}
+
+	asserts := assert.New(t)
+	valJSON := &apiextensionsv1.JSON{
+		Raw: []byte("key:val"),
+	}
+	tests := []struct {
+		name              string
+		values            *apiextensionsv1.JSON
+		valuesFrom        []moduleapi.ValuesFromSource
+		expectedOverrides []vzhelm.ValueOverrides
+	}{
+		{
+			name: "test-no-val",
+		},
+		{
+			name:   "test-val",
+			values: valJSON,
+			expectedOverrides: []vzhelm.ValueOverrides{{
+				Values: valJSON,
+			}},
+		},
+		{
+			name:   "test-val-first",
+			values: valJSON,
+			valuesFrom: []moduleapi.ValuesFromSource{
+				{ConfigMapRef: cmRef, SecretRef: secretRef},
+			},
+			expectedOverrides: []vzhelm.ValueOverrides{
+				{Values: valJSON},
+				{ConfigMapRef: cmRef, SecretRef: secretRef},
+			},
+		},
+		{
+			name:   "test-val-first-plus-overrides",
+			values: valJSON,
+			valuesFrom: []moduleapi.ValuesFromSource{
+				{ConfigMapRef: cmRef, SecretRef: secretRef},
+				{ConfigMapRef: cmRef2, SecretRef: secretRef2},
+			},
+			expectedOverrides: []vzhelm.ValueOverrides{
+				{Values: valJSON},
+				{ConfigMapRef: cmRef, SecretRef: secretRef},
+				{ConfigMapRef: cmRef2, SecretRef: secretRef2},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			module := moduleapi.Module{
+				Spec: moduleapi.ModuleSpec{
+					Values:     test.values,
+					ValuesFrom: test.valuesFrom,
+				},
+			}
+
+			ov := buildOverrides(&module)
+			i := 0
+			// Assert remaining values from are in order
+			for _, vf := range test.valuesFrom {
+				asserts.Equal(ov[i].SecretRef, vf.SecretRef)
+				asserts.Equal(ov[i].ConfigMapRef, vf.ConfigMapRef)
+				i++
+			}
+			// Assert values is last
+			if test.values != nil {
+				asserts.Equal(ov[i].Values, test.values)
+				i++
+			}
+
 		})
 	}
 }
