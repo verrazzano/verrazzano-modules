@@ -58,6 +58,7 @@ else
 fi
 go test ${GO_TEST_ARGS} ${TEST_ROOT}/${TEST_SUITES} ${TEST_ARGS} -json >>${SPOOL_LOG}
 echo "END SPOOL" >>${SPOOL_LOG}
+sleep 5
 if [ "${TEST_ENV}" == "JENKINS" ]; then
   echo ""
   echo "##Test Summary##"
