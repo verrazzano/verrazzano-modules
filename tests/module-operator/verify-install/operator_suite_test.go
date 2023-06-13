@@ -5,20 +5,16 @@ package operator_test
 import (
 	"testing"
 
-	"github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/suite"
 )
 
 // OperatorTestSuite is the test suite for module-operator tests.
 type OperatorTestSuite struct {
 	suite.Suite
-	gomega types.Gomega
 }
 
 // TestOperatorTestSuite is the driver test for module-operator tests.
 func TestOperatorTestSuite(t *testing.T) {
 	operatorTestingSuite := new(OperatorTestSuite)
-	operatorTestingSuite.gomega = gomega.NewGomegaWithT(t)
 	suite.Run(t, operatorTestingSuite)
 }
