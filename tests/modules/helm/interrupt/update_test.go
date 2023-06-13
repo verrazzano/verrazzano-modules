@@ -41,13 +41,13 @@ func (suite *HelmModuleInterruptTestSuite) TestUpdateWhileReconciling() {
 	// WHEN the Module values are updated
 	// THEN the Module Ready condition eventually is true and the installed Helm release has the expected values
 	module.Namespace = "default"
-	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(`{"deployment": {"delaySeconds": 10}}`)}
+	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(`{"deployment": {"delaySeconds": 6}}`)}
 	suite.createModule(ctx, module)
 
 	suite.waitForModuleReadyCondition(ctx, module, corev1.ConditionFalse)
 
 	// Note that we modify the delaySeconds so that the deployment gets updated and pods are rolled out
-	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 11},"%s": "%s"}`, customKey, fredValue))}
+	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 7},"%s": "%s"}`, customKey, fredValue))}
 	suite.updateModule(ctx, module)
 
 	version := suite.waitForModuleReadyCondition(ctx, module, corev1.ConditionTrue)
@@ -56,12 +56,12 @@ func (suite *HelmModuleInterruptTestSuite) TestUpdateWhileReconciling() {
 	// GIVEN a Module resource is updated and the Ready condition is false
 	// WHEN the Module values are updated again
 	// THEN the Module Ready condition eventually is true and the installed Helm release has the expected values
-	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 12},"%s": "barney"}`, customKey))}
+	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 8},"%s": "barney"}`, customKey))}
 	suite.updateModule(ctx, module)
 
 	suite.waitForModuleReadyCondition(ctx, module, corev1.ConditionFalse)
 
-	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 13},"%s": "%s"}`, customKey, dinoValue))}
+	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 6},"%s": "%s"}`, customKey, dinoValue))}
 	suite.updateModule(ctx, module)
 
 	newVersion := suite.waitForModuleReadyCondition(ctx, module, corev1.ConditionTrue)
