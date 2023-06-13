@@ -4,7 +4,7 @@
 package common
 
 import (
-	"fmt"
+	goerrors "errors"
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
@@ -27,6 +27,7 @@ const (
 	releaseNamespace = "releaseNS"
 	namespace        = "test-ns"
 	moduleName       = "test-module"
+	fakeError        = "fake-err"
 )
 
 type fakeHandler struct {
@@ -66,7 +67,7 @@ func TestHelmUpgradeOrInstall(t *testing.T) {
 			chartPath:        "testpath",
 			chartVersion:     "v1.0",
 			repoURL:          "url",
-			err:              fmt.Errorf("fake-error"),
+			err:              goerrors.New("fake-error"),
 		},
 	}
 	for _, test := range tests {
@@ -100,7 +101,7 @@ func TestHelmUpgradeOrInstall(t *testing.T) {
 			}
 			defer ResetUpgradeFunc()
 			h := fakeHandler{err: test.err}
-			upgradeFunc = h.upgradeFunc
+			SetUpgradeFunc(h.upgradeFunc)
 
 			result := h.HelmUpgradeOrInstall(rctx)
 			asserts.Equal(test.err, result.GetError())
@@ -125,6 +126,7 @@ func TestCheckReleaseDeployedAndReady(t *testing.T) {
 		releaseNamespace string
 		err              error
 		ready            bool
+		dryRun           bool
 		actionFunc       vzhelm.ActionConfigFnType
 	}{
 		{
@@ -142,25 +144,39 @@ func TestCheckReleaseDeployedAndReady(t *testing.T) {
 			actionFunc:       testActionConfigWithRelease,
 		},
 		{
-			name:             "test-err",
+			name:             "test-no-release",
 			releaseName:      releaseName,
 			releaseNamespace: releaseNamespace,
 			ready:            false,
-			err:              fmt.Errorf("fake-err"),
 			actionFunc:       testActionConfigWithNoRelease,
+		},
+		{
+			name:             "test-release-error",
+			releaseName:      releaseName,
+			releaseNamespace: releaseNamespace,
+			ready:            false,
+			err:              goerrors.New(fakeError),
+			actionFunc:       testActionConfigWithReleaseError,
+		},
+		{
+			name:             "test-dryrun",
+			releaseName:      releaseName,
+			releaseNamespace: releaseNamespace,
+			ready:            true,
+			dryRun:           true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
-			vzhelm.SetActionConfigFunction(testActionConfigWithRelease)
+			vzhelm.SetActionConfigFunction(test.actionFunc)
 			defer vzhelm.SetDefaultActionConfigFunction()
 
 			cli := fakes.NewClientBuilder().WithScheme(newScheme()).WithObjects().Build()
 			rctx := handlerspi.HandlerContext{
 				Client: cli,
 				Log:    vzlog.DefaultLogger(),
-				DryRun: false,
+				DryRun: test.dryRun,
 				HelmInfo: handlerspi.HelmInfo{
 					HelmRelease: &handlerspi.HelmRelease{
 						Name:      test.releaseName,
@@ -309,6 +325,11 @@ func (f *fakeHandler) checkWorkLoadsReady(ctx handlerspi.HandlerContext, release
 // testActionConfigWithRelease is a fake action that returns an installed Helm release
 func testActionConfigWithRelease(log vzlog.VerrazzanoLogger, settings *cli.EnvSettings, namespace string) (*action.Configuration, error) {
 	return vzhelm.CreateActionConfig(true, releaseName, release.StatusDeployed, log, createRelease)
+}
+
+// testActionConfigWithReleaseError is a fake action that returns an installed Helm release error
+func testActionConfigWithReleaseError(log vzlog.VerrazzanoLogger, settings *cli.EnvSettings, namespace string) (*action.Configuration, error) {
+	return nil, goerrors.New(fakeError)
 }
 
 // testActionConfigWithNoRelease is a fake action that returns an uninstalled Helm release

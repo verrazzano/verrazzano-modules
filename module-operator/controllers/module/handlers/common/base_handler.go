@@ -69,7 +69,7 @@ func (h BaseHandler) CheckReleaseDeployedAndReady(ctx handlerspi.HandlerContext)
 	deployed, err := helm2.IsReleaseDeployed(ctx.HelmRelease.Name, ctx.HelmRelease.Namespace)
 	if err != nil {
 		ctx.Log.ErrorfThrottled("Error occurred checking release deployment: %v", err.Error())
-		return false, result.NewResult()
+		return false, result.NewResultShortRequeueDelayWithError(err)
 	}
 	if !deployed {
 		return false, result.NewResultShortRequeueDelay()
