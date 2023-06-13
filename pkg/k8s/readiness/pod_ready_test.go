@@ -4,6 +4,8 @@
 package readiness
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	corev1 "k8s.io/api/core/v1"
@@ -12,7 +14,6 @@ import (
 	k8scheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 // TestEnsurePodsAreReady tests the EnsurePodsAreReady function
