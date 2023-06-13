@@ -6,6 +6,7 @@ package readiness
 import (
 	"context"
 	"fmt"
+
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -25,6 +26,11 @@ func DaemonSetsAreReady(log vzlog.VerrazzanoLogger, client client.Client, namesp
 				return false
 			}
 			log.Errorf("Failed getting daemonset %v: %v", namespacedName, err)
+			return false
+		}
+		if daemonset.Generation != daemonset.Status.ObservedGeneration {
+			log.Progressf("%s is waiting for daemonset %s observedGeneration %d to match current generation %d", prefix, namespacedName,
+				daemonset.Status.ObservedGeneration, daemonset.Generation)
 			return false
 		}
 		desiredNumberOfNodesReady := daemonset.Status.DesiredNumberScheduled
