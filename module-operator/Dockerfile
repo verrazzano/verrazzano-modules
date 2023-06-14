@@ -18,7 +18,7 @@ RUN go build -o /usr/local/bin/verrazzano-module-operator ./module-operator/main
 RUN chmod 500 /usr/local/bin/verrazzano-module-operator
 
 # Create the verrazzano-module-operator image
-FROM $BASE_IMAGE AS final
+FROM ghcr.io/oracle/oraclelinux:8-slim AS final
 
 RUN microdnf update -y && \
     microdnf clean all && \
