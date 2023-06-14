@@ -31,7 +31,7 @@ const (
 // TestUpdateWhileReconciling tests updating a Module while it's reconciling and validates that all updates
 // are applied correctly.
 func (suite *HelmModuleInterruptTestSuite) TestUpdateWhileReconciling() {
-	ctx := common.NewTestContext(suite.t)
+	ctx := common.NewTestContext(suite.T())
 
 	module := &api.Module{}
 	err := common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)

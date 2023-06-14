@@ -10,11 +10,9 @@ import (
 
 type HelmModuleInterruptTestSuite struct {
 	suite.Suite
-	t *testing.T
 }
 
 // TestHelmModuleInterruptTestSuite runs the interrupt tests for the helm module.
 func TestHelmModuleInterruptTestSuite(t *testing.T) {
-	helmModuleInterruptTestSuite := &HelmModuleInterruptTestSuite{t: t}
-	suite.Run(t, helmModuleInterruptTestSuite)
+	suite.Run(t, &HelmModuleInterruptTestSuite{})
 }
