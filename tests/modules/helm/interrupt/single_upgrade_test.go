@@ -14,7 +14,7 @@ import (
 )
 
 func (suite *HelmModuleInterruptTestSuite) TestSingleUpgradeWhileReconciling() {
-	ctx := common.NewTestContext(suite.t)
+	ctx := common.NewTestContext(suite.T())
 
 	module := &api.Module{}
 	err := common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
