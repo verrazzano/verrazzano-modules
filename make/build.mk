@@ -1,7 +1,7 @@
 # Copyright (C) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-export DOCKER_CMD ?= docker
+export DOCKER_CMD ?= DOCKER_CLI_EXPERIMENTAL=enabled docker
 ##@ Development
 
 .PHONY: fmt
@@ -70,7 +70,7 @@ docker-build-common:
 	# the TPL file needs to be copied into this dir so it is in the ${DOCKER_CMD} build context
 	#cp ../THIRD_PARTY_LICENSES.txt .
 	${DOCKER_CMD} version
-	${DOCKER_CMD} buildx build --platform linux/arm64,linux/amd64 -f Dockerfile \
+	${DOCKER_CMD} buildx build --pull --platform linux/arm64,linux/amd64 -f Dockerfile \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ..
 
