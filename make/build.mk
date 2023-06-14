@@ -69,7 +69,7 @@ docker-build-common:
 	@echo Building ${NAME} image ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
 	# the TPL file needs to be copied into this dir so it is in the ${DOCKER_CMD} build context
 	#cp ../THIRD_PARTY_LICENSES.txt .
-	${DOCKER_CMD} build --pull -f Dockerfile \
+	${DOCKER_CMD} buildx build --pull --platform linux/arm64,linux/amd64 -f Dockerfile \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ..
 
