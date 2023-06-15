@@ -51,19 +51,23 @@ clean: ## remove coverage and test results
 #@ Build
 
 .PHONY: docker-build
-docker-build: ## build and push all images
+docker-build: ## build all images
 	(cd module-operator; make docker-build DOCKER_IMAGE_NAME=${VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
+
+.PHONY: docker-build-multi-arch
+docker-build-multi-arch: ## build and push multi architecture images
+	(cd module-operator; make docker-build-multi-arch DOCKER_IMAGE_NAME=${VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
 
 .PHONY: docker-push
 docker-push: ## build and push all images
 	(cd module-operator; make docker-push DOCKER_IMAGE_NAME=${VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
 
 .PHONY: docker-push-debug
-docker-push-debug: ## build and push all images
+docker-push-debug: ## build and push debug images
 	(cd module-operator; make docker-push-debug DOCKER_IMAGE_NAME=${VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
 
 .PHONY: generate-operator-artifacts
-generate-operator-artifacts: ## build and push all images
+generate-operator-artifacts: ## generates Helm template manifest
 	(cd module-operator; make generate-operator-artifacts DOCKER_IMAGE_NAME=${VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG})
 
 #@ Testing
