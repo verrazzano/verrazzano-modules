@@ -69,14 +69,18 @@ docker-build-common:
 	@echo Building ${NAME} image ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
 	# the TPL file needs to be copied into this dir so it is in the ${DOCKER_CMD} build context
 	#cp ../THIRD_PARTY_LICENSES.txt .
-	${DOCKER_CMD} version
+ifdef DOCKER_CREDS_USR
+ifdef DOCKER_CREDS_PSW
+	@${DOCKER_CMD} login ${DOCKER_REPO} --username ${DOCKER_CREDS_USR} --password ${DOCKER_CREDS_PSW}
+endif
+endif
 	${DOCKER_CMD} buildx create --use
-	${DOCKER_CMD} buildx build --pull --platform linux/arm64,linux/amd64 -f Dockerfile \
+	${DOCKER_CMD} buildx build --push --platform linux/arm64,linux/amd64 -f Dockerfile \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
-		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ..
+		-t ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG} ..
 
 .PHONY: docker-push
-docker-push: docker-build docker-push-common
+docker-push: docker-build
 
 .PHONY: docker-push-debug
 docker-push-debug: docker-build-debug docker-push-common
