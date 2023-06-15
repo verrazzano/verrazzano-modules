@@ -1,7 +1,7 @@
 # Copyright (C) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-export DOCKER_CMD ?= DOCKER_CLI_EXPERIMENTAL=enabled docker
+export DOCKER_CMD ?= docker
 ##@ Development
 
 .PHONY: fmt
@@ -69,33 +69,47 @@ docker-build-common:
 	@echo Building ${NAME} image ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
 	# the TPL file needs to be copied into this dir so it is in the ${DOCKER_CMD} build context
 	#cp ../THIRD_PARTY_LICENSES.txt .
-ifdef DOCKER_CREDS_USR
-ifdef DOCKER_CREDS_PSW
-	@${DOCKER_CMD} login ${DOCKER_REPO} --username ${DOCKER_CREDS_USR} --password ${DOCKER_CREDS_PSW}
-endif
-endif
-	${DOCKER_CMD} buildx create --use
-	${DOCKER_CMD} buildx build --push --platform linux/arm64,linux/amd64 -f Dockerfile \
+	${DOCKER_CMD} build --pull -f Dockerfile \
+		--build-arg BASE_IMAGE=${BASE_IMAGE} \
+		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ..
+
+# Cannot use verrazzano-base here until it supports both arm and amd
+docker-build-and-push-multi-arch: BASE_IMAGE ?= ghcr.io/oracle/oraclelinux:8-slim
+.PHONY: docker-build-and-push-multi-arch
+docker-build-and-push-multi-arch: docker-login
+	@echo Building and pushing ${NAME} multi arch image ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
+	DOCKER_CLI_EXPERIMENTAL=enabled ${DOCKER_CMD} buildx create --use --platform linux/arm64,linux/amd64
+	DOCKER_CLI_EXPERIMENTAL=enabled ${DOCKER_CMD} buildx build --push --platform linux/arm64,linux/amd64 -f Dockerfile \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		-t ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG} ..
 
+# Multi architecture images must be pushed (or saved) when building
+.PHONY: docker-build-multi-arch
+docker-build-multi-arch: docker-build-and-push-multi-arch docker-push-latest
+
 .PHONY: docker-push
-docker-push: docker-build
+docker-push: docker-build docker-push-common docker-push-latest
 
 .PHONY: docker-push-debug
 docker-push-debug: docker-build-debug docker-push-common
 
-.PHONY: docker-push-common
-docker-push-common:
-	${DOCKER_CMD} tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
+.PHONY: docker-login
+docker-login:
 ifdef DOCKER_CREDS_USR
 ifdef DOCKER_CREDS_PSW
 	@${DOCKER_CMD} login ${DOCKER_REPO} --username ${DOCKER_CREDS_USR} --password ${DOCKER_CREDS_PSW}
 endif
 endif
+
+.PHONY: docker-push-common
+docker-push-common: docker-login
+	${DOCKER_CMD} tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
 	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG})
+
+.PHONY: docker-push-latest
+docker-push-latest: docker-login
 ifeq ($(CREATE_LATEST_TAG), "1")
-	${DOCKER_CMD} tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:latest;
+	${DOCKER_CMD} tag ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_FULLNAME}:latest;
 	$(call retry_docker_push,${DOCKER_IMAGE_FULLNAME}:latest);
 endif
 
