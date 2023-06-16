@@ -233,6 +233,14 @@ pipeline {
                 """
             }
             post {
+                aborted {
+                    dumpK8sCluster("module-tests-cluster-snapshot")
+                }
+
+                failure {
+                    dumpK8sCluster("module-tests-cluster-snapshot")
+                }
+
                 always {
                     sh """
                         echo "cleanup kind cluster"
@@ -240,7 +248,7 @@ pipeline {
                         make cleanup
                         cp tests/test_summary.out ${WORKSPACE}
                     """
-                     archiveArtifacts artifacts: '**/test_summary.out', allowEmptyArchive: true
+                     archiveArtifacts artifacts: '**/test_summary.out,**/*module-tests-cluster-snapshot*/**', allowEmptyArchive: true
                 }
             }
         }
@@ -465,4 +473,13 @@ def getSuspectList(commitList, userMappings) {
     }
     echo "returning suspect list: ${retValue}"
     return retValue
+}
+
+def  dumpK8sCluster(dumpDirectory) {
+    sh """
+        echo "dump kind cluster"
+        cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+        make cluster-dump CLUSTER_DUMP_DIR="${dumpDirectory}"
+        mv -f ${dumpDirectory} ${WORKSPACE}
+    """
 }
