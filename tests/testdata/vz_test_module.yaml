@@ -7,4 +7,4 @@ metadata:
   name: vz-test-module
 spec:
   moduleName: "helm"
-  version: "0.1.0"
+  undefined: "0.1.0"
