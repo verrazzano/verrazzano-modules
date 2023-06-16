@@ -231,17 +231,16 @@ pipeline {
                     echo "Executing e2e tests"
                     cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
                     make test
+                    cp tests/test_summary.out ${WORKSPACE}
                 """
             }
             post {
-                always {
-                    sh """
-                        echo "cleanup kind cluster"
-                        cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-                        make cleanup
-                        cp tests/test_summary.out ${WORKSPACE}
-                    """
-                     archiveArtifacts artifacts: '**/test_summary.out', allowEmptyArchive: true
+                aborted {
+                    dumpK8sCluster("module-tests-cluster-snapshot")
+                }
+
+                failure {
+                    dumpK8sCluster("module-tests-cluster-snapshot")
                 }
             }
         }
@@ -249,7 +248,12 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '**/coverage.html,**/logs/**,**/verrazzano_images.txt,**/*cluster-snapshot*/**', allowEmptyArchive: true
+            sh """
+                echo "cleanup kind cluster"
+                cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                make cleanup
+            """
+            archiveArtifacts artifacts: '**/coverage.html,**/logs/**,**/verrazzano_images.txt,**/*cluster-snapshot*/**,**/test_summary.out', allowEmptyArchive: true
             junit testResults: '**/*test-result.xml', allowEmptyResults: true
         }
         failure {
@@ -479,4 +483,13 @@ def getSuspectList(commitList, userMappings) {
     }
     echo "returning suspect list: ${retValue}"
     return retValue
+}
+
+def  dumpK8sCluster(dumpDirectory) {
+    sh """
+        echo "dump kind cluster"
+        cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+        make cluster-dump CLUSTER_DUMP_DIR="${dumpDirectory}"
+        mv -f ${dumpDirectory} ${WORKSPACE}
+    """
 }
