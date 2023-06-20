@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// NewResult tests the NewResult method
+// TestNewResult tests the NewResult method
 // GIVEN a request to NewResult
 // WHEN NewResult is called
 // THEN a requeue result is returned with correct settings
@@ -22,7 +22,7 @@ func TestNewResult(t *testing.T) {
 	asserts.Zero(r.GetCtrlRuntimeResult().RequeueAfter.Seconds())
 }
 
-// NewResultShortRequeueDelay tests the NewResultShortRequeueDelay method
+// TestNewResultShortRequeueDelay tests the NewResultShortRequeueDelay method
 // GIVEN a request to NewResultShortRequeueDelay
 // WHEN a min, max, time units are provided
 // THEN a requeue result is returned with a delay within the specified bounds
@@ -72,11 +72,11 @@ func TestNewResultShortRequeueDelayIfError(t *testing.T) {
 	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(2) * time.Second).Seconds())
 }
 
-// TestNewr tests the NewResultRequeueDelay func for the following use case
+// TestNewResultRequeueDelay tests the NewResultRequeueDelay func for the following use case
 // GIVEN a request to NewResultRequeueDelay
 // WHEN a min, max, time units are provided
 // THEN a requeue result is returned with a delay within the specified bounds
-func TestNewr(t *testing.T) {
+func TestNewResultRequeueDelay(t *testing.T) {
 	asserts := assert.New(t)
 	r := NewResultRequeueDelay(3, 5, time.Millisecond)
 	asserts.True(r.ShouldRequeue())
