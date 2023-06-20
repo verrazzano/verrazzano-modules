@@ -39,6 +39,10 @@ func GetReleaseChartVersion(releaseName string, namespace string) (string, error
 		return "", err
 	}
 
+	if len(releases) == 0 {
+		return ReleaseNotFound, nil
+	}
+
 	var version string
 	for _, info := range releases {
 		release := info.Name
