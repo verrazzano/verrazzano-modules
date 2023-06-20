@@ -30,6 +30,7 @@ pipeline {
 
     parameters {
         booleanParam (description: 'Whether to perform a scan of the built images', name: 'PERFORM_SCAN', defaultValue: false)
+        booleanParam (description: 'Whether to build multi architecture images. Always true for main and release branch builds. Defaults to false for branch builds.', name: 'BUILD_MULTI_ARCH_IMAGES', defaultValue: false)
     }
 
     environment {
@@ -230,17 +231,16 @@ pipeline {
                     echo "Executing e2e tests"
                     cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
                     make test
+                    cp tests/test_summary.out ${WORKSPACE}
                 """
             }
             post {
-                always {
-                    sh """
-                        echo "cleanup kind cluster"
-                        cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-                        make cleanup
-                        cp tests/test_summary.out ${WORKSPACE}
-                    """
-                     archiveArtifacts artifacts: '**/test_summary.out', allowEmptyArchive: true
+                aborted {
+                    dumpK8sCluster("module-tests-cluster-snapshot")
+                }
+
+                failure {
+                    dumpK8sCluster("module-tests-cluster-snapshot")
                 }
             }
         }
@@ -248,7 +248,12 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '**/coverage.html,**/logs/**,**/verrazzano_images.txt,**/*cluster-snapshot*/**', allowEmptyArchive: true
+            sh """
+                echo "cleanup kind cluster"
+                cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+                make cleanup
+            """
+            archiveArtifacts artifacts: '**/coverage.html,**/logs/**,**/verrazzano_images.txt,**/*cluster-snapshot*/**,**/test_summary.out', allowEmptyArchive: true
             junit testResults: '**/*test-result.xml', allowEmptyResults: true
         }
         failure {
@@ -306,16 +311,29 @@ def checkRepoClean() {
 }
 
 // Called in Stage Build steps
-// Makes target docker push for application/platform operator and analysis
+// Builds and pushes the module-operator images
 def buildImages(dockerImageTag) {
     sh """
         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
-        echo 'Building container images...'
-        make docker-push \
-            DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} \
-            DOCKER_IMAGE_TAG=${dockerImageTag} \
-            VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME}
-            CREATE_LATEST_TAG=${CREATE_LATEST_TAG}
+
+        # Release and main branches build multi architecture images, branch builds are amd unless the multi arch box is checked
+        if [[ ${params.BUILD_MULTI_ARCH_IMAGES} == true || ${env.BRANCH_NAME} == "main" || ${env.BRANCH_NAME} == "release*" ]]
+        then
+            echo 'Building multi architecture container images...'
+            make docker-build-multi-arch \
+                DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} \
+                DOCKER_IMAGE_TAG=${dockerImageTag} \
+                VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME}
+                CREATE_LATEST_TAG=${CREATE_LATEST_TAG}
+        else
+            echo 'Building container images...'
+            make docker-push \
+                DOCKER_REPO=${env.DOCKER_REPO} DOCKER_NAMESPACE=${env.DOCKER_NAMESPACE} \
+                DOCKER_IMAGE_TAG=${dockerImageTag} \
+                VERRAZZANO_MODULE_OPERATOR_IMAGE_NAME=${DOCKER_MODULE_IMAGE_NAME}
+                CREATE_LATEST_TAG=${CREATE_LATEST_TAG}
+        fi
+
         #${GO_REPO_PATH}/${GIT_REPO_DIR}/tools/scripts/generate_image_list.sh $WORKSPACE/generated-verrazzano-bom.json $WORKSPACE/verrazzano_images.txt
     """
 }
@@ -465,4 +483,13 @@ def getSuspectList(commitList, userMappings) {
     }
     echo "returning suspect list: ${retValue}"
     return retValue
+}
+
+def  dumpK8sCluster(dumpDirectory) {
+    sh """
+        echo "dump kind cluster"
+        cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
+        make cluster-dump CLUSTER_DUMP_DIR="${dumpDirectory}"
+        mv -f ${dumpDirectory} ${WORKSPACE}
+    """
 }

@@ -23,15 +23,16 @@ const (
 	shortWaitTimeout     = 3 * time.Minute
 	shortPollingInterval = 2 * time.Second
 
-	customKey = "customKey"
-	fredValue = "fred"
-	dinoValue = "dino"
+	customKey   = "customKey"
+	fredValue   = "fred"
+	barneyValue = "barney"
+	dinoValue   = "dino"
 )
 
 // TestUpdateWhileReconciling tests updating a Module while it's reconciling and validates that all updates
 // are applied correctly.
 func (suite *HelmModuleInterruptTestSuite) TestUpdateWhileReconciling() {
-	ctx := common.NewTestContext(suite.t)
+	ctx := common.NewTestContext(suite.T())
 
 	module := &api.Module{}
 	err := common.UnmarshalTestFile(common.TEST_HELM_MODULE_FILE, module)
@@ -56,7 +57,7 @@ func (suite *HelmModuleInterruptTestSuite) TestUpdateWhileReconciling() {
 	// GIVEN a Module resource is updated and the Ready condition is false
 	// WHEN the Module values are updated again
 	// THEN the Module Ready condition eventually is true and the installed Helm release has the expected values
-	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 8},"%s": "barney"}`, customKey))}
+	module.Spec.Values = &apiextensionsv1.JSON{Raw: []byte(fmt.Sprintf(`{"deployment": {"delaySeconds": 8},"%s": "%s"}`, customKey, barneyValue))}
 	suite.updateModule(ctx, module)
 
 	suite.waitForModuleReadyCondition(ctx, module, corev1.ConditionFalse)

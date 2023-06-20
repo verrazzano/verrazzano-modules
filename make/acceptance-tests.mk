@@ -33,3 +33,8 @@ test-reports:
 .PHONY: pipeline-artifacts
 pipeline-artifacts: test-reports
 
+cluster-dump: export CLUSTER_DUMP_DIR ?= "module-tests-cluster-snapshot"
+.PHONY: cluster-dump
+cluster-dump:
+	${CI_SCRIPTS_DIR}/k8s-dump-cluster.sh -d ${CLUSTER_DUMP_DIR}
+
