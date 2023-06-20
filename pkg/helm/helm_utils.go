@@ -10,6 +10,18 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 )
 
+type HelmReleaseOpts struct {
+	RepoURL      string
+	ReleaseName  string
+	Namespace    string
+	ChartPath    string
+	ChartVersion string
+	Overrides    []HelmOverrides
+
+	Username string
+	Password string
+}
+
 func UpgradeRelease(log vzlog.VerrazzanoLogger, releaseOpts *HelmReleaseOpts, wait bool, dryRun bool) (*release.Release, error) {
 	log.Infof("Upgrading release %s in namespace %s, chart %s, version %s, repoURL %s", releaseOpts.ReleaseName,
 		releaseOpts.Namespace, releaseOpts.ChartPath, releaseOpts.ChartVersion, releaseOpts.RepoURL)
