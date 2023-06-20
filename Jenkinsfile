@@ -317,7 +317,7 @@ def buildImages(dockerImageTag) {
         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
 
         # Release and main branches build multi architecture images, branch builds are amd unless the multi arch box is checked
-        if [[ ${params.BUILD_MULTI_ARCH_IMAGES} == true || ${env.BRANCH_NAME} == "main" || ${env.BRANCH_NAME} == "release*" ]]
+        if [[ ${params.BUILD_MULTI_ARCH_IMAGES} == true || ${env.BRANCH_NAME} == "main" || ${env.BRANCH_NAME} == release* ]]
         then
             echo 'Building multi architecture container images...'
             make docker-build-multi-arch \
