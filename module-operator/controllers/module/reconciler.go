@@ -21,6 +21,12 @@ import (
 var funcExecuteStateMachine = defaultExecuteStateMachine
 var funcLoadHelmInfo = loadHelmInfo
 var funcIsUpgradeNeeded = IsUpgradeNeeded
+var ignoreHelmInfo bool
+
+// Temp needed for VPO integration
+func IgnoreHelmInfo() {
+	ignoreHelmInfo = true
+}
 
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) result.Result {
@@ -53,15 +59,19 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 		cr.Spec.TargetNamespace = cr.Namespace
 	}
 
-	// Load the helm information needed by the handler
-	helmInfo, err := funcLoadHelmInfo(cr)
-	if err != nil {
-		if strings.Contains(err.Error(), "FileNotFound") {
-			spictx.Log.Errorf("Failed loading file information: %v", err)
-			return result.NewResultRequeueDelay(10, 15, time.Second)
+	var err error
+	helmInfo := handlerspi2.HelmInfo{}
+	if !ignoreHelmInfo {
+		// Load the helm information needed by the handler
+		helmInfo, err = funcLoadHelmInfo(cr)
+		if err != nil {
+			if strings.Contains(err.Error(), "FileNotFound") {
+				spictx.Log.Errorf("Failed loading file information: %v", err)
+				return result.NewResultRequeueDelay(10, 15, time.Second)
+			}
+			err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
+			return result.NewResultShortRequeueDelayIfError(err)
 		}
-		err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
-		return result.NewResultShortRequeueDelayIfError(err)
 	}
 
 	// Initialize the handler context
