@@ -5,7 +5,7 @@ package install
 
 import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/install"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
+	handlerspi2 "github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 )
 
@@ -14,15 +14,15 @@ type CalicoHandler struct {
 }
 
 var (
-	_ handlerspi.StateMachineHandler = &CalicoHandler{}
+	_ handlerspi2.StateMachineHandler = &CalicoHandler{}
 )
 
-func NewHandler() handlerspi.StateMachineHandler {
+func NewHandler() handlerspi2.StateMachineHandler {
 	return &CalicoHandler{}
 }
 
 // PreWork does installation pre-work
-func (h CalicoHandler) PreWork(ctx handlerspi.HandlerContext) result.Result {
+func (h CalicoHandler) PreWork(ctx handlerspi2.HandlerContext) result.Result {
 
 	// TODO - Do Calico specific work here
 	ctx.Log.Progress("Doing custom Calico pre-install logic")

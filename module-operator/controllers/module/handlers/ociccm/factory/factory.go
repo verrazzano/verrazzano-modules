@@ -8,15 +8,15 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/install"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/update"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/upgrade"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 )
 
 // NewModuleHandlerInfo creates a new ModuleHandlerInfo
 func NewModuleHandlerInfo() handlerspi.ModuleHandlerInfo {
 	return handlerspi.ModuleHandlerInfo{
-		InstallActionHandler:       install.NewHandler(),
-		DeleteActionHandler:        delete.NewHandler(),
-		UpdateActionHandler:        update.NewHandler(),
-		UpgradeActionHandler:       upgrade.NewHandler(),
+		InstallActionHandler: install.NewHandler(),
+		DeleteActionHandler:  delete.NewHandler(),
+		UpdateActionHandler:  update.NewHandler(),
+		UpgradeActionHandler: upgrade.NewHandler(),
 	}
 }
