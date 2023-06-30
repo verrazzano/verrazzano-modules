@@ -60,7 +60,15 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 	}
 
 	var err error
-	helmInfo := handlerspi2.HelmInfo{}
+
+	// Temp hack to support VPO integration.  There is no Helm release for VPO module, but status update depends on it
+	// so for now use module name/ns.
+	helmInfo := handlerspi2.HelmInfo{
+		HelmRelease: &handlerspi2.HelmRelease{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+		},
+	}
 	if !ignoreHelmInfo {
 		// Load the helm information needed by the handler
 		helmInfo, err = funcLoadHelmInfo(cr)
