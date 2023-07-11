@@ -7,7 +7,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
-	handlerspi2 "github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -41,7 +41,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return result.NewResult()
 	}
 
-	ctx := handlerspi2.HandlerContext{Client: r.Client, Log: spictx.Log}
+	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 	handler, res := r.getActionHandler(ctx, cr)
 	if res.ShouldRequeue() {
 		return res
@@ -54,7 +54,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 }
 
 // reconcileAction reconciles the Module CR for a particular action
-func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler handlerspi2.StateMachineHandler) result.Result {
+func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler handlerspi.StateMachineHandler) result.Result {
 	if cr.Spec.TargetNamespace == "" {
 		cr.Spec.TargetNamespace = cr.Namespace
 	}
@@ -63,8 +63,8 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 
 	// Temp hack to support VPO integration.  There is no Helm release for VPO module, but status update depends on it
 	// so for now use module name/ns.
-	helmInfo := handlerspi2.HelmInfo{
-		HelmRelease: &handlerspi2.HelmRelease{
+	helmInfo := handlerspi.HelmInfo{
+		HelmRelease: &handlerspi.HelmRelease{
 			Name:      cr.Name,
 			Namespace: cr.Namespace,
 		},
@@ -83,7 +83,7 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 	}
 
 	// Initialize the handler context
-	ctx := handlerspi2.HandlerContext{Client: r.Client, Log: spictx.Log, CR: cr, HelmInfo: helmInfo}
+	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log, CR: cr, HelmInfo: helmInfo}
 
 	// Execute the state machine
 	sm := statemachine.StateMachine{
@@ -94,7 +94,7 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 }
 
 // getActionHandler must return one of the Module action handlers.
-func (r *Reconciler) getActionHandler(ctx handlerspi2.HandlerContext, cr *moduleapi.Module) (handlerspi2.StateMachineHandler, result.Result) {
+func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, result.Result) {
 	if !status.IsInstalled(cr) {
 		return r.HandlerInfo.InstallActionHandler, result.NewResult()
 	}
@@ -128,6 +128,6 @@ func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
 	return installedSemver.IsLessThan(desiredSemver), nil
 }
 
-func defaultExecuteStateMachine(ctx handlerspi2.HandlerContext, sm statemachine.StateMachine) result.Result {
+func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) result.Result {
 	return sm.Execute(ctx)
 }

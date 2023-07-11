@@ -7,7 +7,7 @@ import (
 	goerrors "errors"
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	handlerspi2 "github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	vzhelm "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"helm.sh/helm/v3/pkg/action"
@@ -80,20 +80,20 @@ func TestHelmUpgradeOrInstall(t *testing.T) {
 				},
 			}
 
-			rctx := handlerspi2.HandlerContext{
+			rctx := handlerspi.HandlerContext{
 				Client: cli,
 				Log:    vzlog.DefaultLogger(),
 				DryRun: false,
 				CR:     module,
-				HelmInfo: handlerspi2.HelmInfo{
-					HelmRelease: &handlerspi2.HelmRelease{
+				HelmInfo: handlerspi.HelmInfo{
+					HelmRelease: &handlerspi.HelmRelease{
 						Name:      test.releaseName,
 						Namespace: test.releaseNamespace,
-						ChartInfo: handlerspi2.HelmChart{
+						ChartInfo: handlerspi.HelmChart{
 							Version: test.chartVersion,
 							Path:    test.chartPath,
 						},
-						Repository: handlerspi2.HelmChartRepository{
+						Repository: handlerspi.HelmChartRepository{
 							URI: test.repoURL,
 						},
 					},
@@ -173,12 +173,12 @@ func TestCheckReleaseDeployedAndReady(t *testing.T) {
 			defer vzhelm.SetDefaultActionConfigFunction()
 
 			cli := fakes.NewClientBuilder().WithScheme(newScheme()).WithObjects().Build()
-			rctx := handlerspi2.HandlerContext{
+			rctx := handlerspi.HandlerContext{
 				Client: cli,
 				Log:    vzlog.DefaultLogger(),
 				DryRun: test.dryRun,
-				HelmInfo: handlerspi2.HelmInfo{
-					HelmRelease: &handlerspi2.HelmRelease{
+				HelmInfo: handlerspi.HelmInfo{
+					HelmRelease: &handlerspi.HelmRelease{
 						Name:      test.releaseName,
 						Namespace: test.releaseNamespace,
 					},
@@ -316,7 +316,7 @@ func getChart() *chart.Chart {
 	}
 }
 
-func (f *fakeHandler) checkWorkLoadsReady(ctx handlerspi2.HandlerContext, releaseName string, namespace string) (bool, error) {
+func (f *fakeHandler) checkWorkLoadsReady(ctx handlerspi.HandlerContext, releaseName string, namespace string) (bool, error) {
 	return f.ready, f.err
 
 }
