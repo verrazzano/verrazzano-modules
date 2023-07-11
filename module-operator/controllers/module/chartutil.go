@@ -5,13 +5,13 @@ package module
 
 import (
 	"fmt"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"os"
 	"path/filepath"
 	"strings"
 
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 )
 

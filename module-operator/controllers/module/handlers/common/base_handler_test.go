@@ -7,7 +7,7 @@ import (
 	goerrors "errors"
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	vzhelm "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"helm.sh/helm/v3/pkg/action"

@@ -5,6 +5,7 @@ package install
 
 import (
 	"context"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"testing"
 
@@ -24,7 +25,6 @@ import (
 
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	vzhelm "github.com/verrazzano/verrazzano-modules/pkg/helm"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 )

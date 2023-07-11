@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

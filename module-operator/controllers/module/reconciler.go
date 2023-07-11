@@ -5,9 +5,9 @@ package module
 
 import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,6 +21,12 @@ import (
 var funcExecuteStateMachine = defaultExecuteStateMachine
 var funcLoadHelmInfo = loadHelmInfo
 var funcIsUpgradeNeeded = IsUpgradeNeeded
+var ignoreHelmInfo bool
+
+// IgnoreHelmInfo allows the module to ignore loading Helm info.  This is used for VPO integration.
+func IgnoreHelmInfo() {
+	ignoreHelmInfo = true
+}
 
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) result.Result {
@@ -53,15 +59,27 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 		cr.Spec.TargetNamespace = cr.Namespace
 	}
 
-	// Load the helm information needed by the handler
-	helmInfo, err := funcLoadHelmInfo(cr)
-	if err != nil {
-		if strings.Contains(err.Error(), "FileNotFound") {
-			spictx.Log.Errorf("Failed loading file information: %v", err)
-			return result.NewResultRequeueDelay(10, 15, time.Second)
+	var err error
+
+	// Temp hack to support VPO integration.  There is no Helm release for VPO module, but status update depends on it
+	// so for now use module name/ns.
+	helmInfo := handlerspi.HelmInfo{
+		HelmRelease: &handlerspi.HelmRelease{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+		},
+	}
+	if !ignoreHelmInfo {
+		// Load the helm information needed by the handler
+		helmInfo, err = funcLoadHelmInfo(cr)
+		if err != nil {
+			if strings.Contains(err.Error(), "FileNotFound") {
+				spictx.Log.Errorf("Failed loading file information: %v", err)
+				return result.NewResultRequeueDelay(10, 15, time.Second)
+			}
+			err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
+			return result.NewResultShortRequeueDelayIfError(err)
 		}
-		err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
-		return result.NewResultShortRequeueDelayIfError(err)
 	}
 
 	// Initialize the handler context
