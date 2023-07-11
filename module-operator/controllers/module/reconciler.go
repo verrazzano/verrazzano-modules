@@ -23,7 +23,7 @@ var funcLoadHelmInfo = loadHelmInfo
 var funcIsUpgradeNeeded = IsUpgradeNeeded
 var ignoreHelmInfo bool
 
-// Temp needed for VPO integration
+// IgnoreHelmInfo allows the module to ignore loading Helm info.  This is used for VPO integration.
 func IgnoreHelmInfo() {
 	ignoreHelmInfo = true
 }
