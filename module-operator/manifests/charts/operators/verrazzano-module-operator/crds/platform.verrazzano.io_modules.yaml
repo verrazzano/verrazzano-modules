@@ -29,10 +29,15 @@ spec:
       jsonPath: .status.conditions[:].status
       name: Ready
       type: string
+    - description: Lifecycle message
+      jsonPath: .status.conditions[:].message
+      name: Message
+      priority: 2
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Module specifies a Verrazzano Module instance
+        description: Module specifies a Verrazzano Module instance.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -47,28 +52,30 @@ spec:
           metadata:
             type: object
           spec:
-            description: ModuleSpec defines the attributes for a Verrazzano Module
-              instance
+            description: ModuleSpec defines the specification for a Verrazzano Module
+              instance.
             properties:
               moduleName:
-                description: Module name is the well-known Module name
+                description: Module name is the well-known Module name.
                 type: string
               targetNamespace:
                 description: TargetNamespace is the namespace where the Module will
-                  be installed
+                  be installed.
                 type: string
               values:
-                description: Values specifies overrides using inline YAML.  Values
-                  have precedence over ValuesFrom
+                description: Values specifies configuration values using inline YAML.
+                  Values have precedence over ValuesFrom.
                 x-kubernetes-preserve-unknown-fields: true
               valuesFrom:
-                description: ValuesFrom specifies the values from a Configmap or Secret
+                description: ValuesFrom specifies the values from a Configmap or Secret.
+                  Each entry in the list has precedence over all previous entries
+                  in the list.
                 items:
-                  description: ValuesFromSource identifies value overrides for a Module.
+                  description: ValuesFromSource specifies value overrides for a Module.
                   properties:
                     configMapRef:
                       description: ConfigMapRef is a selector for a ConfigMap containing
-                        override data.
+                        values data.
                       properties:
                         key:
                           description: The key to select.
@@ -87,7 +94,7 @@ spec:
                       x-kubernetes-map-type: atomic
                     secretRef:
                       description: SecretRef is a selector for a Secret containing
-                        override data.
+                        values data.
                       properties:
                         key:
                           description: The key of the secret to select from.  Must
@@ -108,14 +115,14 @@ spec:
                   type: object
                 type: array
               version:
-                description: Version is the desired version of the Module
+                description: Version is the desired version of the Module.
                 type: string
             type: object
           status:
             description: ModuleStatus defines the action state of the Module resource.
             properties:
               conditions:
-                description: Conditions are the list of conditions for the module.
+                description: Conditions are the list of conditions for the Module.
                 items:
                   description: ModuleCondition describes the current condition of
                     the Module.
@@ -130,7 +137,7 @@ spec:
                       type: string
                     reason:
                       description: Reason for the condition.  This is a machine-readable
-                        one word value
+                        one word value.
                       type: string
                     status:
                       description: 'Status of the condition: one of `True`, `False`,
@@ -148,11 +155,11 @@ spec:
                 type: array
               lastSuccessfulGeneration:
                 description: LastSuccessfulGeneration is the last generation of the
-                  module that was successfully reconciled.
+                  Module that was successfully reconciled.
                 format: int64
                 type: integer
               lastSuccessfulVersion:
-                description: LastSuccessfulVersion is the last version of the module
+                description: LastSuccessfulVersion is the last version of the Module
                   that was successfully reconciled.
                 type: string
             type: object
