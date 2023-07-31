@@ -49,10 +49,7 @@ func UpdateReadyConditionReconciling(ctx handlerspi.HandlerContext, module *modu
 }
 
 // UpdateReadyConditionFailed updates the Ready condition when the module has failed
-func UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, msgDetail string) result.Result {
-	msgTemplate := readyConditionMessages[reason]
-	msg := fmt.Sprintf(msgTemplate, module.Name, module.Spec.TargetNamespace, ctx.HelmRelease.Name, msgDetail)
-
+func UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, msg string) result.Result {
 	return updateReadyCondition(ctx, module, reason, corev1.ConditionFalse, msg)
 }
 
