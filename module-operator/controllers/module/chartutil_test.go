@@ -39,6 +39,11 @@ func TestLoadHelmInfo(t *testing.T) {
 			expectedDir: path.Join(rootDir, "modules/calico/3.25.0"),
 		},
 		{
+			name:        "test-multus",
+			moduleName:  "multus",
+			expectedDir: path.Join(rootDir, "modules/multus/4.0.1"),
+		},
+		{
 			name:        "test-vz-test",
 			moduleName:  "helm",
 			expectedDir: path.Join(rootDir, "vz-test/0.1.0"),
@@ -60,6 +65,7 @@ func TestLoadHelmInfo(t *testing.T) {
 			info, err := loadHelmInfo(&mod)
 			asserts.NoError(err)
 			asserts.NotNil(info)
+			asserts.Equal(test.expectedDir, info.ChartInfo.Path)
 		})
 	}
 }
@@ -119,6 +125,29 @@ func TestLookupChartLeafDirName(t *testing.T) {
 			moduleName:  "calico",
 			version:     "3.25.0",
 			expectedDir: "modules/calico/3.25.0",
+		},
+		{
+			name:        "test-calico-version-v3.25.1",
+			moduleName:  "calico",
+			version:     "v3.25.1",
+			expectedDir: "modules/calico/3.25.1",
+		},
+		{
+			name:        "test-calico-version-3.25.1",
+			moduleName:  "calico",
+			version:     "3.25.1",
+			expectedDir: "modules/calico/3.25.1",
+		},
+		{
+			name:        "test-multus",
+			moduleName:  "multus",
+			expectedDir: "modules/multus/4.0.1",
+		},
+		{
+			name:        "test-multus-version",
+			moduleName:  "multus",
+			version:     "4.0.1",
+			expectedDir: "modules/multus/4.0.1",
 		},
 		{
 			name:        "test-vz-test",
