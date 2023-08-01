@@ -79,15 +79,22 @@ func updateReadyCondition(ctx handlerspi.HandlerContext, module *moduleapi.Modul
 
 // appendCondition appends the condition to the list of conditions
 func appendCondition(module *moduleapi.Module, cond moduleapi.ModuleCondition) {
-	cond.LastTransitionTime = getTransitionTime()
-
 	// Copy conditions that have a different type than the input condition into a new list
 	var newConditions []moduleapi.ModuleCondition
 	for i, existing := range module.Status.Conditions {
-		if existing.Type != cond.Type {
+		if existing.Type == cond.Type {
+			// Don't modify Status.Conditions if nothing changed in the target condition
+			if existing.Reason == cond.Reason && existing.Status == cond.Status && existing.Message == cond.Message {
+				return
+			}
+		} else {
+			// Append the existing condition since it doesn't match the target condition type
 			newConditions = append(newConditions, module.Status.Conditions[i])
 		}
 	}
+
+	// Append the new target condition
+	cond.LastTransitionTime = getTransitionTime()
 	module.Status.Conditions = append(newConditions, cond)
 }
 
