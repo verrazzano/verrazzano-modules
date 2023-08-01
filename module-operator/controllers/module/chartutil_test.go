@@ -36,7 +36,7 @@ func TestLoadHelmInfo(t *testing.T) {
 		{
 			name:        "test-calico",
 			moduleName:  "calico",
-			expectedDir: path.Join(rootDir, "modules/calico/3.25.0"),
+			expectedDir: path.Join(rootDir, "modules/calico/3.25.1"),
 		},
 		{
 			name:        "test-multus",
@@ -110,9 +110,9 @@ func TestLookupChartLeafDirName(t *testing.T) {
 			expectedDir: "modules/oci-ccm/1.25.0",
 		},
 		{
-			name:        "test-calico",
+			name:        "test-calico-default",
 			moduleName:  "calico",
-			expectedDir: "modules/calico/3.25.0",
+			expectedDir: "modules/calico/3.25.1",
 		},
 		{
 			name:        "test-calico-version",
