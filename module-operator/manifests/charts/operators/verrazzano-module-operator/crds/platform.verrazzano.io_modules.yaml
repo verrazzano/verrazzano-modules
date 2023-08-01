@@ -29,6 +29,11 @@ spec:
       jsonPath: .status.conditions[:].status
       name: Ready
       type: string
+    - description: Last transition time
+      jsonPath: .status.conditions[:].lastTransitionTime
+      name: Transition Time
+      priority: 2
+      type: string
     - description: Lifecycle message
       jsonPath: .status.conditions[:].message
       name: Message
