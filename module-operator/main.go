@@ -37,20 +37,32 @@ func main() {
 	}
 
 	// init Helm controller
-	if err := module.InitController(mgr, helmfactory.NewModuleHandlerInfo(), moduleapi.HelmModuleClass); err != nil {
+	if err := module.InitController(module.ModuleControllerConfig{
+		ControllerManager: mgr,
+		ModuleHandlerInfo: helmfactory.NewModuleHandlerInfo(),
+		ModuleClass:       moduleapi.HelmModuleClass,
+	}); err != nil {
 		log.Errorf("Failed to start Helm controller", err)
 		return
 	}
 
 	// init Calico controller
-	if err := module.InitController(mgr, calicofactory.NewModuleHandlerInfo(), moduleapi.CalicoModuleClass); err != nil {
-		log.Errorf("Failed to start the Calico controller", err)
+	if err := module.InitController(module.ModuleControllerConfig{
+		ControllerManager: mgr,
+		ModuleHandlerInfo: calicofactory.NewModuleHandlerInfo(),
+		ModuleClass:       moduleapi.CalicoModuleClass,
+	}); err != nil {
+		log.Errorf("Failed to start Calico controller", err)
 		return
 	}
 
 	// init CCM controller
-	if err := module.InitController(mgr, ccmfactory.NewModuleHandlerInfo(), moduleapi.CCMModuleClass); err != nil {
-		log.Errorf("Failed to start OCI-CCM controller", err)
+	if err := module.InitController(module.ModuleControllerConfig{
+		ControllerManager: mgr,
+		ModuleHandlerInfo: ccmfactory.NewModuleHandlerInfo(),
+		ModuleClass:       moduleapi.CCMModuleClass,
+	}); err != nil {
+		log.Errorf("Failed to start OCI-CCM  controller", err)
 		return
 	}
 

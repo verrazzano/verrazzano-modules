@@ -159,9 +159,9 @@ func TestReconcileSuccess(t *testing.T) {
 			scheme := initScheme()
 			clientBuilder := fakes.NewClientBuilder().WithScheme(scheme)
 			r := Reconciler{
-				Client:      clientBuilder.Build(),
-				Scheme:      initScheme(),
-				HandlerInfo: test.moduleInfo,
+				Client:                 clientBuilder.Build(),
+				Scheme:                 initScheme(),
+				ModuleControllerConfig: ModuleControllerConfig{ModuleHandlerInfo: test.moduleInfo},
 			}
 			uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 			asserts.NoError(err)
@@ -303,9 +303,9 @@ func TestReconcileErrors(t *testing.T) {
 			scheme := initScheme()
 			clientBuilder := fakes.NewClientBuilder().WithScheme(scheme)
 			r := Reconciler{
-				Client:      clientBuilder.Build(),
-				Scheme:      initScheme(),
-				HandlerInfo: test.moduleInfo,
+				Client:                 clientBuilder.Build(),
+				Scheme:                 initScheme(),
+				ModuleControllerConfig: ModuleControllerConfig{ModuleHandlerInfo: test.moduleInfo},
 			}
 			uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 			asserts.NoError(err)

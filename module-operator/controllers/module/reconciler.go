@@ -96,7 +96,7 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 // getActionHandler must return one of the Module action handlers.
 func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, result.Result) {
 	if !status.IsInstalled(cr) {
-		return r.HandlerInfo.InstallActionHandler, result.NewResult()
+		return r.ModuleHandlerInfo.InstallActionHandler, result.NewResult()
 	}
 
 	// return UpgradeAction only when the desired version is different from current
@@ -106,9 +106,9 @@ func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *modulea
 		return nil, result.NewResultShortRequeueDelay()
 	}
 	if upgradeNeeded {
-		return r.HandlerInfo.UpgradeActionHandler, result.NewResult()
+		return r.ModuleHandlerInfo.UpgradeActionHandler, result.NewResult()
 	}
-	return r.HandlerInfo.UpdateActionHandler, result.NewResult()
+	return r.ModuleHandlerInfo.UpdateActionHandler, result.NewResult()
 
 }
 
