@@ -5,7 +5,6 @@ package basecontroller
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -26,9 +25,9 @@ import (
 
 type watchController struct {
 	FakeController
-	t            *testing.T
-	numResources int
-	predicate    bool
+	t         *testing.T
+	predicate bool
+	nsn       types.NamespacedName
 }
 
 type FakeController struct{}
@@ -43,54 +42,50 @@ func TestWatch(t *testing.T) {
 	asserts := assert.New(t)
 
 	tests := []struct {
-		name         string
-		numResources int
-		predicate    bool
+		name      string
+		predicate bool
 	}{
 		{
-			name:         "test1",
-			numResources: 0,
-			predicate:    true,
+			name:      "test1",
+			predicate: true,
 		},
 		{
-			name:         "test2",
-			numResources: 0,
-			predicate:    false,
+			name:      "test2",
+			predicate: false,
 		},
 		{
-			name:         "test3",
-			numResources: 1,
-			predicate:    true,
+			name:      "test3",
+			predicate: true,
 		},
 		{
-			name:         "test4",
-			numResources: 1,
-			predicate:    false,
+			name:      "test4",
+			predicate: false,
 		},
 		{
-			name:         "test5",
-			numResources: 2,
-			predicate:    true,
+			name:      "test5",
+			predicate: true,
 		},
 		{
-			name:         "test6",
-			numResources: 2,
-			predicate:    false,
+			name:      "test6",
+			predicate: false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			nsn := types.NamespacedName{Namespace: "default", Name: t.Name()}
 			c := watchController{
-				t:            t,
-				numResources: test.numResources,
-				predicate:    test.predicate,
+				t:         t,
+				predicate: test.predicate,
+				nsn:       nsn,
 			}
 			w := &WatchContext{
-				Controller:                 c,
-				Log:                        vzlog.DefaultLogger(),
-				ResourceKind:               source.Kind{Type: &moduleapi.Module{}},
-				ShouldReconcile:            c.shouldReconcile,
-				FuncGetControllerResources: c.getControllerResources,
+				Controller:              c,
+				Log:                     vzlog.DefaultLogger(),
+				resourceBeingReconciled: nsn,
+				watchDescriptor: controllerspi.WatchDescriptor{
+					WatchedResourceKind: source.Kind{Type: &moduleapi.Module{}},
+					FuncShouldReconcile: c.shouldReconcile,
+				},
 			}
 			err := w.Watch()
 			asserts.NoError(err)
@@ -100,8 +95,8 @@ func TestWatch(t *testing.T) {
 
 func (w watchController) Watch(src source.Source, eventhandler handler.EventHandler, predicates ...predicate.Predicate) error {
 	asserts := assert.New(w.t)
-	cr := newModuleCR("test", "test")
-	cr2 := newModuleCR("test2", "test2")
+	cr := newModuleCR(w.nsn.Namespace, w.nsn.Namespace)
+	cr2 := newModuleCR(w.nsn.Namespace, w.nsn.Namespace)
 
 	for _, p := range predicates {
 		asserts.Equal(w.predicate, p.Create(event.CreateEvent{Object: cr}))
@@ -113,19 +108,8 @@ func (w watchController) Watch(src source.Source, eventhandler handler.EventHand
 	// Call event handler directly to get requests
 	q := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	eventhandler.Create(event.CreateEvent{Object: cr}, q)
-	asserts.Equal(w.numResources, q.Len())
+	asserts.Equal(1, q.Len())
 	return nil
-}
-
-func (w watchController) getControllerResources() []types.NamespacedName {
-	nsList := []types.NamespacedName{}
-	for i := 1; i <= w.numResources; i++ {
-		nsList = append(nsList, types.NamespacedName{
-			Namespace: "namespace",
-			Name:      fmt.Sprintf("name-%v", i),
-		})
-	}
-	return nsList
 }
 
 func (w watchController) shouldReconcile(object client.Object, event controllerspi.WatchEvent) bool {

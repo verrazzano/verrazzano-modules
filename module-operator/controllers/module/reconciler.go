@@ -38,6 +38,16 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 	}
 
 	if cr.Generation == cr.Status.LastSuccessfulGeneration {
+		// When the cr.Generation matches the status generation, then the
+		// spec config for that specific generation has been reconciled.
+		// However, even if the reconciliation (e.g. install) finishes,
+		// reconcile might still get called a few times because controller-runtime can have
+		// CR updates in its cache.  If the code was to continue to reconcile, then
+		// the update action would occur and the Module condition would have update reasons
+		// instead of install reasons (e.g. InstallComplete).
+		// Therefore, we only re-reconcile if a watch triggered reconcile because
+		// something changed (the watched resource).
+		//
 		return result.NewResult()
 	}
 

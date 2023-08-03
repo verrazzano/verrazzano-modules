@@ -6,50 +6,20 @@ package basecontroller
 import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sync"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
-
-// ControllerConfig specifies the config of the controller using this base controller
-type ControllerConfig struct {
-	controllerspi.Finalizer
-	controllerspi.Reconciler
-	controllerspi.EventFilter
-	controllerspi.Watcher
-}
-
-// Reconciler contains data needed to reconcile a DNS object.
-type Reconciler struct {
-	client.Client
-	Scheme     *runtime.Scheme
-	Controller controller.Controller
-	ControllerConfig
-	watchersInitialized bool
-	watchContexts       []*WatchContext
-
-	// controllerResources contains a set of CRs for this controller that exist.
-	// It is important that resources get added to this set during the base controller reconcile loop, as
-	// well as removed when the resource is deleted.
-	controllerResources map[types.NamespacedName]bool
-	mutex               sync.RWMutex
-}
 
 // CreateControllerAndAddItToManager creates the base controller and adds it to the manager.
 func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controllerConfig ControllerConfig) (*Reconciler, error) {
 	r := Reconciler{
-		Client:              mgr.GetClient(),
-		Scheme:              mgr.GetScheme(),
-		ControllerConfig:    controllerConfig,
-		controllerResources: make(map[types.NamespacedName]bool),
-		mutex:               sync.RWMutex{},
+		Client:                  mgr.GetClient(),
+		Scheme:                  mgr.GetScheme(),
+		layeredControllerConfig: controllerConfig,
+		watcherMap:              make(map[types.NamespacedName]bool),
 	}
 
 	// Create the controller and add it to the manager (Build does an implicit add)

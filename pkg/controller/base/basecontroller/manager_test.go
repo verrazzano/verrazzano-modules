@@ -66,7 +66,7 @@ func TestCreatePredicateFilter(t *testing.T) {
 			clientBuilder := fakes.NewClientBuilder()
 			c := clientBuilder.WithScheme(newScheme()).WithObjects(cr).Build()
 			r := newReconciler(c, config)
-			f := r.createPredicateFilter(r.EventFilter)
+			f := r.createPredicateFilter(r.layeredControllerConfig.EventFilter)
 
 			asserts.NotNil(f.Create)
 			asserts.NotNil(f.Delete)

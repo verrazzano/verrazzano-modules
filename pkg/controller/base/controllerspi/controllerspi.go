@@ -34,7 +34,9 @@ const (
 
 // WatchDescriptor described an object being watched
 type WatchDescriptor struct {
-	WatchKind source.Kind
+	// WatchedResourceKind is the kind of resource being watched
+	WatchedResourceKind source.Kind
+	// FuncShouldReconcile is called when watch event occurs to determine if CR should be reconciled
 	FuncShouldReconcile
 }
 

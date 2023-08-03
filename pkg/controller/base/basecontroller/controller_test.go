@@ -103,9 +103,6 @@ func TestConcurrentReconcile(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-
-	crList := r.GetControllerResources()
-	asserts.Len(crList, threadCount)
 }
 
 // TestReconciler tests that the layered controller Reconcile interface works alone
@@ -159,14 +156,6 @@ func TestWatcher(t *testing.T) {
 	asserts.NoError(err)
 	asserts.False(res.Requeue)
 	asserts.True(watcher.called)
-
-	// Make sure the ModuleCR has been added to controller resources
-	crList := r.GetControllerResources()
-	asserts.Len(crList, 1)
-
-	r.removeControllerResource(crList[0])
-	crList = r.GetControllerResources()
-	asserts.Len(crList, 0)
 }
 
 // TestEnsureFinalizer tests that a finalizer is added to the ModuleCR
@@ -344,20 +333,17 @@ func TestNotFound(t *testing.T) {
 	// state and gen should never match
 	asserts.NoError(err)
 	asserts.False(res.Requeue)
-
-	crList := r.GetControllerResources()
-	asserts.Len(crList, 0)
 }
 
 // newReconciler creates a new reconciler for testing
 func newReconciler(c client.Client, controllerConfig ControllerConfig) *Reconciler {
 	scheme := newScheme()
 	reconciler := Reconciler{
-		Client:              c,
-		Scheme:              scheme,
-		ControllerConfig:    controllerConfig,
-		Controller:          fakeController{},
-		controllerResources: make(map[types.NamespacedName]bool),
+		Client:                  c,
+		Scheme:                  scheme,
+		layeredControllerConfig: controllerConfig,
+		Controller:              fakeController{},
+		watcherMap:              make(map[types.NamespacedName]bool),
 	}
 	return &reconciler
 }
@@ -419,7 +405,7 @@ func (r *ReconcilerImpl) Reconcile(spictx controllerspi.ReconcileContext, u *uns
 func (r *WatcherImpl) GetWatchDescriptors() []controllerspi.WatchDescriptor {
 	r.called = true
 	return []controllerspi.WatchDescriptor{{
-		WatchKind:           source.Kind{Type: &moduleapi.Module{}},
+		WatchedResourceKind: source.Kind{Type: &moduleapi.Module{}},
 		FuncShouldReconcile: nil,
 	}}
 }
