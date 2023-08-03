@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sync/atomic"
 )
 
 // ControllerConfig specifies the config of the controller using this base controller
@@ -27,7 +26,7 @@ type Reconciler struct {
 	client.Client
 
 	// Scheme is the CR scheme
-	Scheme     *runtime.Scheme
+	Scheme *runtime.Scheme
 
 	// Controller is a controller-runtime controller
 	Controller controller.Controller
@@ -35,27 +34,24 @@ type Reconciler struct {
 	// layeredControllerConfig config is the layered controller
 	layeredControllerConfig ControllerConfig
 
-	// WatchEventOccurred is a toggle to indicate that a watch has occurred. Once it is reconciled, then it is cleared.
-	WatchEventOccurred atomic.Bool
-
 	// watcherMap is used to determine if a watches have been initialized for the CR instance
-	watcherMap         map[types.NamespacedName]bool
+	watcherMap map[types.NamespacedName]bool
 
 	// watchContexts is the list of watchContexts, one for each watch
-	watchContexts      []*WatchContext
+	watchContexts []*WatchContext
 }
 
 // WatchContext provides context to a watcher
 // There is a WatchContext for each resource being watched by each instance of a CR.
 type WatchContext struct {
 	// Controller is a controller-runtime controller
-	Controller              controller.Controller
+	Controller controller.Controller
 
 	// Log is the Verrazzano logger
-	Log                     vzlog.VerrazzanoLogger
+	Log vzlog.VerrazzanoLogger
 
 	// watchDescriptor describes the resource being watched
-	watchDescriptor 	controllerspi.WatchDescriptor
+	watchDescriptor controllerspi.WatchDescriptor
 
 	// resourceBeingReconciled is the resource being reconciled
 	resourceBeingReconciled types.NamespacedName
