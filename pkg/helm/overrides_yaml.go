@@ -15,15 +15,15 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// getInstallOverridesYAML takes the list of ValuesFrom and returns a string array of YAMLs
-func getInstallOverridesYAML(log vzlog.VerrazzanoLogger, client client.Client, overrides []ValueOverrides,
+// GetInstallOverridesYAML takes the list of ValuesFrom and returns a string array of YAMLs
+func GetInstallOverridesYAML(log vzlog.VerrazzanoLogger, client client.Client, overrides []ValueOverrides,
 	mlcNamespace string) ([]string, error) {
 	var overrideStrings []string
 	for _, override := range overrides {
 		// Check if ConfigMapRef is populated and gather data
 		if override.ConfigMapRef != nil {
 			// Get the ConfigMap data
-			data, err := getConfigMapOverrides(log, client, override.ConfigMapRef, mlcNamespace)
+			data, err := GetConfigMapOverrides(log, client, override.ConfigMapRef, mlcNamespace)
 			if err != nil {
 				return overrideStrings, err
 			}
@@ -33,7 +33,7 @@ func getInstallOverridesYAML(log vzlog.VerrazzanoLogger, client client.Client, o
 		// Check if SecretRef is populated and gather data
 		if override.SecretRef != nil {
 			// Get the Secret data
-			data, err := getSecretOverrides(log, client, override.SecretRef, mlcNamespace)
+			data, err := GetSecretOverrides(log, client, override.SecretRef, mlcNamespace)
 			if err != nil {
 				return overrideStrings, err
 			}
@@ -52,8 +52,8 @@ func getInstallOverridesYAML(log vzlog.VerrazzanoLogger, client client.Client, o
 	return overrideStrings, nil
 }
 
-// getConfigMapOverrides takes a ConfigMap selector and returns the YAML data and handles k8s api errors appropriately
-func getConfigMapOverrides(log vzlog.VerrazzanoLogger, client client.Client, selector *v1.ConfigMapKeySelector,
+// GetConfigMapOverrides takes a ConfigMap selector and returns the YAML data and handles k8s api errors appropriately
+func GetConfigMapOverrides(log vzlog.VerrazzanoLogger, client client.Client, selector *v1.ConfigMapKeySelector,
 	namespace string) (string, error) {
 	configMap := &v1.ConfigMap{}
 	nsn := types.NamespacedName{Name: selector.Name, Namespace: namespace}
@@ -84,8 +84,8 @@ func getConfigMapOverrides(log vzlog.VerrazzanoLogger, client client.Client, sel
 	return fieldData, nil
 }
 
-// getSecretOverrides takes a Secret selector and returns the YAML data and handles k8s api errors appropriately
-func getSecretOverrides(log vzlog.VerrazzanoLogger, client client.Client, selector *v1.SecretKeySelector,
+// GetSecretOverrides takes a Secret selector and returns the YAML data and handles k8s api errors appropriately
+func GetSecretOverrides(log vzlog.VerrazzanoLogger, client client.Client, selector *v1.SecretKeySelector,
 	namespace string) (string, error) {
 	sec := &v1.Secret{}
 	nsn := types.NamespacedName{Name: selector.Name, Namespace: namespace}

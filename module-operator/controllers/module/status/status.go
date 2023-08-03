@@ -49,10 +49,7 @@ func UpdateReadyConditionReconciling(ctx handlerspi.HandlerContext, module *modu
 }
 
 // UpdateReadyConditionFailed updates the Ready condition when the module has failed
-func UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, msgDetail string) result.Result {
-	msgTemplate := readyConditionMessages[reason]
-	msg := fmt.Sprintf(msgTemplate, module.Name, module.Spec.TargetNamespace, ctx.HelmRelease.Name, msgDetail)
-
+func UpdateReadyConditionFailed(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason, msg string) result.Result {
 	return updateReadyCondition(ctx, module, reason, corev1.ConditionFalse, msg)
 }
 
@@ -82,15 +79,22 @@ func updateReadyCondition(ctx handlerspi.HandlerContext, module *moduleapi.Modul
 
 // appendCondition appends the condition to the list of conditions
 func appendCondition(module *moduleapi.Module, cond moduleapi.ModuleCondition) {
-	cond.LastTransitionTime = getTransitionTime()
-
 	// Copy conditions that have a different type than the input condition into a new list
 	var newConditions []moduleapi.ModuleCondition
 	for i, existing := range module.Status.Conditions {
-		if existing.Type != cond.Type {
+		if existing.Type == cond.Type {
+			// Don't modify Status.Conditions if nothing changed in the target condition
+			if existing.Reason == cond.Reason && existing.Status == cond.Status && existing.Message == cond.Message {
+				return
+			}
+		} else {
+			// Append the existing condition since it doesn't match the target condition type
 			newConditions = append(newConditions, module.Status.Conditions[i])
 		}
 	}
+
+	// Append the new target condition
+	cond.LastTransitionTime = getTransitionTime()
 	module.Status.Conditions = append(newConditions, cond)
 }
 

@@ -34,7 +34,7 @@ func LoadOverrideFiles(log vzlog.VerrazzanoLogger, client ctrlclient.Client, rel
 	var err error
 
 	// Getting user defined Helm overrides as the highest priority
-	overrideStrings, err := getInstallOverridesYAML(log, client, moduleOverrides, mlcNamespace)
+	overrideStrings, err := GetInstallOverridesYAML(log, client, moduleOverrides, mlcNamespace)
 	if err != nil {
 		return nil, err
 	}

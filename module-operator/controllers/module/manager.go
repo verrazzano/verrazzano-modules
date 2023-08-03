@@ -7,7 +7,7 @@ import (
 	"context"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/basecontroller"
-	spi "github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -15,17 +15,23 @@ import (
 )
 
 // Specify the SPI interfaces that this controller implements
-var _ spi.Reconciler = Reconciler{}
+var _ controllerspi.Reconciler = Reconciler{}
 
 type Reconciler struct {
-	Client      client.Client
-	Scheme      *runtime.Scheme
-	HandlerInfo handlerspi.ModuleHandlerInfo
-	ModuleClass moduleapi.ModuleClassType
+	Client client.Client
+	Scheme *runtime.Scheme
+	ModuleControllerConfig
+}
+
+type ModuleControllerConfig struct {
+	ControllerManager ctrlruntime.Manager
+	ModuleHandlerInfo handlerspi.ModuleHandlerInfo
+	ModuleClass       moduleapi.ModuleClassType
+	WatchDescriptors  []controllerspi.WatchDescriptor
 }
 
 // InitController start the  controller
-func InitController(mgr ctrlruntime.Manager, handlerInfo handlerspi.ModuleHandlerInfo, class moduleapi.ModuleClassType) error {
+func InitController(modConfig ModuleControllerConfig) error {
 	controller := Reconciler{}
 
 	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
@@ -33,8 +39,10 @@ func InitController(mgr ctrlruntime.Manager, handlerInfo handlerspi.ModuleHandle
 		Reconciler:  &controller,
 		Finalizer:   &controller,
 		EventFilter: &controller,
+		Watcher:     &controller,
 	}
-	baseController, err := basecontroller.CreateControllerAndAddItToManager(mgr, config)
+
+	baseController, err := basecontroller.CreateControllerAndAddItToManager(modConfig.ControllerManager, config)
 	if err != nil {
 		return err
 	}
@@ -42,8 +50,7 @@ func InitController(mgr ctrlruntime.Manager, handlerInfo handlerspi.ModuleHandle
 	// init other controller fields
 	controller.Client = baseController.Client
 	controller.Scheme = baseController.Scheme
-	controller.HandlerInfo = handlerInfo
-	controller.ModuleClass = class
+	controller.ModuleControllerConfig = modConfig
 	return nil
 }
 
@@ -59,4 +66,8 @@ func (r Reconciler) HandlePredicateEvent(cli client.Client, object client.Object
 		return false
 	}
 	return mlc.Spec.ModuleName == string(r.ModuleClass)
+}
+
+func (r Reconciler) GetWatchDescriptors() []controllerspi.WatchDescriptor {
+	return r.WatchDescriptors
 }

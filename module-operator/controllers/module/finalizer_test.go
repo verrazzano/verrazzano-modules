@@ -106,7 +106,7 @@ func TestPreRemoveFinalizer(t *testing.T) {
 			r := Reconciler{
 				Client:      clientBuilder.Build(),
 				Scheme:      initScheme(),
-				HandlerInfo: test.moduleInfo,
+				ModuleControllerConfig: ModuleControllerConfig{ModuleHandlerInfo: test.moduleInfo},
 			}
 			uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 			asserts.NoError(err)

@@ -15,6 +15,8 @@ import (
 // +kubebuilder:resource:path=modules,shortName=module;modules
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.lastSuccessfulVersion",description="The current version of the Verrazzano platform."
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[:].status",description="True if the Module is ready"
+// +kubebuilder:printcolumn:name="Transition Time",type="string",priority=2,JSONPath=".status.conditions[:].lastTransitionTime",description="Last transition time"
+// +kubebuilder:printcolumn:name="Message",type="string",priority=2,JSONPath=".status.conditions[:].message",description="Lifecycle message"
 // +genclient
 
 // Module specifies a Verrazzano Module instance.

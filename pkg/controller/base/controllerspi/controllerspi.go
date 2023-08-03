@@ -62,7 +62,7 @@ type EventFilter interface {
 
 // Watcher is an interface used by controllers that watch resources
 type Watcher interface {
-	// GetWatchDescriptors returns the list of object kinds being watched
+	// GetWatchDescriptors returns the list of WatchDescriptor for objects being watched
 	GetWatchDescriptors() []WatchDescriptor
 }
 
