@@ -41,7 +41,7 @@ func TestLoadHelmInfo(t *testing.T) {
 		{
 			name:        "test-multus",
 			moduleName:  "multus",
-			expectedDir: path.Join(rootDir, "modules/multus/4.0.1"),
+			expectedDir: path.Join(rootDir, "modules/multus/4.0.2"),
 		},
 		{
 			name:        "test-vz-test",
@@ -141,13 +141,19 @@ func TestLookupChartLeafDirName(t *testing.T) {
 		{
 			name:        "test-multus",
 			moduleName:  "multus",
-			expectedDir: "modules/multus/4.0.1",
+			expectedDir: "modules/multus/4.0.2",
 		},
 		{
 			name:        "test-multus-version",
 			moduleName:  "multus",
 			version:     "4.0.1",
 			expectedDir: "modules/multus/4.0.1",
+		},
+		{
+			name:        "test-multus-version",
+			moduleName:  "multus",
+			version:     "4.0.2",
+			expectedDir: "modules/multus/4.0.2",
 		},
 		{
 			name:        "test-vz-test",

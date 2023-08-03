@@ -65,7 +65,7 @@ func lookupChartLeafDirName(mod *moduleapi.Module) string {
 		dir = filepath.Join("modules/oci-ccm", version)
 	case string(moduleapi.MultusModuleClass):
 		if version == "" {
-			version = "4.0.1"
+			version = "4.0.2"
 		}
 		dir = filepath.Join("modules/multus", version)
 	case string(moduleapi.HelmModuleClass):
