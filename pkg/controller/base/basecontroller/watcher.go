@@ -19,7 +19,7 @@ func (w *WatchContext) Watch() error {
 	p := predicate.Funcs{
 		// a watched resource just got created
 		CreateFunc: func(e event.CreateEvent) bool {
-			w.Log.Infof("Watcher `create` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
+			w.log.Infof("Watcher `create` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
 			return w.shouldReconcile(e.Object, controllerspi.Created)
 		},
 		// a watched resource just got updated
@@ -27,18 +27,18 @@ func (w *WatchContext) Watch() error {
 			if e.ObjectOld == e.ObjectNew {
 				return false
 			}
-			w.Log.Infof("Watcher `update` event occurred for watched  resource %s/%s", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
+			w.log.Infof("Watcher `update` event occurred for watched  resource %s/%s", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
 			return w.shouldReconcile(e.ObjectNew, controllerspi.Updated)
 		},
 		// a watched resource just got deleted
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			w.Log.Infof("Watcher `delete` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
+			w.log.Infof("Watcher `delete` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
 			return w.shouldReconcile(e.Object, controllerspi.Deleted)
 		},
 	}
 	// return a Watch with the predicate that is called in the future when a resource
 	// event occurs.  If the predicate returns true. then the reconciler loop will be called
-	return w.Controller.Watch(
+	return w.controller.Watch(
 		&w.watchDescriptor.WatchedResourceKind,
 		w.createReconcileEventHandler(),
 		p)

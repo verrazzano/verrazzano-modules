@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sync"
+	"time"
 )
 
 // ControllerConfig specifies the config of the controller using this base controller
@@ -34,21 +36,30 @@ type Reconciler struct {
 	// layeredControllerConfig config is the layered controller
 	layeredControllerConfig ControllerConfig
 
-	// watcherMap is used to determine if a watches have been initialized for the CR instance
-	watcherMap map[types.NamespacedName]bool
+	// watcherInitMap is used to determine if a watches have been initialized for the CR instance
+	watcherInitMap map[types.NamespacedName]bool
 
 	// watchContexts is the list of watchContexts, one for each watch
 	watchContexts []*WatchContext
+
+	// watchEventTimestampMap is used to record the latest watch event timestamp that caused a reconcile event
+	watchEventTimestampMap map[types.NamespacedName]time.Time
+
+	// WatchMutex is used to control concurrent access the maps
+	watchMutex sync.Mutex
 }
 
 // WatchContext provides context to a watcher
 // There is a WatchContext for each resource being watched by each instance of a CR.
 type WatchContext struct {
 	// Controller is a controller-runtime controller
-	Controller controller.Controller
+	controller controller.Controller
+
+	// Reconciler is the base reconciler that created this WatchContext
+	reconciler *Reconciler
 
 	// Log is the Verrazzano logger
-	Log vzlog.VerrazzanoLogger
+	log vzlog.VerrazzanoLogger
 
 	// watchDescriptor describes the resource being watched
 	watchDescriptor controllerspi.WatchDescriptor

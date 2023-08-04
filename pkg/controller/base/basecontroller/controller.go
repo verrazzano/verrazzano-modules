@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"time"
 )
 
 // Reconcile the resource
@@ -120,7 +121,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 // Init the watches for this resource
 func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, resourceNSN types.NamespacedName) error {
-	if _, ok := r.watcherMap[resourceNSN]; ok {
+	r.watchMutex.Lock()
+	defer r.watchMutex.Unlock()
+	if _, ok := r.watcherInitMap[resourceNSN]; ok {
 		return nil
 	}
 
@@ -128,8 +131,9 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, resourceNSN types.N
 	wds := r.layeredControllerConfig.Watcher.GetWatchDescriptors()
 	for i := range wds {
 		w := &WatchContext{
-			Controller:              r.Controller,
-			Log:                     log,
+			controller:              r.Controller,
+			reconciler:              r,
+			log:                     log,
 			watchDescriptor:         wds[i],
 			resourceBeingReconciled: resourceNSN,
 		}
@@ -140,7 +144,7 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, resourceNSN types.N
 		r.watchContexts = append(r.watchContexts, w)
 	}
 
-	r.watcherMap[resourceNSN] = true
+	r.watcherInitMap[resourceNSN] = true
 	return nil
 }
 
@@ -177,4 +181,22 @@ func (r *Reconciler) deleteFinalizer(log vzlog.VerrazzanoLogger, u *unstructured
 	}
 
 	return nil
+}
+
+// Update the map entry for the resource with the current time
+func (r *Reconciler) updateWatchTimestamp(nsn types.NamespacedName) {
+	r.watchMutex.Lock()
+	defer r.watchMutex.Unlock()
+	r.watchEventTimestampMap[nsn] = time.Now()
+}
+
+// GetWatchTimestamp gets the map entry for the resource
+func (r *Reconciler) GetWatchTimestamp(nsn types.NamespacedName) *time.Time {
+	r.watchMutex.Lock()
+	defer r.watchMutex.Unlock()
+	t, ok := r.watchEventTimestampMap[nsn]
+	if !ok {
+		return nil
+	}
+	return &t
 }

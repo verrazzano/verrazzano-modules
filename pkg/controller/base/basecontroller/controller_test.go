@@ -343,7 +343,7 @@ func newReconciler(c client.Client, controllerConfig ControllerConfig) *Reconcil
 		Scheme:                  scheme,
 		layeredControllerConfig: controllerConfig,
 		Controller:              fakeController{},
-		watcherMap:              make(map[types.NamespacedName]bool),
+		watcherInitMap:          make(map[types.NamespacedName]bool),
 	}
 	return &reconciler
 }
