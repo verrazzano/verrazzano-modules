@@ -9,6 +9,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
 	calicofactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/calico/factory"
 	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/factory"
+	metallbfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/metallb/factory"
 	multusfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/multus/factory"
 	ccmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/ociccm/factory"
 	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
@@ -74,6 +75,16 @@ func main() {
 		ModuleClass:       moduleapi.MultusModuleClass,
 	}); err != nil {
 		log.Errorf("Failed to start Multus controller", err)
+		return
+	}
+
+	// init Metallb controller
+	if err := module.InitController(module.ModuleControllerConfig{
+		ControllerManager: mgr,
+		ModuleHandlerInfo: metallbfactory.NewModuleHandlerInfo(),
+		ModuleClass:       moduleapi.MetallbModuleClass,
+	}); err != nil {
+		log.Errorf("Failed to start Metallb controller", err)
 		return
 	}
 

@@ -127,6 +127,9 @@ const (
 
 	// MultusModuleClass defines the class type used by the multus operator.
 	MultusModuleClass ModuleClassType = "multus"
+
+	// MetallbModuleClass defines the class type used by the Metallb operator.
+	MetallbModuleClass ModuleClassType = "metallb"
 )
 
 // ModuleConditionReason is the reason for the condition type.
