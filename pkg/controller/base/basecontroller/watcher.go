@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"time"
 )
 
 // Watch for a specific resource type
@@ -65,6 +66,15 @@ func (w *WatchContext) createReconcileEventHandler() handler.EventHandler {
 func (w *WatchContext) shouldReconcile(resourceBeingReconciled types.NamespacedName, watchedResource client.Object, ev controllerspi.WatchEvent) bool {
 	if w.watchDescriptor.FuncShouldReconcile == nil {
 		return false
+	}
+
+	// Controller runtime generates Create event for all watched event on startup.
+	// Ignore the Create event if the creation timestamp is older than 30 seconds, otherwise
+	// every resource that uses watches will reconcile (like Module)
+	if ev == controllerspi.Created {
+		if watchedResource.GetCreationTimestamp().Time.Add(time.Second * 30).Before(time.Now()) {
+			return false
+		}
 	}
 	return w.watchDescriptor.FuncShouldReconcile(resourceBeingReconciled, watchedResource, ev)
 }
