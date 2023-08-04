@@ -9,7 +9,6 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/basecontroller"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -18,8 +17,7 @@ import (
 var _ controllerspi.Reconciler = Reconciler{}
 
 type Reconciler struct {
-	Client client.Client
-	Scheme *runtime.Scheme
+	*basecontroller.BaseReconciler
 	ModuleControllerConfig
 }
 
@@ -34,7 +32,7 @@ type ModuleControllerConfig struct {
 func InitController(modConfig ModuleControllerConfig) error {
 	controller := Reconciler{}
 
-	// The config MUST contain at least the Reconciler.  Other spi interfaces are optional.
+	// The config MUST contain at least the BaseReconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
 		Reconciler:  &controller,
 		Finalizer:   &controller,
@@ -42,14 +40,13 @@ func InitController(modConfig ModuleControllerConfig) error {
 		Watcher:     &controller,
 	}
 
-	baseController, err := basecontroller.CreateControllerAndAddItToManager(modConfig.ControllerManager, config)
+	baseReconciler, err := basecontroller.CreateControllerAndAddItToManager(modConfig.ControllerManager, config)
 	if err != nil {
 		return err
 	}
+	controller.BaseReconciler = baseReconciler
 
 	// init other controller fields
-	controller.Client = baseController.Client
-	controller.Scheme = baseController.Scheme
 	controller.ModuleControllerConfig = modConfig
 	return nil
 }

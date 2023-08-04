@@ -22,16 +22,16 @@ import (
 // Reconcile the resource
 // The controller-runtime will call this method repeatedly if the ctrl.Result.Requeue is true, or an error is returned
 // This code will always return a nil error, and will set the ctrl.Result.Requeue to true (with a delay) if a requeue is needed.
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *BaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Do some validation then get the GVK of the resource
 	if r.layeredControllerConfig.Reconciler == nil {
-		err := errors.New("Failed, Reconciler interface in ControllerConfig must be implemented")
+		err := errors.New("Failed, BaseReconciler interface in ControllerConfig must be implemented")
 		zap.S().Error(err)
 		return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), err
 	}
 	ro := r.layeredControllerConfig.GetReconcileObject()
 	if ro == nil {
-		err := errors.New("Failed, Reconciler.GetReconcileObject returns nil")
+		err := errors.New("Failed, BaseReconciler.GetReconcileObject returns nil")
 		zap.S().Error(err)
 		return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), err
 	}
@@ -120,7 +120,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 // Init the watches for this resource
-func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, resourceNSN types.NamespacedName) error {
+func (r *BaseReconciler) initWatches(log vzlog.VerrazzanoLogger, resourceNSN types.NamespacedName) error {
 	r.watchMutex.Lock()
 	defer r.watchMutex.Unlock()
 	if _, ok := r.watcherInitMap[resourceNSN]; ok {
@@ -149,7 +149,7 @@ func (r *Reconciler) initWatches(log vzlog.VerrazzanoLogger, resourceNSN types.N
 }
 
 // ensureFinalizer ensures that a finalizer exists and updates the ModuleCR if it doesn't
-func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) result.Result {
+func (r *BaseReconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) result.Result {
 	finalizerName := r.layeredControllerConfig.Finalizer.GetName()
 	finalizers := u.GetFinalizers()
 	if vzstring.SliceContainsString(finalizers, finalizerName) {
@@ -167,7 +167,7 @@ func (r *Reconciler) ensureFinalizer(log vzlog.VerrazzanoLogger, u *unstructured
 }
 
 // deleteFinalizer deletes the finalizer
-func (r *Reconciler) deleteFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) error {
+func (r *BaseReconciler) deleteFinalizer(log vzlog.VerrazzanoLogger, u *unstructured.Unstructured) error {
 	finalizerName := r.layeredControllerConfig.Finalizer.GetName()
 	finalizers := u.GetFinalizers()
 	if !vzstring.SliceContainsString(finalizers, finalizerName) {
@@ -184,14 +184,14 @@ func (r *Reconciler) deleteFinalizer(log vzlog.VerrazzanoLogger, u *unstructured
 }
 
 // Update the map entry for the resource with the current time
-func (r *Reconciler) updateWatchTimestamp(nsn types.NamespacedName) {
+func (r *BaseReconciler) updateWatchTimestamp(nsn types.NamespacedName) {
 	r.watchMutex.Lock()
 	defer r.watchMutex.Unlock()
 	r.watchEventTimestampMap[nsn] = time.Now()
 }
 
 // GetWatchTimestamp gets the map entry for the resource
-func (r *Reconciler) GetWatchTimestamp(nsn types.NamespacedName) *time.Time {
+func (r *BaseReconciler) GetWatchTimestamp(nsn types.NamespacedName) *time.Time {
 	r.watchMutex.Lock()
 	defer r.watchMutex.Unlock()
 	t, ok := r.watchEventTimestampMap[nsn]

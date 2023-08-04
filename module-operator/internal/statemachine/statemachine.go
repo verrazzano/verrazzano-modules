@@ -24,6 +24,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 // state identifies the state of a component during work
@@ -110,6 +111,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 			tracker.state = statePreWork
 
 		case statePreWork:
+			tracker.preInstallTime = time.Now()
 			handlerContext.Log.Progressf("Doing pre-%s for %s", workerName, nsn)
 			res := s.Handler.PreWork(handlerContext)
 			if res.ShouldRequeue() {
@@ -166,4 +168,10 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 		}
 	}
 	return result.NewResult()
+}
+
+// GetPreInstallTime returns the time right before preinstall is called
+func GetPreInstallTime(cr client.Object) *time.Time {
+	tracker := ensureTracker(cr, stateInit)
+	return &tracker.preInstallTime
 }

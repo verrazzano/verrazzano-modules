@@ -22,8 +22,8 @@ type ControllerConfig struct {
 	controllerspi.Watcher
 }
 
-// Reconciler contains data needed to reconcile a DNS object.
-type Reconciler struct {
+// BaseReconciler contains data needed to reconcile a DNS object.
+type BaseReconciler struct {
 	// Client is the controller-runtime client
 	client.Client
 
@@ -55,8 +55,8 @@ type WatchContext struct {
 	// Controller is a controller-runtime controller
 	controller controller.Controller
 
-	// Reconciler is the base reconciler that created this WatchContext
-	reconciler *Reconciler
+	// BaseReconciler is the base reconciler that created this WatchContext
+	reconciler *BaseReconciler
 
 	// Log is the Verrazzano logger
 	log vzlog.VerrazzanoLogger

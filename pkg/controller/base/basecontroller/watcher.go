@@ -33,7 +33,7 @@ func (w *WatchContext) Watch() error {
 		// a watched resource just got deleted
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			w.log.Infof("Watcher `delete` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
-			return w.shouldReconcile(e.Object, controllerspi.Deleted)
+			return w.shouldReconcile(e.Object, controllerspi.Deleted, w.resourceBeingReconciled)
 		},
 	}
 	// return a Watch with the predicate that is called in the future when a resource

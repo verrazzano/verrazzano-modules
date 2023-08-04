@@ -106,7 +106,7 @@ func TestConcurrentReconcile(t *testing.T) {
 }
 
 // TestReconciler tests that the layered controller Reconcile interface works alone
-// GIVEN a controller that implements Reconciler interface
+// GIVEN a controller that implements BaseReconciler interface
 // WHEN Reconcile is called
 // THEN ensure that the controller returns success and that the Reconcile method is called
 func TestReconciler(t *testing.T) {
@@ -263,7 +263,7 @@ func TestDelete(t *testing.T) {
 }
 
 // TestReconcilerMissing tests that an error is returned when the reconciler implementation is missing
-// GIVEN a controller that implements Reconciler interface
+// GIVEN a controller that implements BaseReconciler interface
 // WHEN Reconcile is called
 // THEN ensure that the controller returns success
 func TestReconcilerMissing(t *testing.T) {
@@ -287,7 +287,7 @@ func TestReconcilerMissing(t *testing.T) {
 }
 
 // TestReconcilerGetObjectMissing tests that an error is returned
-// GIVEN a controller that implements Reconciler interface
+// GIVEN a controller that implements BaseReconciler interface
 // WHEN Reconcile is called and GetReconcileObject returns nil
 // THEN ensure that the controller returns and error
 func TestReconcilerGetObjectMissing(t *testing.T) {
@@ -313,7 +313,7 @@ func TestReconcilerGetObjectMissing(t *testing.T) {
 }
 
 // TestNotFound tests that the controller handles not found
-// GIVEN a controller that implements Reconciler interface
+// GIVEN a controller that implements BaseReconciler interface
 // WHEN Reconcile is called
 // THEN ensure that the controller returns success if ModuleCR doesn't exist
 func TestNotFound(t *testing.T) {
@@ -336,9 +336,9 @@ func TestNotFound(t *testing.T) {
 }
 
 // newReconciler creates a new reconciler for testing
-func newReconciler(c client.Client, controllerConfig ControllerConfig) *Reconciler {
+func newReconciler(c client.Client, controllerConfig ControllerConfig) *BaseReconciler {
 	scheme := newScheme()
-	reconciler := Reconciler{
+	reconciler := BaseReconciler{
 		Client:                  c,
 		Scheme:                  scheme,
 		layeredControllerConfig: controllerConfig,

@@ -79,8 +79,8 @@ func TestWatch(t *testing.T) {
 				nsn:       nsn,
 			}
 			w := &WatchContext{
-				Controller:              c,
-				Log:                     vzlog.DefaultLogger(),
+				controller:              c,
+				log:                     vzlog.DefaultLogger(),
 				resourceBeingReconciled: nsn,
 				watchDescriptor: controllerspi.WatchDescriptor{
 					WatchedResourceKind: source.Kind{Type: &moduleapi.Module{}},

@@ -15,8 +15,8 @@ import (
 )
 
 // CreateControllerAndAddItToManager creates the base controller and adds it to the manager.
-func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controllerConfig ControllerConfig) (*Reconciler, error) {
-	r := Reconciler{
+func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controllerConfig ControllerConfig) (*BaseReconciler, error) {
+	r := BaseReconciler{
 		Client:                  mgr.GetClient(),
 		Scheme:                  mgr.GetScheme(),
 		layeredControllerConfig: controllerConfig,
@@ -43,7 +43,7 @@ func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controller
 	return &r, nil
 }
 
-func (r *Reconciler) createPredicateFilter(filter controllerspi.EventFilter) predicate.Predicate {
+func (r *BaseReconciler) createPredicateFilter(filter controllerspi.EventFilter) predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			return filter.HandlePredicateEvent(r.Client, e.Object)
