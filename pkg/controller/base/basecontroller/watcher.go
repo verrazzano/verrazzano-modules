@@ -53,6 +53,7 @@ func (w *WatchContext) Watch() error {
 func (w *WatchContext) createReconcileEventHandler() handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(
 		func(a client.Object) []reconcile.Request {
+			w.reconciler.updateWatchTimestamp(w.resourceBeingReconciled)
 			requests := []reconcile.Request{}
 			requests = append(requests, reconcile.Request{
 				NamespacedName: w.resourceBeingReconciled})
