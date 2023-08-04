@@ -5,6 +5,7 @@ package basecontroller
 
 import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -20,7 +21,7 @@ func (w *WatchContext) Watch() error {
 		// a watched resource just got created
 		CreateFunc: func(e event.CreateEvent) bool {
 			w.log.Infof("Watcher `create` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
-			return w.shouldReconcile(e.Object, controllerspi.Created)
+			return w.shouldReconcile(w.resourceBeingReconciled, e.Object, controllerspi.Created)
 		},
 		// a watched resource just got updated
 		UpdateFunc: func(e event.UpdateEvent) bool {
@@ -28,12 +29,12 @@ func (w *WatchContext) Watch() error {
 				return false
 			}
 			w.log.Infof("Watcher `update` event occurred for watched  resource %s/%s", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
-			return w.shouldReconcile(e.ObjectNew, controllerspi.Updated)
+			return w.shouldReconcile(w.resourceBeingReconciled, e.ObjectNew, controllerspi.Updated)
 		},
 		// a watched resource just got deleted
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			w.log.Infof("Watcher `delete` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
-			return w.shouldReconcile(e.Object, controllerspi.Deleted, w.resourceBeingReconciled)
+			return w.shouldReconcile(w.resourceBeingReconciled, e.Object, controllerspi.Deleted)
 		},
 	}
 	// return a Watch with the predicate that is called in the future when a resource
@@ -60,9 +61,9 @@ func (w *WatchContext) createReconcileEventHandler() handler.EventHandler {
 }
 
 // If the watched resource event should cause reconcile then return true
-func (w *WatchContext) shouldReconcile(watchedResource client.Object, ev controllerspi.WatchEvent) bool {
+func (w *WatchContext) shouldReconcile(resourceBeingReconciled types.NamespacedName, watchedResource client.Object, ev controllerspi.WatchEvent) bool {
 	if w.watchDescriptor.FuncShouldReconcile == nil {
 		return false
 	}
-	return w.watchDescriptor.FuncShouldReconcile(watchedResource, ev)
+	return w.watchDescriptor.FuncShouldReconcile(resourceBeingReconciled, watchedResource, ev)
 }

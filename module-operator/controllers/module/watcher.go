@@ -4,9 +4,12 @@
 package module
 
 import (
+	"context"
+	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	corev1 "k8s.io/api/core/v1"
-	clipkg "sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -16,42 +19,46 @@ func (r *Reconciler) GetDefaultWatchDescriptors() []controllerspi.WatchDescripto
 	return []controllerspi.WatchDescriptor{
 		{
 			WatchedResourceKind: source.Kind{Type: &corev1.Secret{}},
-			FuncShouldReconcile: r.ShouldSecretEventTriggerReconcile,
+			FuncShouldReconcile: r.ShouldSecretTriggerReconcile,
 		},
 		{
 			WatchedResourceKind: source.Kind{Type: &corev1.ConfigMap{}},
-			FuncShouldReconcile: r.ShouldConfigmapEventTriggerReconcile,
+			FuncShouldReconcile: r.ShouldConfigMapTriggerReconcile,
 		},
 	}
 }
 
-// ShouldSecretEventTriggerReconcile returns true if reconcile should be done in response to a Secret lifecycle event
-func (r *Reconciler) ShouldSecretEventTriggerReconcile(obj clipkg.Object, event controllerspi.WatchEvent) bool {
-	if event == controllerspi.Deleted {
+// ShouldSecretTriggerReconcile returns true if reconcile should be done in response to a Secret lifecycle event
+func (r *Reconciler) ShouldSecretTriggerReconcile(moduleNSN types.NamespacedName, secret client.Object, _ controllerspi.WatchEvent) bool {
+	if secret.GetNamespace() != moduleNSN.Namespace {
 		return false
 	}
-	secret := obj.(*corev1.Secret)
-	return doesModuleOwnResource(secret.Labels, r.Name())
+	return r.shouldReconcile(moduleNSN, secret.GetName(), "")
 }
 
-// ShouldConfigmapEventTriggerReconcile returns true if reconcile should be done in response to a Configmap lifecycle event
-func (r *Reconciler) ShouldConfigmapEventTriggerReconcile(obj clipkg.Object, event controllerspi.WatchEvent) bool {
-	if event == controllerspi.Deleted {
+// ShouldConfigMapTriggerReconcile returns true if reconcile should be done in response to a Secret lifecycle event
+func (r *Reconciler) ShouldConfigMapTriggerReconcile(moduleNSN types.NamespacedName, cm client.Object, _ controllerspi.WatchEvent) bool {
+	if cm.GetNamespace() != moduleNSN.Namespace {
 		return false
 	}
-	cm := obj.(*corev1.ConfigMap)
-	return doesModuleOwnResource(cm.Labels, h.Name())
+	return r.shouldReconcile(moduleNSN, cm.GetName(), "")
 }
 
-// doesModuleOwnResource returns true if the resource module owner label matches component
-func doesModuleOwnResource(labels map[string]string, moduleName string) bool {
-	if labels == nil {
+// shouldReconcile returns true if reconcile should be done in response to a Secret or ConfigMap lifecycle event
+// Only reconcile if this module has those secret or configmap names in the module spec
+func (r *Reconciler) shouldReconcile(moduleNSN types.NamespacedName, secretName string, cmName string) bool {
+	module := moduleapi.Module{}
+	if err := r.Get(context.TODO(), moduleNSN, &module); err != nil {
 		return false
 	}
-	owner, ok := labels[constants.VerrazzanoModuleOwnerLabel]
-	if !ok {
-		return false
+	// Check if the secret is in the valuesFrom
+	for _, vf := range module.Spec.ValuesFrom {
+		if vf.SecretRef != nil && secretName != "" && vf.SecretRef.Name == secretName {
+			return true
+		}
+		if vf.ConfigMapRef != nil && cmName != "" && vf.ConfigMapRef.Name == cmName {
+			return true
+		}
 	}
-	// return true if this resource has the module owner label that matches this component.
-	return owner == moduleName
+	return false
 }

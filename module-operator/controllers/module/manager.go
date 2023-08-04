@@ -65,6 +65,7 @@ func (r Reconciler) HandlePredicateEvent(cli client.Client, object client.Object
 	return mlc.Spec.ModuleName == string(r.ModuleClass)
 }
 
+// GetWatchDescriptors returns the user supplied watch descriptors along with the default Module ones
 func (r Reconciler) GetWatchDescriptors() []controllerspi.WatchDescriptor {
-	return r.WatchDescriptors
+	return append(r.GetDefaultWatchDescriptors(), r.WatchDescriptors...)
 }

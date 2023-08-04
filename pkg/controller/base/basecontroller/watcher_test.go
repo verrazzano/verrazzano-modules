@@ -112,7 +112,7 @@ func (w watchController) Watch(src source.Source, eventhandler handler.EventHand
 	return nil
 }
 
-func (w watchController) shouldReconcile(object client.Object, event controllerspi.WatchEvent) bool {
+func (w watchController) shouldReconcile(resourceBeingReconciled types.NamespacedName, object client.Object, event controllerspi.WatchEvent) bool {
 	return w.predicate
 }
 

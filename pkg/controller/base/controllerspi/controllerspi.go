@@ -8,12 +8,13 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // FuncShouldReconcile returns true if the watched object event should trigger reconcile
-type FuncShouldReconcile func(object client.Object, event WatchEvent) bool
+type FuncShouldReconcile func(reconciledResource types.NamespacedName, watchedObject client.Object, event WatchEvent) bool
 
 // FuncControllerEventFilter is the predicate event handler filter that returns true if the object should be reconciled.
 // This is needed to use same CR for multiple controllers
