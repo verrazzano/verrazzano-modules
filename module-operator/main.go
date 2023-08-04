@@ -68,7 +68,11 @@ func main() {
 	}
 
 	// init Multus controller
-	if err := module.InitController(mgr, multusfactory.NewModuleHandlerInfo(), moduleapi.MultusModuleClass); err != nil {
+	if err := module.InitController(module.ModuleControllerConfig{
+		ControllerManager: mgr,
+		ModuleHandlerInfo: multusfactory.NewModuleHandlerInfo(),
+		ModuleClass:       moduleapi.MultusModuleClass,
+	}); err != nil {
 		log.Errorf("Failed to start Multus controller", err)
 		return
 	}
