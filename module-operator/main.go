@@ -9,6 +9,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
 	calicofactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/calico/factory"
 	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/factory"
+	multusfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/multus/factory"
 	ccmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/ociccm/factory"
 	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	"github.com/verrazzano/verrazzano-modules/pkg/k8sutil"
@@ -63,6 +64,12 @@ func main() {
 		ModuleClass:       moduleapi.CCMModuleClass,
 	}); err != nil {
 		log.Errorf("Failed to start OCI-CCM  controller", err)
+		return
+	}
+
+	// init Multus controller
+	if err := module.InitController(mgr, multusfactory.NewModuleHandlerInfo(), moduleapi.MultusModuleClass); err != nil {
+		log.Errorf("Failed to start Multus controller", err)
 		return
 	}
 

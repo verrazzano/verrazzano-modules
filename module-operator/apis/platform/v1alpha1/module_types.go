@@ -124,6 +124,9 @@ const (
 
 	// CCMModuleClass defines the class type used by the oci-ccm operator.
 	CCMModuleClass ModuleClassType = "oci-ccm"
+
+	// MultusModuleClass defines the class type used by the multus operator.
+	MultusModuleClass ModuleClassType = "multus"
 )
 
 // ModuleConditionReason is the reason for the condition type.

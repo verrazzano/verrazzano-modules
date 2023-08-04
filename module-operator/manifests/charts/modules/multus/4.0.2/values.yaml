@@ -1,0 +1,5 @@
+global:
+  registry: "container-registry.oracle.com/olcne"
+  namespace: "kube-system"
+
+multus-cni: v4.0.2
