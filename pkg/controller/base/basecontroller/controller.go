@@ -66,7 +66,7 @@ func (r *BaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return result.NewResultShortRequeueDelay().GetCtrlRuntimeResult(), nil
 	}
 
-	log.Progressf("Reconciling resource %v, GVK %v, generation %v", req.NamespacedName, gvk, cr.GetGeneration())
+	log.Debugf("Reconciling resource %v, GVK %v, generation %v", req.NamespacedName, gvk, cr.GetGeneration())
 
 	// Create a new context for this reconcile loop
 	rctx := controllerspi.ReconcileContext{
@@ -115,7 +115,7 @@ func (r *BaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	// The resource has been reconciled.
-	log.Infof("Successfully reconciled resource %v", req.NamespacedName)
+	log.Debugf("Successfully reconciled resource %v", req.NamespacedName)
 	return ctrl.Result{}, nil
 }
 

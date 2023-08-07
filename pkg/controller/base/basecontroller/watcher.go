@@ -21,7 +21,7 @@ func (w *WatchContext) Watch() error {
 	p := predicate.Funcs{
 		// a watched resource just got created
 		CreateFunc: func(e event.CreateEvent) bool {
-			w.log.Infof("Watcher `create` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
+			w.log.Debugf("Watcher `create` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
 			return w.shouldReconcile(w.resourceBeingReconciled, e.Object, controllerspi.Created)
 		},
 		// a watched resource just got updated
@@ -29,12 +29,12 @@ func (w *WatchContext) Watch() error {
 			if e.ObjectOld == e.ObjectNew {
 				return false
 			}
-			w.log.Infof("Watcher `update` event occurred for watched  resource %s/%s", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
+			w.log.Debugf("Watcher `update` event occurred for watched  resource %s/%s", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
 			return w.shouldReconcile(w.resourceBeingReconciled, e.ObjectNew, controllerspi.Updated)
 		},
 		// a watched resource just got deleted
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			w.log.Infof("Watcher `delete` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
+			w.log.Debugf("Watcher `delete` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
 			return w.shouldReconcile(w.resourceBeingReconciled, e.Object, controllerspi.Deleted)
 		},
 	}
