@@ -167,14 +167,12 @@ func (r Reconciler) checkIfRequeueNeededWhenGenerationsMatch(module *moduleapi.M
 	// every resource that uses watches will reconcile (like Module).
 	// We can possibly remove this code when we optimize the module handlers. so they only call Helm
 	// when needed by using a hash on the manifests, or something like that.
-	//if watchEvent.WatchEventType == controllerspi.Created {
-	//	// Get the watched resource
-	//
-	//	if watchEvent.WatchedResource.GetCreationTimestamp().Time.Add(time.Second * 60).Before(time.Now()) {
-	//		return result.NewResult()
-	//	}
-	//}
-	//
+	if watchEvent.WatchEventType == controllerspi.Created {
+		if watchEvent.WatchedResource.GetCreationTimestamp().Time.Add(time.Second * 60).Before(time.Now()) {
+			return result.NewResult()
+		}
+	}
+
 	// At this point, there was an event that happened after the last reconcile, so another reconcile needs to be done
 	// Reset the last reconciled generation to zero so that we go through the normal reconcile loop
 	// Also, reset the state machine tracker for this CR generation
