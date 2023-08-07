@@ -72,7 +72,7 @@ func (w *WatchContext) shouldReconcile(resourceBeingReconciled types.NamespacedN
 	// Ignore the Create event if the creation timestamp is older than 30 seconds, otherwise
 	// every resource that uses watches will reconcile (like Module)
 	if ev == controllerspi.Created {
-		if watchedResource.GetCreationTimestamp().Time.Add(time.Second * 30).Before(time.Now()) {
+		if watchedResource.GetCreationTimestamp().Time.Add(time.Second * 60).Before(time.Now()) {
 			return false
 		}
 	}
