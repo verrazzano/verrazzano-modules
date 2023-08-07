@@ -30,8 +30,8 @@ func TestNewResultShortRequeueDelay(t *testing.T) {
 	asserts := assert.New(t)
 	r := NewResultShortRequeueDelay()
 	asserts.True(r.ShouldRequeue())
-	asserts.GreaterOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(1) * time.Second).Seconds())
-	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(2) * time.Second).Seconds())
+	asserts.GreaterOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(200) * time.Millisecond).Seconds())
+	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(500) * time.Millisecond).Seconds())
 }
 
 // TestNewResultShortRequeueDelayWithError tests the NewResultShortRequeueDelayWithError method
@@ -49,8 +49,8 @@ func TestNewResultShortRequeueDelayWithError(t *testing.T) {
 	asserts.True(r.ShouldRequeue())
 	asserts.True(r.IsError())
 	asserts.Error(r.GetError())
-	asserts.GreaterOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(1) * time.Second).Seconds())
-	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(2) * time.Second).Seconds())
+	asserts.GreaterOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(200) * time.Millisecond).Seconds())
+	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(500) * time.Millisecond).Seconds())
 }
 
 // TestNewResultShortRequeueDelayIfError tests the NewResultShortRequeueDelayIfError method
@@ -68,8 +68,8 @@ func TestNewResultShortRequeueDelayIfError(t *testing.T) {
 	asserts.True(r.ShouldRequeue())
 	asserts.True(r.IsError())
 	asserts.Error(r.GetError())
-	asserts.GreaterOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(1) * time.Second).Seconds())
-	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(2) * time.Second).Seconds())
+	asserts.GreaterOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(200) * time.Millisecond).Seconds())
+	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(500) * time.Millisecond).Seconds())
 }
 
 // TestNewResultRequeueDelay tests the NewResultRequeueDelay func for the following use case

@@ -52,8 +52,8 @@ func TestBuildShortDelay(t *testing.T) {
 	asserts.False(r.IsError())
 	asserts.NoError(r.GetError())
 	asserts.True(r.ShouldRequeue())
-	asserts.GreaterOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(1) * time.Second).Seconds())
-	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(2) * time.Second).Seconds())
+	asserts.GreaterOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(200) * time.Millisecond).Seconds())
+	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(500) * time.Millisecond).Seconds())
 }
 
 // TestBuildDelay tests the Delay builder method
@@ -97,6 +97,6 @@ func TestBuildAll(t *testing.T) {
 	asserts.True(r.ShouldRequeue())
 	asserts.True(r.IsError())
 	asserts.Equal(err2, r.GetError())
-	asserts.GreaterOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(1) * time.Second).Seconds())
-	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(2) * time.Second).Seconds())
+	asserts.GreaterOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(200) * time.Millisecond).Seconds())
+	asserts.LessOrEqual(r.GetCtrlRuntimeResult().RequeueAfter.Seconds(), (time.Duration(500) * time.Millisecond).Seconds())
 }
