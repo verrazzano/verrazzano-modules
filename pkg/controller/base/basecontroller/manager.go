@@ -11,7 +11,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"time"
 )
 
 // CreateControllerAndAddItToManager creates the base controller and adds it to the manager.
@@ -21,7 +20,7 @@ func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controller
 		Scheme:                  mgr.GetScheme(),
 		layeredControllerConfig: controllerConfig,
 		watcherInitMap:          make(map[types.NamespacedName]bool),
-		watchEventTimestampMap:  make(map[types.NamespacedName]time.Time),
+		watchEvents:             make(map[types.NamespacedName]*controllerspi.WatchEvent),
 	}
 
 	// Create the controller and add it to the manager (Build does an implicit add)

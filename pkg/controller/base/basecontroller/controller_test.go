@@ -344,6 +344,7 @@ func newReconciler(c client.Client, controllerConfig ControllerConfig) *BaseReco
 		layeredControllerConfig: controllerConfig,
 		Controller:              fakeController{},
 		watcherInitMap:          make(map[types.NamespacedName]bool),
+		watchEvents:             make(map[types.NamespacedName]*controllerspi.WatchEvent),
 	}
 	return &reconciler
 }

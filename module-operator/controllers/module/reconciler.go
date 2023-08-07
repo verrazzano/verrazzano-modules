@@ -149,28 +149,32 @@ func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.S
 // something changed (the watched resource).  Determine if we need to reconcile
 // based on the watch event timestamps.
 func (r Reconciler) checkIfRequeueNeededWhenGenerationsMatch(module *moduleapi.Module) result.Result {
-	watchEventTime := r.BaseReconciler.GetWatchTimestamp(types.NamespacedName{Namespace: module.Namespace, Name: module.Name})
-	if watchEventTime == nil {
+	watchEvent := r.BaseReconciler.GetLastWatchEvent(types.NamespacedName{Namespace: module.Namespace, Name: module.Name})
+	if watchEvent == nil {
 		// no watch events occurred
 		return result.NewResult()
 	}
 
 	preInstallTime := statemachine.GetPreInstallTime(module)
-	if preInstallTime != nil && watchEventTime.Before(*preInstallTime) {
+	if preInstallTime != nil && watchEvent.EventTime.Before(*preInstallTime) {
 		// watch event occurred before pre-install, so we can ignore it
 		// since the pre-install and subsequent actions will use the latest resources
 		return result.NewResult()
 	}
 
-	// The watch event after the pre-install state of the current generation so reconcile needs to happen.
-	// If the event just happened, wait a few seconds to see if the CR is modified around the same time,
-	// in which case the next reconcile won't have matching generations and the normal reconcile will occur.
-	// This is just an optimization to allow normal reconcile flow (different generations) if the CR was
-	// modified at the same time as a watch event
-	if watchEventTime.Add(time.Second + 2).Before(time.Now()) {
-		return result.NewResultShortRequeueDelay()
-	}
-
+	// Controller runtime generates Create event for all watched event on startup.
+	// Ignore the Create event if the creation timestamp is older than 60 seconds, otherwise
+	// every resource that uses watches will reconcile (like Module).
+	// We can possibly remove this code when we optimize the module handlers. so they only call Helm
+	// when needed by using a hash on the manifests, or something like that.
+	//if watchEvent.WatchEventType == controllerspi.Created {
+	//	// Get the watched resource
+	//
+	//	if watchEvent.WatchedResource.GetCreationTimestamp().Time.Add(time.Second * 60).Before(time.Now()) {
+	//		return result.NewResult()
+	//	}
+	//}
+	//
 	// At this point, there was an event that happened after the last reconcile, so another reconcile needs to be done
 	// Reset the last reconciled generation to zero so that we go through the normal reconcile loop
 	// Also, reset the state machine tracker for this CR generation

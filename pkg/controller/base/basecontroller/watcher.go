@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 // Watch for a specific resource type
@@ -54,7 +53,6 @@ func (w *WatchContext) Watch() error {
 func (w *WatchContext) createReconcileEventHandler() handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(
 		func(a client.Object) []reconcile.Request {
-			w.reconciler.updateWatchTimestamp(w.resourceBeingReconciled)
 			requests := []reconcile.Request{}
 			requests = append(requests, reconcile.Request{
 				NamespacedName: w.resourceBeingReconciled})
@@ -63,18 +61,14 @@ func (w *WatchContext) createReconcileEventHandler() handler.EventHandler {
 }
 
 // If the watched resource event should cause reconcile then return true
-func (w *WatchContext) shouldReconcile(resourceBeingReconciled types.NamespacedName, watchedResource client.Object, ev controllerspi.WatchEvent) bool {
+func (w *WatchContext) shouldReconcile(resourceBeingReconciled types.NamespacedName, watchedResource client.Object, ev controllerspi.WatchEventType) bool {
 	if w.watchDescriptor.FuncShouldReconcile == nil {
 		return false
 	}
 
-	// Controller runtime generates Create event for all watched event on startup.
-	// Ignore the Create event if the creation timestamp is older than 30 seconds, otherwise
-	// every resource that uses watches will reconcile (like Module)
-	if ev == controllerspi.Created {
-		if watchedResource.GetCreationTimestamp().Time.Add(time.Second * 60).Before(time.Now()) {
-			return false
-		}
+	doReconcile := w.watchDescriptor.FuncShouldReconcile(resourceBeingReconciled, watchedResource, ev)
+	if doReconcile {
+		w.reconciler.recordWatchEvent(w.resourceBeingReconciled, watchedResource, ev)
 	}
-	return w.watchDescriptor.FuncShouldReconcile(resourceBeingReconciled, watchedResource, ev)
+	return doReconcile
 }

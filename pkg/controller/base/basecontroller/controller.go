@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"time"
 )
@@ -183,20 +184,25 @@ func (r *BaseReconciler) deleteFinalizer(log vzlog.VerrazzanoLogger, u *unstruct
 	return nil
 }
 
-// Update the map entry for the resource with the current time
-func (r *BaseReconciler) updateWatchTimestamp(nsn types.NamespacedName) {
+// updateWatchEventOccurrence Update the map entry for the resource with the current time
+func (r *BaseReconciler) recordWatchEvent(reconcilingResourceNSN types.NamespacedName, watchedResource client.Object, ev controllerspi.WatchEventType) {
 	r.watchMutex.Lock()
 	defer r.watchMutex.Unlock()
-	r.watchEventTimestampMap[nsn] = time.Now()
+	r.watchEvents[reconcilingResourceNSN] = &controllerspi.WatchEvent{
+		EventTime:           time.Now(),
+		ReconcilingResource: reconcilingResourceNSN,
+		WatchEventType:      ev,
+		WatchedResource:     watchedResource,
+	}
 }
 
-// GetWatchTimestamp gets the map entry for the resource
-func (r *BaseReconciler) GetWatchTimestamp(nsn types.NamespacedName) *time.Time {
+// GetLastWatchEvent gets the last WatchEvent for the resource
+func (r *BaseReconciler) GetLastWatchEvent(reconcilingResourceNSN types.NamespacedName) *controllerspi.WatchEvent {
 	r.watchMutex.Lock()
 	defer r.watchMutex.Unlock()
-	t, ok := r.watchEventTimestampMap[nsn]
+	ev, ok := r.watchEvents[reconcilingResourceNSN]
 	if !ok {
 		return nil
 	}
-	return &t
+	return ev
 }

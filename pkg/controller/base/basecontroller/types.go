@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sync"
-	"time"
 )
 
 // ControllerConfig specifies the config of the controller using this base controller
@@ -42,8 +41,8 @@ type BaseReconciler struct {
 	// watchContexts is the list of watchContexts, one for each watch
 	watchContexts []*WatchContext
 
-	// watchEventTimestampMap is used to record the latest watch event timestamp that caused a reconcile event
-	watchEventTimestampMap map[types.NamespacedName]time.Time
+	// watchEvents is used to record the latest watch event for a given resource being reconciled
+	watchEvents map[types.NamespacedName]*controllerspi.WatchEvent
 
 	// WatchMutex is used to control concurrent access the maps
 	watchMutex sync.Mutex
