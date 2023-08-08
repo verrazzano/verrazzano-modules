@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/basecontroller"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
@@ -104,8 +105,10 @@ func TestPreRemoveFinalizer(t *testing.T) {
 			scheme := initScheme()
 			clientBuilder := fakes.NewClientBuilder().WithScheme(scheme)
 			r := Reconciler{
-				Client:      clientBuilder.Build(),
-				Scheme:      initScheme(),
+				BaseReconciler: &basecontroller.BaseReconciler {
+					Client:     clientBuilder.Build(),
+					Scheme:     initScheme(),
+				},
 				ModuleControllerConfig: ModuleControllerConfig{ModuleHandlerInfo: test.moduleInfo},
 			}
 			uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
@@ -145,8 +148,10 @@ func TestPostRemoveFinalizer(t *testing.T) {
 	scheme := initScheme()
 	clientBuilder := fakes.NewClientBuilder().WithScheme(scheme)
 	r := Reconciler{
-		Client: clientBuilder.Build(),
-		Scheme: initScheme(),
+		BaseReconciler: &basecontroller.BaseReconciler {
+			Client:     clientBuilder.Build(),
+			Scheme:     initScheme(),
+		},
 	}
 
 	uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)

@@ -20,7 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -132,7 +131,7 @@ func TestPreWork(t *testing.T) {
 
 	res := handler.PreWork(ctx)
 	asserts.NoError(res.GetError())
-	asserts.Equal(ctrl.Result{Requeue: true, RequeueAfter: 1000000000}, res.GetCtrlRuntimeResult())
+	asserts.True(res.GetCtrlRuntimeResult().Requeue)
 
 	// fetch the Module and validate that the spec version has been set
 	err := cli.Get(context.TODO(), types.NamespacedName{Name: moduleName, Namespace: namespace}, module)

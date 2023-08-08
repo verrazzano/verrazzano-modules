@@ -8,6 +8,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sync"
+	"time"
 )
 
 // stateTracker keeps an in-memory state for a ModuleCR execute the state machine.
@@ -15,6 +16,9 @@ type stateTracker struct {
 	state state
 	gen   int64
 	key   string
+
+	// preInstallTime tracks the time right before preInstall is called
+	preInstallTime time.Time
 }
 
 // trackerMap has a map of trackers with key from VZ name, namespace, and UID.

@@ -34,7 +34,7 @@ func (b *builder) Delay(min int, max int, units time.Duration) Builder {
 }
 
 func (b *builder) ShortDelay() Builder {
-	return b.Delay(1, 2, time.Second)
+	return b.Delay(200, 500, time.Millisecond)
 }
 
 func (b *builder) Error(err error) Builder {

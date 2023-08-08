@@ -4,6 +4,7 @@
 package module
 
 import (
+	"context"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
@@ -12,6 +13,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"strings"
 	"time"
 
@@ -37,12 +39,13 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return result.NewResult()
 	}
 
+	handlerCtx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
+
 	if cr.Generation == cr.Status.LastSuccessfulGeneration {
-		return result.NewResult()
+		return r.checkIfRequeueNeededWhenGenerationsMatch(cr)
 	}
 
-	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
-	handler, res := r.getActionHandler(ctx, cr)
+	handler, res := r.getActionHandler(handlerCtx, cr)
 	if res.ShouldRequeue() {
 		return res
 	}
@@ -94,7 +97,7 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 }
 
 // getActionHandler must return one of the Module action handlers.
-func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, result.Result) {
+func (r *Reconciler) getActionHandler(handlerCtx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, result.Result) {
 	if !status.IsInstalled(cr) {
 		return r.ModuleHandlerInfo.InstallActionHandler, result.NewResult()
 	}
@@ -102,7 +105,7 @@ func (r *Reconciler) getActionHandler(ctx handlerspi.HandlerContext, cr *modulea
 	// return UpgradeAction only when the desired version is different from current
 	upgradeNeeded, err := funcIsUpgradeNeeded(cr.Spec.Version, cr.Status.LastSuccessfulVersion)
 	if err != nil {
-		ctx.Log.ErrorfThrottled("Failed checking if upgrade needed for Module %s/%s failed with error: %v\n", cr.Namespace, cr.Name, err)
+		handlerCtx.Log.ErrorfThrottled("Failed checking if upgrade needed for Module %s/%s failed with error: %v\n", cr.Namespace, cr.Name, err)
 		return nil, result.NewResultShortRequeueDelay()
 	}
 	if upgradeNeeded {
@@ -130,4 +133,54 @@ func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
 
 func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) result.Result {
 	return sm.Execute(ctx)
+}
+
+// checkIfRequeueNeededWhenGenerationsMatch determines if reconcile should be done
+// when the cr.Generation matches the status generation, which means a previous
+// reconcile successfully completed and updated the status generation.
+// However, even if the reconciliation (e.g. install) finishes,
+// reconcile might still get called a few times because controller-runtime can have
+// CR updates in its cache. Also, a watched resource may have triggered an event causing
+// reconcile to be called.  If the code was to continue to reconcile when it was really done,
+// then the update action would occur and the Module condition would have update reasons
+// instead of install reasons (e.g. InstallComplete).
+//
+// Therefore, we only re-reconcile if a watch triggered reconcile because
+// something changed (the watched resource).  Determine if we need to reconcile
+// based on the watch event timestamps.
+func (r Reconciler) checkIfRequeueNeededWhenGenerationsMatch(module *moduleapi.Module) result.Result {
+	watchEvent := r.BaseReconciler.GetLastWatchEvent(types.NamespacedName{Namespace: module.Namespace, Name: module.Name})
+	if watchEvent == nil {
+		// no watch events occurred
+		return result.NewResult()
+	}
+
+	preInstallTime := statemachine.GetPreInstallTime(module)
+	if preInstallTime != nil && watchEvent.EventTime.Before(*preInstallTime) {
+		// watch event occurred before pre-install, so we can ignore it
+		// since the pre-install and subsequent actions will use the latest resources
+		return result.NewResult()
+	}
+
+	// Controller runtime generates Create event for all watched event on startup.
+	// Ignore the Create event if the creation timestamp is older than 60 seconds, otherwise
+	// every resource that uses watches will reconcile (like Module).
+	// We can possibly remove this code when we optimize the module handlers. so they only call Helm
+	// when needed by using a hash on the manifests, or something like that.
+	if watchEvent.WatchEventType == controllerspi.Created {
+		if watchEvent.WatchedResource.GetCreationTimestamp().Time.Add(time.Second * 60).Before(time.Now()) {
+			return result.NewResult()
+		}
+	}
+
+	// At this point, there was an event that happened after the last reconcile, so another reconcile needs to be done
+	// Reset the last reconciled generation to zero so that we go through the normal reconcile loop
+	// Also, reset the state machine tracker for this CR generation
+	statemachine.DeleteTracker(module)
+	module.Status.LastSuccessfulGeneration = 0
+	err := r.Status().Update(context.TODO(), module)
+	if err != nil {
+		return result.NewResultShortRequeueDelayWithError(err)
+	}
+	return result.NewResultShortRequeueDelay()
 }

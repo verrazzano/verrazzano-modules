@@ -103,13 +103,10 @@ func TestConcurrentReconcile(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-
-	crList := r.GetControllerResources()
-	asserts.Len(crList, threadCount)
 }
 
 // TestReconciler tests that the layered controller Reconcile interface works alone
-// GIVEN a controller that implements Reconciler interface
+// GIVEN a controller that implements BaseReconciler interface
 // WHEN Reconcile is called
 // THEN ensure that the controller returns success and that the Reconcile method is called
 func TestReconciler(t *testing.T) {
@@ -159,14 +156,6 @@ func TestWatcher(t *testing.T) {
 	asserts.NoError(err)
 	asserts.False(res.Requeue)
 	asserts.True(watcher.called)
-
-	// Make sure the ModuleCR has been added to controller resources
-	crList := r.GetControllerResources()
-	asserts.Len(crList, 1)
-
-	r.removeControllerResource(crList[0])
-	crList = r.GetControllerResources()
-	asserts.Len(crList, 0)
 }
 
 // TestEnsureFinalizer tests that a finalizer is added to the ModuleCR
@@ -274,7 +263,7 @@ func TestDelete(t *testing.T) {
 }
 
 // TestReconcilerMissing tests that an error is returned when the reconciler implementation is missing
-// GIVEN a controller that implements Reconciler interface
+// GIVEN a controller that implements BaseReconciler interface
 // WHEN Reconcile is called
 // THEN ensure that the controller returns success
 func TestReconcilerMissing(t *testing.T) {
@@ -298,7 +287,7 @@ func TestReconcilerMissing(t *testing.T) {
 }
 
 // TestReconcilerGetObjectMissing tests that an error is returned
-// GIVEN a controller that implements Reconciler interface
+// GIVEN a controller that implements BaseReconciler interface
 // WHEN Reconcile is called and GetReconcileObject returns nil
 // THEN ensure that the controller returns and error
 func TestReconcilerGetObjectMissing(t *testing.T) {
@@ -324,7 +313,7 @@ func TestReconcilerGetObjectMissing(t *testing.T) {
 }
 
 // TestNotFound tests that the controller handles not found
-// GIVEN a controller that implements Reconciler interface
+// GIVEN a controller that implements BaseReconciler interface
 // WHEN Reconcile is called
 // THEN ensure that the controller returns success if ModuleCR doesn't exist
 func TestNotFound(t *testing.T) {
@@ -344,20 +333,18 @@ func TestNotFound(t *testing.T) {
 	// state and gen should never match
 	asserts.NoError(err)
 	asserts.False(res.Requeue)
-
-	crList := r.GetControllerResources()
-	asserts.Len(crList, 0)
 }
 
 // newReconciler creates a new reconciler for testing
-func newReconciler(c client.Client, controllerConfig ControllerConfig) *Reconciler {
+func newReconciler(c client.Client, controllerConfig ControllerConfig) *BaseReconciler {
 	scheme := newScheme()
-	reconciler := Reconciler{
-		Client:              c,
-		Scheme:              scheme,
-		ControllerConfig:    controllerConfig,
-		Controller:          fakeController{},
-		controllerResources: make(map[types.NamespacedName]bool),
+	reconciler := BaseReconciler{
+		Client:                  c,
+		Scheme:                  scheme,
+		layeredControllerConfig: controllerConfig,
+		Controller:              fakeController{},
+		watcherInitMap:          make(map[types.NamespacedName]bool),
+		watchEvents:             make(map[types.NamespacedName]*controllerspi.WatchEvent),
 	}
 	return &reconciler
 }
@@ -419,7 +406,7 @@ func (r *ReconcilerImpl) Reconcile(spictx controllerspi.ReconcileContext, u *uns
 func (r *WatcherImpl) GetWatchDescriptors() []controllerspi.WatchDescriptor {
 	r.called = true
 	return []controllerspi.WatchDescriptor{{
-		WatchKind:           source.Kind{Type: &moduleapi.Module{}},
+		WatchedResourceKind: source.Kind{Type: &moduleapi.Module{}},
 		FuncShouldReconcile: nil,
 	}}
 }

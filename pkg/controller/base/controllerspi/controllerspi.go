@@ -8,39 +8,63 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
 )
 
 // FuncShouldReconcile returns true if the watched object event should trigger reconcile
-type FuncShouldReconcile func(object client.Object, event WatchEvent) bool
+type FuncShouldReconcile func(reconciledResource types.NamespacedName, watchedObject client.Object, event WatchEventType) bool
 
 // FuncControllerEventFilter is the predicate event handler filter that returns true if the object should be reconciled.
 // This is needed to use same CR for multiple controllers
 type FuncControllerEventFilter func(cli client.Client, object client.Object) bool
 
-type WatchEvent int
+// WatchEventType is the type of watched event
+type WatchEventType int
 
 const (
 	// Created indicates the watched object was created
-	Created WatchEvent = iota
+	Created WatchEventType = iota
 
 	// Updated indicates the watched object was updated
-	Updated WatchEvent = iota
+	Updated WatchEventType = iota
 
 	// Deleted indicates the watched object was deleted
-	Deleted WatchEvent = iota
+	Deleted WatchEventType = iota
 )
 
 // WatchDescriptor described an object being watched
 type WatchDescriptor struct {
-	WatchKind source.Kind
+	// WatchedResourceKind is the kind of resource being watched
+	WatchedResourceKind source.Kind
+
+	// FuncShouldReconcile is called when watch event occurs to determine if CR should be reconciled
 	FuncShouldReconcile
+}
+
+// WatchEvent is an occurrence of a watch event
+type WatchEvent struct {
+	// WatchEventType is the type of watched event
+	WatchEventType
+
+	// EventTime is the time the event occurred
+	EventTime time.Time
+
+	// WatchedResource is the resource that caused the event
+	WatchedResource client.Object
+
+	// ReconcilingResource is the resource that is potentially being reconciled
+	ReconcilingResource types.NamespacedName
 }
 
 // ReconcileContext is a context has the dynamic context needed for a reconcile operation
 type ReconcileContext struct {
-	Log       vzlog.VerrazzanoLogger
+	// Log is the VerrazzanoLogger
+	Log vzlog.VerrazzanoLogger
+
+	// ClientCtx is the context used to make controller runtime client API calls
 	ClientCtx context.Context
 }
 

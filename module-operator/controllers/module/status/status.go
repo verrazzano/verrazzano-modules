@@ -30,6 +30,8 @@ var readyConditionMessages = map[moduleapi.ModuleConditionReason]string{
 	moduleapi.ReadyReasonUpgradeFailed:      "Failed upgrading Module `%s` as Helm release `%s/%s`: %v",
 }
 
+const timeFormat = "%d-%02d-%02dT%02d:%02d:%02dZ"
+
 // UpdateReadyConditionSucceeded updates the Ready condition when the module has succeeded
 func UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason) result.Result {
 	module.Status.LastSuccessfulVersion = module.Spec.Version
@@ -128,6 +130,14 @@ func GetReadyCondition(cr *moduleapi.Module) *moduleapi.ModuleCondition {
 
 func getTransitionTime() string {
 	t := time.Now().UTC()
-	return fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02dZ",
+	return fmt.Sprintf(timeFormat,
 		t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+}
+
+func ParseTime(timestamp string) (time.Time, error) {
+	t, err := time.Parse(timeFormat, timestamp)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return t, nil
 }
