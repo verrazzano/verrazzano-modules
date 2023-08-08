@@ -32,10 +32,11 @@ var readyConditionMessages = map[moduleapi.ModuleConditionReason]string{
 
 const timeFormat = "%d-%02d-%02dT%02d:%02d:%02dZ"
 
-// SetModuleStatusToInstalled sets the status to indicate that the module is already installed.
+// UpdateModuleStatusToInstalled updates the status to indicate that the module is already installed.
 // The module CR status doesn't exist and this module is already installed by Verrazzano
 // Update the module status to reflect that it is installed
-func SetModuleStatusToInstalled(moduleStatus *moduleapi.ModuleStatus, version string, gen int64) {
+// NOTE: this is a special case used when migrating from a Verrazzano installation (or other installations) to modules.
+func UpdateModuleStatusToInstalled(ctx handlerspi.HandlerContext, module *moduleapi.Module, version string, gen int64) result.Result {
 	cond := moduleapi.ModuleCondition{
 		Type:    moduleapi.ModuleConditionReady,
 		Reason:  moduleapi.ReadyReasonInstallSucceeded,
@@ -43,9 +44,15 @@ func SetModuleStatusToInstalled(moduleStatus *moduleapi.ModuleStatus, version st
 		Message: string(moduleapi.ReadyReasonInstallSucceeded),
 	}
 	cond.LastTransitionTime = getTransitionTime()
-	moduleStatus.Conditions = []moduleapi.ModuleCondition{cond}
-	moduleStatus.LastSuccessfulVersion = version
-	moduleStatus.LastSuccessfulGeneration = gen
+	module.Status.Conditions = []moduleapi.ModuleCondition{cond}
+	module.Status.LastSuccessfulVersion = version
+	module.Status.LastSuccessfulGeneration = gen
+
+	if err := ctx.Client.Status().Update(context.TODO(), module); err != nil {
+		return result.NewResultShortRequeueDelay()
+	}
+	// intentionally requeue so the reconciler gets called again
+	return result.NewResultShortRequeueDelay()
 }
 
 // UpdateReadyConditionSucceeded updates the Ready condition when the module has succeeded
