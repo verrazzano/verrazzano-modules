@@ -44,6 +44,11 @@ func TestLoadHelmInfo(t *testing.T) {
 			expectedDir: path.Join(rootDir, "modules/multus/4.0.2"),
 		},
 		{
+			name:        "test-metallb",
+			moduleName:  "metallb",
+			expectedDir: path.Join(rootDir, "modules/metallb/0.13.10"),
+		},
+		{
 			name:        "test-vz-test",
 			moduleName:  "helm",
 			expectedDir: path.Join(rootDir, "vz-test/0.1.0"),
@@ -154,6 +159,17 @@ func TestLookupChartLeafDirName(t *testing.T) {
 			moduleName:  "multus",
 			version:     "4.0.2",
 			expectedDir: "modules/multus/4.0.2",
+		},
+		{
+			name:        "test-metallb",
+			moduleName:  "metallb",
+			expectedDir: "modules/metallb/0.13.10",
+		},
+		{
+			name:        "test-metallb-version",
+			moduleName:  "metallb",
+			version:     "v0.13.10",
+			expectedDir: "modules/metallb/0.13.10",
 		},
 		{
 			name:        "test-vz-test",

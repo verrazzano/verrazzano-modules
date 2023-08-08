@@ -53,6 +53,11 @@ func lookupChartLeafDirName(mod *moduleapi.Module) string {
 	var dir string
 	version := strings.TrimPrefix(mod.Spec.Version, "v")
 	switch mod.Spec.ModuleName {
+	case string(moduleapi.MetallbModuleClass):
+		if version == "" {
+			version = "0.13.10"
+		}
+		dir = filepath.Join("modules/metallb", version)
 	case string(moduleapi.CalicoModuleClass):
 		if version == "" {
 			version = "3.25.1"

@@ -10,6 +10,7 @@ coverage.xml
 module-operator/manifests/charts/modules/calico
 module-operator/manifests/charts/modules/oci-ccm
 module-operator/manifests/charts/modules/multus
+module-operator/manifests/charts/modules/metallb
 module-operator/module-operator
 
 tools/copyright/test
