@@ -26,7 +26,19 @@ func (r Reconciler) PreRemoveFinalizer(spictx controllerspi.ReconcileContext, u 
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		return result.NewResult()
 	}
-	return r.reconcileAction(spictx, cr, r.ModuleHandlerInfo.DeleteActionHandler)
+
+	// Initialize the handler context
+	handlerCtx, res := r.initHandlerCtx(spictx, cr)
+	if res.ShouldRequeue() {
+		return res
+	}
+
+	// Execute the state machine
+	sm := statemachine.StateMachine{
+		Handler: r.ModuleHandlerInfo.DeleteActionHandler,
+		CR:      cr,
+	}
+	return funcExecuteStateMachine(handlerCtx, sm)
 }
 
 // PostRemoveFinalizer is called after the finalizer is successfully removed.
