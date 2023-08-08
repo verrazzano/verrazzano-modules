@@ -56,7 +56,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		}
 	}
 
-	// Get the action handler then finish the reconcile
+	// Get the action handler then finish reconcile
 	handler, res := r.getActionHandler(handlerCtx, cr)
 	if res.ShouldRequeue() {
 		return res
@@ -74,9 +74,7 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 		cr.Spec.TargetNamespace = cr.Namespace
 	}
 
-	var err error
-
-	// Temp hack to support VPO integration.  There is no Helm release for VPO module, but status update depends on it
+	// Needed to support VPO integration.  There is no Helm release for VPO module, but status update depends on it
 	// so for now use module name/ns.
 	helmInfo := handlerspi.HelmInfo{
 		HelmRelease: &handlerspi.HelmRelease{
@@ -86,6 +84,7 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 	}
 	if !ignoreHelmInfo {
 		// Load the helm information needed by the handler
+		var err error
 		helmInfo, err = funcLoadHelmInfo(cr)
 		if err != nil {
 			if strings.Contains(err.Error(), "FileNotFound") {
