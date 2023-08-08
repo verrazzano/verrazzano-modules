@@ -41,10 +41,22 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 
 	handlerCtx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
 
+	// If the spec has already been reconciled, see if something else changed
+	// that needs to be reconciled
 	if cr.Generation == cr.Status.LastSuccessfulGeneration {
 		return r.checkIfRequeueNeededWhenGenerationsMatch(cr)
 	}
 
+	// Check if this module was pre-installed by an external actor, like Verrazzano
+	// This is needed for the non-module (Verrazzano component) to module upgrade case.
+	if r.ModuleHandlerInfo.MigrationHandler != nil {
+		res := r.ModuleHandlerInfo.MigrationHandler.UpdateStatusIfAlreadyInstalled(handlerCtx)
+		if res.ShouldRequeue() {
+			return res
+		}
+	}
+
+	// Get the action handler then finish the reconcile
 	handler, res := r.getActionHandler(handlerCtx, cr)
 	if res.ShouldRequeue() {
 		return res
