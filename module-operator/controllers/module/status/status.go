@@ -32,6 +32,29 @@ var readyConditionMessages = map[moduleapi.ModuleConditionReason]string{
 
 const timeFormat = "%d-%02d-%02dT%02d:%02d:%02dZ"
 
+// UpdateModuleStatusToInstalled updates the status to indicate that the module is already installed.
+// The module CR status doesn't exist and this module is already installed by Verrazzano
+// Update the module status to reflect that it is installed
+// NOTE: this is a special case used when migrating from a Verrazzano installation (or other installations) to modules.
+func UpdateModuleStatusToInstalled(ctx handlerspi.HandlerContext, module *moduleapi.Module, version string, gen int64) result.Result {
+	cond := moduleapi.ModuleCondition{
+		Type:    moduleapi.ModuleConditionReady,
+		Reason:  moduleapi.ReadyReasonInstallSucceeded,
+		Status:  corev1.ConditionTrue,
+		Message: string(moduleapi.ReadyReasonInstallSucceeded),
+	}
+	cond.LastTransitionTime = getTransitionTime()
+	module.Status.Conditions = []moduleapi.ModuleCondition{cond}
+	module.Status.LastSuccessfulVersion = version
+	module.Status.LastSuccessfulGeneration = gen
+
+	if err := ctx.Client.Status().Update(context.TODO(), module); err != nil {
+		return result.NewResultShortRequeueDelay()
+	}
+	// intentionally requeue so the reconciler gets called again
+	return result.NewResultShortRequeueDelay()
+}
+
 // UpdateReadyConditionSucceeded updates the Ready condition when the module has succeeded
 func UpdateReadyConditionSucceeded(ctx handlerspi.HandlerContext, module *moduleapi.Module, reason moduleapi.ModuleConditionReason) result.Result {
 	module.Status.LastSuccessfulVersion = module.Spec.Version
@@ -132,12 +155,4 @@ func getTransitionTime() string {
 	t := time.Now().UTC()
 	return fmt.Sprintf(timeFormat,
 		t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
-}
-
-func ParseTime(timestamp string) (time.Time, error) {
-	t, err := time.Parse(timeFormat, timestamp)
-	if err != nil {
-		return time.Time{}, err
-	}
-	return t, nil
 }

@@ -39,12 +39,28 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return result.NewResult()
 	}
 
-	handlerCtx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log}
+	// Initialize the handler context
+	handlerCtx, res := r.initHandlerCtx(spictx, cr)
+	if res.ShouldRequeue() {
+		return res
+	}
 
+	// Check if this module was pre-installed by an external actor, like Verrazzano
+	// This is needed for the non-module (Verrazzano component) to module upgrade case.
+	if r.ModuleHandlerInfo.MigrationHandler != nil {
+		res := r.ModuleHandlerInfo.MigrationHandler.UpdateStatusIfAlreadyInstalled(handlerCtx)
+		if res.ShouldRequeue() {
+			return res
+		}
+	}
+
+	// If the spec has already been reconciled, see if something else changed
+	// that needs to be reconciled
 	if cr.Generation == cr.Status.LastSuccessfulGeneration {
 		return r.checkIfRequeueNeededWhenGenerationsMatch(cr)
 	}
 
+	// Get the action handler
 	handler, res := r.getActionHandler(handlerCtx, cr)
 	if res.ShouldRequeue() {
 		return res
@@ -53,18 +69,22 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return result.NewResultShortRequeueDelay()
 	}
 
-	return r.reconcileAction(spictx, cr, handler)
+	// Execute the state machine
+	sm := statemachine.StateMachine{
+		Handler: handler,
+		CR:      cr,
+	}
+	return funcExecuteStateMachine(handlerCtx, sm)
 }
 
-// reconcileAction reconciles the Module CR for a particular action
-func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *moduleapi.Module, handler handlerspi.StateMachineHandler) result.Result {
+// initHandlerCtx initializes the handler context
+func (r Reconciler) initHandlerCtx(spictx controllerspi.ReconcileContext, cr *moduleapi.Module) (handlerspi.HandlerContext, result.Result) {
+	// Default the target namespace to the cr namespace
 	if cr.Spec.TargetNamespace == "" {
 		cr.Spec.TargetNamespace = cr.Namespace
 	}
 
-	var err error
-
-	// Temp hack to support VPO integration.  There is no Helm release for VPO module, but status update depends on it
+	// Needed to support VPO integration.  There is no Helm release for VPO module, but status update depends on it
 	// so for now use module name/ns.
 	helmInfo := handlerspi.HelmInfo{
 		HelmRelease: &handlerspi.HelmRelease{
@@ -74,26 +94,21 @@ func (r Reconciler) reconcileAction(spictx controllerspi.ReconcileContext, cr *m
 	}
 	if !ignoreHelmInfo {
 		// Load the helm information needed by the handler
+		var err error
 		helmInfo, err = funcLoadHelmInfo(cr)
 		if err != nil {
 			if strings.Contains(err.Error(), "FileNotFound") {
 				spictx.Log.Errorf("Failed loading file information: %v", err)
-				return result.NewResultRequeueDelay(10, 15, time.Second)
+				return handlerspi.HandlerContext{}, result.NewResultRequeueDelay(10, 15, time.Second)
 			}
 			err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
-			return result.NewResultShortRequeueDelayIfError(err)
+			return handlerspi.HandlerContext{}, result.NewResultShortRequeueDelayIfError(err)
 		}
 	}
 
 	// Initialize the handler context
-	ctx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log, CR: cr, HelmInfo: helmInfo}
-
-	// Execute the state machine
-	sm := statemachine.StateMachine{
-		Handler: handler,
-		CR:      cr,
-	}
-	return funcExecuteStateMachine(ctx, sm)
+	handlerCtx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log, CR: cr, HelmInfo: helmInfo}
+	return handlerCtx, result.NewResult()
 }
 
 // getActionHandler must return one of the Module action handlers.
