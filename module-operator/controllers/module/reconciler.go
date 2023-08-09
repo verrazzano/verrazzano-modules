@@ -39,12 +39,6 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return result.NewResult()
 	}
 
-	// If the spec has already been reconciled, see if something else changed
-	// that needs to be reconciled
-	if cr.Generation == cr.Status.LastSuccessfulGeneration {
-		return r.checkIfRequeueNeededWhenGenerationsMatch(cr)
-	}
-
 	// Initialize the handler context
 	handlerCtx, res := r.initHandlerCtx(spictx, cr)
 	if res.ShouldRequeue() {
@@ -58,6 +52,12 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		if res.ShouldRequeue() {
 			return res
 		}
+	}
+
+	// If the spec has already been reconciled, see if something else changed
+	// that needs to be reconciled
+	if cr.Generation == cr.Status.LastSuccessfulGeneration {
+		return r.checkIfRequeueNeededWhenGenerationsMatch(cr)
 	}
 
 	// Get the action handler
