@@ -69,11 +69,6 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		return result.NewResultShortRequeueDelay()
 	}
 
-	// Default the target namespace to the cr namespace
-	if cr.Spec.TargetNamespace == "" {
-		cr.Spec.TargetNamespace = cr.Namespace
-	}
-
 	// Execute the state machine
 	sm := statemachine.StateMachine{
 		Handler: handler,
@@ -84,6 +79,11 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 
 // initHandlerCtx initializes the handler context
 func (r Reconciler) initHandlerCtx(spictx controllerspi.ReconcileContext, cr *moduleapi.Module) (handlerspi.HandlerContext, result.Result) {
+	// Default the target namespace to the cr namespace
+	if cr.Spec.TargetNamespace == "" {
+		cr.Spec.TargetNamespace = cr.Namespace
+	}
+
 	// Needed to support VPO integration.  There is no Helm release for VPO module, but status update depends on it
 	// so for now use module name/ns.
 	helmInfo := handlerspi.HelmInfo{
