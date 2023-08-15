@@ -21,7 +21,7 @@ func (w *WatchContext) Watch() error {
 		// a watched resource just got created
 		CreateFunc: func(e event.CreateEvent) bool {
 			w.log.Debugf("Watcher `create` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
-			return w.shouldReconcile(w.resourceBeingReconciled, e.Object, controllerspi.Created)
+			return w.shouldReconcile(w.resourceBeingReconciled, e.Object, nil, controllerspi.Created)
 		},
 		// a watched resource just got updated
 		UpdateFunc: func(e event.UpdateEvent) bool {
@@ -29,12 +29,12 @@ func (w *WatchContext) Watch() error {
 				return false
 			}
 			w.log.Debugf("Watcher `update` event occurred for watched  resource %s/%s", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName())
-			return w.shouldReconcile(w.resourceBeingReconciled, e.ObjectNew, controllerspi.Updated)
+			return w.shouldReconcile(w.resourceBeingReconciled, e.ObjectNew, e.ObjectOld, controllerspi.Updated)
 		},
 		// a watched resource just got deleted
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			w.log.Debugf("Watcher `delete` occurred for watched resource %s/%s", e.Object.GetNamespace(), e.Object.GetName())
-			return w.shouldReconcile(w.resourceBeingReconciled, e.Object, controllerspi.Deleted)
+			return w.shouldReconcile(w.resourceBeingReconciled, e.Object, nil, controllerspi.Deleted)
 		},
 	}
 	// return a Watch with the predicate that is called in the future when a resource
@@ -61,14 +61,14 @@ func (w *WatchContext) createReconcileEventHandler() handler.EventHandler {
 }
 
 // If the watched resource event should cause reconcile then return true
-func (w *WatchContext) shouldReconcile(resourceBeingReconciled types.NamespacedName, watchedResource client.Object, ev controllerspi.WatchEventType) bool {
+func (w *WatchContext) shouldReconcile(resourceBeingReconciled types.NamespacedName, newWatchedObject client.Object, oldWatchedObject client.Object, ev controllerspi.WatchEventType) bool {
 	if w.watchDescriptor.FuncShouldReconcile == nil {
 		return false
 	}
 
-	doReconcile := w.watchDescriptor.FuncShouldReconcile(resourceBeingReconciled, watchedResource, ev)
+	doReconcile := w.watchDescriptor.FuncShouldReconcile(resourceBeingReconciled, newWatchedObject, oldWatchedObject, ev)
 	if doReconcile {
-		w.reconciler.recordWatchEvent(w.resourceBeingReconciled, watchedResource, ev)
+		w.reconciler.recordWatchEvent(w.resourceBeingReconciled, newWatchedObject, ev)
 	}
 	return doReconcile
 }

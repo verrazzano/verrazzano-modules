@@ -15,7 +15,7 @@ import (
 )
 
 // FuncShouldReconcile returns true if the watched object event should trigger reconcile
-type FuncShouldReconcile func(reconciledResource types.NamespacedName, watchedObject client.Object, event WatchEventType) bool
+type FuncShouldReconcile func(reconciledResource types.NamespacedName, newWatchedObject client.Object, oldWatchedObject client.Object, event WatchEventType) bool
 
 // FuncControllerEventFilter is the predicate event handler filter that returns true if the object should be reconciled.
 // This is needed to use same CR for multiple controllers

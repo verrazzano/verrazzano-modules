@@ -29,7 +29,7 @@ func (r *Reconciler) GetDefaultWatchDescriptors() []controllerspi.WatchDescripto
 }
 
 // ShouldSecretTriggerReconcile returns true if reconcile should be done in response to a Secret lifecycle event
-func (r *Reconciler) ShouldSecretTriggerReconcile(moduleNSN types.NamespacedName, secret client.Object, _ controllerspi.WatchEventType) bool {
+func (r *Reconciler) ShouldSecretTriggerReconcile(moduleNSN types.NamespacedName, secret client.Object, _ client.Object, _ controllerspi.WatchEventType) bool {
 	if secret.GetNamespace() != moduleNSN.Namespace {
 		return false
 	}
@@ -37,7 +37,7 @@ func (r *Reconciler) ShouldSecretTriggerReconcile(moduleNSN types.NamespacedName
 }
 
 // ShouldConfigMapTriggerReconcile returns true if reconcile should be done in response to a Secret lifecycle event
-func (r *Reconciler) ShouldConfigMapTriggerReconcile(moduleNSN types.NamespacedName, cm client.Object, _ controllerspi.WatchEventType) bool {
+func (r *Reconciler) ShouldConfigMapTriggerReconcile(moduleNSN types.NamespacedName, cm client.Object, _ client.Object, _ controllerspi.WatchEventType) bool {
 	if cm.GetNamespace() != moduleNSN.Namespace {
 		return false
 	}
