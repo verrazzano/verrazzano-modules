@@ -82,8 +82,7 @@ func TestWatch(t *testing.T) {
 				controller:              c,
 				log:                     vzlog.DefaultLogger(),
 				resourceBeingReconciled: nsn,
-				reconciler: newReconciler(nil, ControllerConfig{
-				}),
+				reconciler:              newReconciler(nil, ControllerConfig{}),
 				watchDescriptor: controllerspi.WatchDescriptor{
 					WatchedResourceKind: source.Kind{Type: &moduleapi.Module{}},
 					FuncShouldReconcile: c.shouldReconcile,
@@ -114,7 +113,7 @@ func (w watchController) Watch(src source.Source, eventhandler handler.EventHand
 	return nil
 }
 
-func (w watchController) shouldReconcile(resourceBeingReconciled types.NamespacedName, object client.Object, event controllerspi.WatchEventType) bool {
+func (w watchController) shouldReconcile(cli client.Client, event controllerspi.WatchEvent) bool {
 	return w.predicate
 }
 
