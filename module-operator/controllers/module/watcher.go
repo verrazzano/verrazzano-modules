@@ -13,6 +13,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+type configType string
+
+const (
+	secretType    = "secretType"
+	configMapType = "configMapType"
+)
+
 // GetDefaultWatchDescriptors returns the list of WatchDescriptors for objects being watched by the Module
 // Always for secrets and configmaps since they may contain module configuration
 func (r *Reconciler) GetDefaultWatchDescriptors() []controllerspi.WatchDescriptor {
@@ -29,34 +36,34 @@ func (r *Reconciler) GetDefaultWatchDescriptors() []controllerspi.WatchDescripto
 }
 
 // ShouldSecretTriggerReconcile returns true if reconcile should be done in response to a Secret lifecycle event
-func (r *Reconciler) ShouldSecretTriggerReconcile(moduleNSN types.NamespacedName, secret client.Object, _ controllerspi.WatchEventType) bool {
-	if secret.GetNamespace() != moduleNSN.Namespace {
+func (r *Reconciler) ShouldSecretTriggerReconcile(cli client.Client, wev controllerspi.WatchEvent) bool {
+	if wev.NewWatchedObject.GetNamespace() != wev.ReconcilingResource.Namespace {
 		return false
 	}
-	return r.shouldReconcile(moduleNSN, secret.GetName(), "")
+	return r.shouldReconcile(wev.ReconcilingResource, wev.NewWatchedObject.GetName(), secretType)
 }
 
 // ShouldConfigMapTriggerReconcile returns true if reconcile should be done in response to a Secret lifecycle event
-func (r *Reconciler) ShouldConfigMapTriggerReconcile(moduleNSN types.NamespacedName, cm client.Object, _ controllerspi.WatchEventType) bool {
-	if cm.GetNamespace() != moduleNSN.Namespace {
+func (r *Reconciler) ShouldConfigMapTriggerReconcile(cli client.Client, wev controllerspi.WatchEvent) bool {
+	if wev.NewWatchedObject.GetNamespace() != wev.ReconcilingResource.Namespace {
 		return false
 	}
-	return r.shouldReconcile(moduleNSN, cm.GetName(), "")
+	return r.shouldReconcile(wev.ReconcilingResource, wev.NewWatchedObject.GetName(), configMapType)
 }
 
 // shouldReconcile returns true if reconcile should be done in response to a Secret or ConfigMap lifecycle event
 // Only reconcile if this module has those secret or configmap names in the module spec
-func (r *Reconciler) shouldReconcile(moduleNSN types.NamespacedName, secretName string, cmName string) bool {
+func (r *Reconciler) shouldReconcile(moduleNSN types.NamespacedName, resName string, cType configType) bool {
 	module := moduleapi.Module{}
 	if err := r.Get(context.TODO(), moduleNSN, &module); err != nil {
 		return false
 	}
 	// Check if the secret is in the valuesFrom
 	for _, vf := range module.Spec.ValuesFrom {
-		if vf.SecretRef != nil && secretName != "" && vf.SecretRef.Name == secretName {
+		if vf.SecretRef != nil && cType != secretType && vf.SecretRef.Name == resName {
 			return true
 		}
-		if vf.ConfigMapRef != nil && cmName != "" && vf.ConfigMapRef.Name == cmName {
+		if vf.ConfigMapRef != nil && cType != configMapType && vf.ConfigMapRef.Name == resName {
 			return true
 		}
 	}

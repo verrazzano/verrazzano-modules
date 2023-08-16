@@ -15,9 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 // Reconcile the resource
@@ -185,15 +183,10 @@ func (r *BaseReconciler) deleteFinalizer(log vzlog.VerrazzanoLogger, u *unstruct
 }
 
 // updateWatchEventOccurrence Update the map entry for the resource with the current time
-func (r *BaseReconciler) recordWatchEvent(reconcilingResourceNSN types.NamespacedName, watchedResource client.Object, ev controllerspi.WatchEventType) {
+func (r *BaseReconciler) recordWatchEvent(wev controllerspi.WatchEvent) {
 	r.watchMutex.Lock()
 	defer r.watchMutex.Unlock()
-	r.watchEvents[reconcilingResourceNSN] = &controllerspi.WatchEvent{
-		EventTime:           time.Now(),
-		ReconcilingResource: reconcilingResourceNSN,
-		WatchEventType:      ev,
-		WatchedResource:     watchedResource,
-	}
+	r.watchEvents[wev.ReconcilingResource] = &wev
 }
 
 // GetLastWatchEvent gets the last WatchEvent for the resource
