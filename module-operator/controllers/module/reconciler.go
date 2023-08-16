@@ -183,7 +183,7 @@ func (r Reconciler) checkIfRequeueNeededWhenGenerationsMatch(module *moduleapi.M
 	// We can possibly remove this code when we optimize the module handlers. so they only call Helm
 	// when needed by using a hash on the manifests, or something like that.
 	if watchEvent.WatchEventType == controllerspi.Created {
-		if watchEvent.WatchedResource.GetCreationTimestamp().Time.Add(time.Second * 60).Before(time.Now()) {
+		if watchEvent.NewWatchedObject.GetCreationTimestamp().Time.Add(time.Second * 60).Before(time.Now()) {
 			return result.NewResult()
 		}
 	}

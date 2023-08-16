@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"time"
 )
 
 // Watch for a specific resource type
@@ -66,9 +67,16 @@ func (w *WatchContext) shouldReconcile(resourceBeingReconciled types.NamespacedN
 		return false
 	}
 
-	doReconcile := w.watchDescriptor.FuncShouldReconcile(resourceBeingReconciled, newWatchedObject, oldWatchedObject, ev)
+	wev := controllerspi.WatchEvent{
+		WatchEventType:      ev,
+		EventTime:           time.Now(),
+		NewWatchedObject:    newWatchedObject,
+		OldWatchedObject:    oldWatchedObject,
+		ReconcilingResource: resourceBeingReconciled,
+	}
+	doReconcile := w.watchDescriptor.FuncShouldReconcile(w.reconciler.Client, wev)
 	if doReconcile {
-		w.reconciler.recordWatchEvent(w.resourceBeingReconciled, newWatchedObject, ev)
+		w.reconciler.recordWatchEvent(wev)
 	}
 	return doReconcile
 }
