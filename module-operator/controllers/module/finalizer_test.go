@@ -8,11 +8,11 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/basecontroller"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/basecontroller"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -105,9 +105,9 @@ func TestPreRemoveFinalizer(t *testing.T) {
 			scheme := initScheme()
 			clientBuilder := fakes.NewClientBuilder().WithScheme(scheme)
 			r := Reconciler{
-				BaseReconciler: &basecontroller.BaseReconciler {
-					Client:     clientBuilder.Build(),
-					Scheme:     initScheme(),
+				BaseReconciler: &basecontroller.BaseReconciler{
+					Client: clientBuilder.Build(),
+					Scheme: initScheme(),
 				},
 				ModuleControllerConfig: ModuleControllerConfig{ModuleHandlerInfo: test.moduleInfo},
 			}
@@ -148,9 +148,9 @@ func TestPostRemoveFinalizer(t *testing.T) {
 	scheme := initScheme()
 	clientBuilder := fakes.NewClientBuilder().WithScheme(scheme)
 	r := Reconciler{
-		BaseReconciler: &basecontroller.BaseReconciler {
-			Client:     clientBuilder.Build(),
-			Scheme:     initScheme(),
+		BaseReconciler: &basecontroller.BaseReconciler{
+			Client: clientBuilder.Build(),
+			Scheme: initScheme(),
 		},
 	}
 

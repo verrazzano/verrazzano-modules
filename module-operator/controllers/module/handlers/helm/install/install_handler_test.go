@@ -5,8 +5,8 @@ package install
 
 import (
 	"context"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

@@ -6,10 +6,10 @@ package module
 import (
 	"context"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"

@@ -21,8 +21,8 @@ package statemachine
 
 import (
 	"fmt"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )

@@ -5,7 +5,7 @@ package common
 
 import (
 	"context"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 
 	"github.com/verrazzano/verrazzano-modules/pkg/k8s/readiness"
 	v1 "k8s.io/api/apps/v1"

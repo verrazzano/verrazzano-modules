@@ -6,9 +6,9 @@ package module
 import (
 	"context"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/basecontroller"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/basecontroller"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

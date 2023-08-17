@@ -4,7 +4,7 @@
 package basecontroller
 
 import (
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"

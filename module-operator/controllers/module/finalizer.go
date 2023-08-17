@@ -5,9 +5,9 @@ package module
 
 import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/statemachine"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )

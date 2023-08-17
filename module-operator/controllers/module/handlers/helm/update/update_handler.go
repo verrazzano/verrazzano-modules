@@ -7,8 +7,8 @@ import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/common"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 )
 
 type HelmHandler struct {

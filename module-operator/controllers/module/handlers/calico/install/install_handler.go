@@ -5,8 +5,8 @@ package install
 
 import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/install"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 )
 
 type CalicoHandler struct {
