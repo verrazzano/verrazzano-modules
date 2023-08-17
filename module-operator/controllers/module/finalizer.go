@@ -5,9 +5,9 @@ package module
 
 import (
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/module-operator/internal/statemachine"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
+	statemachine2 "github.com/verrazzano/verrazzano-modules/pkg/controller/statemachine"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -34,7 +34,7 @@ func (r Reconciler) PreRemoveFinalizer(spictx controllerspi.ReconcileContext, u 
 	}
 
 	// Execute the state machine
-	sm := statemachine.StateMachine{
+	sm := statemachine2.StateMachine{
 		Handler: r.ModuleHandlerInfo.DeleteActionHandler,
 		CR:      cr,
 	}
@@ -45,5 +45,5 @@ func (r Reconciler) PreRemoveFinalizer(spictx controllerspi.ReconcileContext, u 
 // This method does garbage collection and other tasks that can never return an error
 func (r Reconciler) PostRemoveFinalizer(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) {
 	// Delete the tracker used for this CR
-	statemachine.DeleteTracker(u)
+	statemachine2.DeleteTracker(u)
 }

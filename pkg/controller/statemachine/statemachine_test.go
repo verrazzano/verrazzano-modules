@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	handlerspi2 "github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
@@ -80,7 +80,7 @@ func TestAllStatesSucceed(t *testing.T) {
 		CR:      cr,
 		Handler: h,
 	}
-	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger(), HelmInfo: handlerspi.HelmInfo{}}
+	ctx := handlerspi2.HandlerContext{Client: nil, Log: vzlog.DefaultLogger(), HelmInfo: handlerspi2.HelmInfo{}}
 
 	res := sm.Execute(ctx)
 	asserts.False(res.ShouldRequeue())
@@ -99,7 +99,7 @@ func TestAllStatesSucceed(t *testing.T) {
 // AND each subsequent state is not executed
 func TestEachStateRequeue(t *testing.T) {
 	asserts := assert.New(t)
-	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger(), HelmInfo: handlerspi.HelmInfo{}}
+	ctx := handlerspi2.HandlerContext{Client: nil, Log: vzlog.DefaultLogger(), HelmInfo: handlerspi2.HelmInfo{}}
 
 	// Check for a Requeue result for every state
 	for i, s := range getStatesInOrder() {
@@ -152,7 +152,7 @@ func TestEachStateRequeue(t *testing.T) {
 // AND each subsequent state is not executed
 func TestNotDone(t *testing.T) {
 	asserts := assert.New(t)
-	ctx := handlerspi.HandlerContext{Client: nil, Log: vzlog.DefaultLogger(), HelmInfo: handlerspi.HelmInfo{}}
+	ctx := handlerspi2.HandlerContext{Client: nil, Log: vzlog.DefaultLogger(), HelmInfo: handlerspi2.HelmInfo{}}
 
 	tests := []struct {
 		name          string
@@ -225,39 +225,39 @@ func (h handler) GetWorkName() string {
 	return "install"
 }
 
-func (h handler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, result.Result) {
+func (h handler) IsWorkNeeded(context handlerspi2.HandlerContext) (bool, result.Result) {
 	return h.procHandlerBool(isWorkNeeded)
 }
 
-func (h handler) PreWork(context handlerspi.HandlerContext) result.Result {
+func (h handler) PreWork(context handlerspi2.HandlerContext) result.Result {
 	return h.procHandlerCall(preWork)
 }
 
-func (h handler) PreWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
+func (h handler) PreWorkUpdateStatus(context handlerspi2.HandlerContext) result.Result {
 	return h.procHandlerCall(preWorkUpdateStatus)
 }
 
-func (h handler) DoWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
+func (h handler) DoWorkUpdateStatus(context handlerspi2.HandlerContext) result.Result {
 	return h.procHandlerCall(workUpdateStatus)
 }
 
-func (h handler) DoWork(context handlerspi.HandlerContext) result.Result {
+func (h handler) DoWork(context handlerspi2.HandlerContext) result.Result {
 	return h.procHandlerCall(doWork)
 }
 
-func (h handler) IsWorkDone(context handlerspi.HandlerContext) (bool, result.Result) {
+func (h handler) IsWorkDone(context handlerspi2.HandlerContext) (bool, result.Result) {
 	return h.procHandlerBool(isWorkDone)
 }
 
-func (h handler) PostWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
+func (h handler) PostWorkUpdateStatus(context handlerspi2.HandlerContext) result.Result {
 	return h.procHandlerCall(postWorkUpdateStatus)
 }
 
-func (h handler) PostWork(context handlerspi.HandlerContext) result.Result {
+func (h handler) PostWork(context handlerspi2.HandlerContext) result.Result {
 	return h.procHandlerCall(postWork)
 }
 
-func (h handler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) result.Result {
+func (h handler) WorkCompletedUpdateStatus(context handlerspi2.HandlerContext) result.Result {
 	return h.procHandlerCall(completedWorkUpdateStatus)
 }
 

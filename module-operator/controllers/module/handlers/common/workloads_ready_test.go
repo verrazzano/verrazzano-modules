@@ -6,7 +6,7 @@ package common
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"

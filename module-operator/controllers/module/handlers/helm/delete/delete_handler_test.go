@@ -5,8 +5,8 @@ package delete
 
 import (
 	"context"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	handlerspi2 "github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,7 +53,7 @@ func TestIsWorkNeeded(t *testing.T) {
 	// GIVEN a delete handler
 	// WHEN the IsWorkNeeded function is called
 	// THEN no error occurs and the function returns true and an empty ctrl.Result
-	needed, res := handler.IsWorkNeeded(handlerspi.HandlerContext{})
+	needed, res := handler.IsWorkNeeded(handlerspi2.HandlerContext{})
 	asserts.NoError(res.GetError())
 	asserts.True(needed)
 	asserts.Equal(result.NewResult(), res)
@@ -76,12 +76,12 @@ func TestPreWorkUpdateStatus(t *testing.T) {
 	}
 
 	cli := fake.NewClientBuilder().WithScheme(newScheme()).WithObjects(module).Build()
-	ctx := handlerspi.HandlerContext{
+	ctx := handlerspi2.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
-		HelmInfo: handlerspi.HelmInfo{
-			HelmRelease: &handlerspi.HelmRelease{
+		HelmInfo: handlerspi2.HelmInfo{
+			HelmRelease: &handlerspi2.HelmRelease{
 				Name:      releaseName,
 				Namespace: namespace,
 			},
@@ -101,7 +101,7 @@ func TestPreWork(t *testing.T) {
 	// GIVEN a delete handler
 	// WHEN the PreWork function is called
 	// THEN no error occurs and the function returns true and an empty ctrl.Result
-	res := handler.PreWork(handlerspi.HandlerContext{})
+	res := handler.PreWork(handlerspi2.HandlerContext{})
 	asserts.NoError(res.GetError())
 	asserts.Equal(result.NewResult(), res)
 }
@@ -123,12 +123,12 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 	}
 
 	cli := fake.NewClientBuilder().WithScheme(newScheme()).WithObjects(module).Build()
-	ctx := handlerspi.HandlerContext{
+	ctx := handlerspi2.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
-		HelmInfo: handlerspi.HelmInfo{
-			HelmRelease: &handlerspi.HelmRelease{
+		HelmInfo: handlerspi2.HelmInfo{
+			HelmRelease: &handlerspi2.HelmRelease{
 				Name:      releaseName,
 				Namespace: namespace,
 			},
@@ -202,12 +202,12 @@ func TestDoWork(t *testing.T) {
 	// WHEN the DoWork function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
 	cli := fake.NewClientBuilder().WithScheme(newScheme()).Build()
-	ctx := handlerspi.HandlerContext{
+	ctx := handlerspi2.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     &v1alpha1.Module{},
-		HelmInfo: handlerspi.HelmInfo{
-			HelmRelease: &handlerspi.HelmRelease{
+		HelmInfo: handlerspi2.HelmInfo{
+			HelmRelease: &handlerspi2.HelmRelease{
 				Name:      releaseName,
 				Namespace: namespace,
 			},
@@ -240,11 +240,11 @@ func TestIsWorkDone(t *testing.T) {
 	// WHEN the IsWorkDone function is called
 	// THEN no error occurs and the function returns false and an empty ctrl.Result
 	cli := fake.NewClientBuilder().WithScheme(newScheme()).Build()
-	ctx := handlerspi.HandlerContext{
+	ctx := handlerspi2.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
-		HelmInfo: handlerspi.HelmInfo{
-			HelmRelease: &handlerspi.HelmRelease{
+		HelmInfo: handlerspi2.HelmInfo{
+			HelmRelease: &handlerspi2.HelmRelease{
 				Name:      releaseName,
 				Namespace: namespace,
 			},
@@ -277,7 +277,7 @@ func TestPostWorkUpdateStatus(t *testing.T) {
 	// GIVEN a delete handler
 	// WHEN the PostWorkUpdateStatus function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	res := handler.PostWorkUpdateStatus(handlerspi.HandlerContext{})
+	res := handler.PostWorkUpdateStatus(handlerspi2.HandlerContext{})
 	asserts.NoError(res.GetError())
 	asserts.Equal(result.NewResult(), res)
 }
@@ -291,7 +291,7 @@ func TestPostWork(t *testing.T) {
 	// GIVEN a delete handler
 	// WHEN the PostWork function is called
 	// THEN no error occurs and the function returns an empty ctrl.Result
-	res := handler.PostWork(handlerspi.HandlerContext{})
+	res := handler.PostWork(handlerspi2.HandlerContext{})
 	asserts.NoError(res.GetError())
 	asserts.Equal(result.NewResult(), res)
 }
@@ -313,12 +313,12 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 	}
 
 	cli := fake.NewClientBuilder().WithScheme(newScheme()).WithObjects(module).Build()
-	ctx := handlerspi.HandlerContext{
+	ctx := handlerspi2.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
 		CR:     module,
-		HelmInfo: handlerspi.HelmInfo{
-			HelmRelease: &handlerspi.HelmRelease{
+		HelmInfo: handlerspi2.HelmInfo{
+			HelmRelease: &handlerspi2.HelmRelease{
 				Name:      releaseName,
 				Namespace: namespace,
 			},

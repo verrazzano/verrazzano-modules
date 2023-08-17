@@ -5,7 +5,7 @@ package module
 
 import (
 	"fmt"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"os"
 	"path/filepath"
 	"strings"

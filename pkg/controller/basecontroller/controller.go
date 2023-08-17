@@ -6,8 +6,8 @@ package basecontroller
 import (
 	"context"
 	"errors"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/base/controllerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
 	vzstring "github.com/verrazzano/verrazzano-modules/pkg/string"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"go.uber.org/zap"
