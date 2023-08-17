@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// stateTracker keeps an in-memory state for a ModuleCR execute the state machine.
+// stateTracker keeps an in-memory state needed to execute the state machine for a CR.
 type stateTracker struct {
 	state state
 	gen   int64
@@ -27,7 +27,7 @@ var trackerMap = make(map[string]*stateTracker)
 // trackerMutex is used to access the map concurrently.
 var trackerMutex sync.RWMutex
 
-// getTrackerKey gets the stateTracker key for a ModuleCR.
+// getTrackerKey gets the stateTracker key for a CR.
 func getTrackerKey(CR client.Object) string {
 	return fmt.Sprintf("%s-%s-%s", CR.GetNamespace(), CR.GetName(), string(CR.GetUID()))
 }

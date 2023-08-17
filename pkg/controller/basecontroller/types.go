@@ -19,6 +19,7 @@ type ControllerConfig struct {
 	controllerspi.Reconciler
 	controllerspi.EventFilter
 	controllerspi.Watcher
+	controller.Options
 }
 
 // BaseReconciler contains data needed to reconcile a DNS object.

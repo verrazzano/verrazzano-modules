@@ -11,6 +11,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
 // Specify the SPI interfaces that this controller implements
@@ -23,31 +24,37 @@ type Reconciler struct {
 
 type ModuleControllerConfig struct {
 	ControllerManager ctrlruntime.Manager
+	ControllerOptions *controller.Options
 	ModuleHandlerInfo handlerspi.ModuleHandlerInfo
 	ModuleClass       moduleapi.ModuleClassType
 	WatchDescriptors  []controllerspi.WatchDescriptor
 }
 
 // InitController start the  controller
-func InitController(modConfig ModuleControllerConfig) error {
-	controller := Reconciler{}
+func InitController(moduleConfig ModuleControllerConfig) error {
+	moduleController := Reconciler{}
 
+	opt := controller.Options{}
+	if moduleConfig.ControllerOptions != nil {
+		opt = *moduleConfig.ControllerOptions
+	}
 	// The config MUST contain at least the BaseReconciler.  Other spi interfaces are optional.
 	config := basecontroller.ControllerConfig{
-		Reconciler:  &controller,
-		Finalizer:   &controller,
-		EventFilter: &controller,
-		Watcher:     &controller,
+		Reconciler:  &moduleController,
+		Finalizer:   &moduleController,
+		EventFilter: &moduleController,
+		Watcher:     &moduleController,
+		Options:     opt,
 	}
 
-	baseReconciler, err := basecontroller.CreateControllerAndAddItToManager(modConfig.ControllerManager, config)
+	baseReconciler, err := basecontroller.CreateControllerAndAddItToManager(moduleConfig.ControllerManager, config)
 	if err != nil {
 		return err
 	}
-	controller.BaseReconciler = baseReconciler
+	moduleController.BaseReconciler = baseReconciler
 
 	// init other controller fields
-	controller.ModuleControllerConfig = modConfig
+	moduleController.ModuleControllerConfig = moduleConfig
 	return nil
 }
 
