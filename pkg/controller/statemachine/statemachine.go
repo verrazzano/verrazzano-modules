@@ -22,7 +22,7 @@ package statemachine
 import (
 	"fmt"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
-	handlerspi2 "github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
@@ -68,7 +68,7 @@ const (
 // StateMachine contains the fields needed to execute the state machine.
 type StateMachine struct {
 	CR      client.Object
-	Handler handlerspi2.StateMachineHandler
+	Handler handlerspi.StateMachineHandler
 }
 
 // Execute runs the state machine starting at the state stored in the tracker.
@@ -81,7 +81,7 @@ type StateMachine struct {
 // During state machine execution, a result may be returned to indicate that the
 // controller-runtime should requeue after a delay.  This is done when a handler is
 // waiting for a resource or some other condition.
-func (s *StateMachine) Execute(handlerContext handlerspi2.HandlerContext) result.Result {
+func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.Result {
 	tracker := ensureTracker(s.CR, stateInit)
 
 	workerName := s.Handler.GetWorkName()

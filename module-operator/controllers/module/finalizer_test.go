@@ -11,7 +11,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/basecontroller"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
-	handlerspi2 "github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,10 +25,10 @@ type finalizerHandler struct {
 	statemachineError  bool
 	statemachineCalled bool
 	loadHelmInfoErr    string
-	smHandler          handlerspi2.StateMachineHandler
+	smHandler          handlerspi.StateMachineHandler
 }
 
-var _ handlerspi2.StateMachineHandler = &handler{}
+var _ handlerspi.StateMachineHandler = &handler{}
 
 // TestPreRemoveFinalizer tests that the PreRemoveFinalizer implementation works correctly
 // GIVEN a Finalizer
@@ -46,7 +46,7 @@ func TestPreRemoveFinalizer(t *testing.T) {
 		specVersion                string
 		statusVersion              string
 		statusGeneration           int64
-		moduleInfo                 handlerspi2.ModuleHandlerInfo
+		moduleInfo                 handlerspi.ModuleHandlerInfo
 		expectedStatemachineCalled bool
 		expectedRequeue            bool
 		expectedError              bool
@@ -55,7 +55,7 @@ func TestPreRemoveFinalizer(t *testing.T) {
 		{
 			name:              "test-no-error",
 			statemachineError: false,
-			moduleInfo: handlerspi2.ModuleHandlerInfo{
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				DeleteActionHandler: &handler{},
 			},
 			expectedStatemachineCalled: true,
@@ -65,7 +65,7 @@ func TestPreRemoveFinalizer(t *testing.T) {
 		{
 			name:              "test-state-machine-error",
 			statemachineError: true,
-			moduleInfo: handlerspi2.ModuleHandlerInfo{
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				DeleteActionHandler: &handler{},
 			},
 			expectedStatemachineCalled: true,
@@ -169,7 +169,7 @@ func TestGetName(t *testing.T) {
 	asserts.Equal(expectedName, Reconciler{}.GetName())
 }
 
-func (h *finalizerHandler) fakeExecuteStateMachine(ctx handlerspi2.HandlerContext, sm statemachine.StateMachine) result.Result {
+func (h *finalizerHandler) fakeExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) result.Result {
 	h.statemachineCalled = true
 	h.smHandler = sm.Handler
 	if h.statemachineError {
@@ -182,53 +182,53 @@ func (h finalizerHandler) GetWorkName() string {
 	return "install"
 }
 
-func (h finalizerHandler) IsWorkNeeded(context handlerspi2.HandlerContext) (bool, result.Result) {
+func (h finalizerHandler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, result.Result) {
 	return true, result.NewResult()
 }
 
-func (h finalizerHandler) PreWork(context handlerspi2.HandlerContext) result.Result {
+func (h finalizerHandler) PreWork(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h finalizerHandler) PreWorkUpdateStatus(context handlerspi2.HandlerContext) result.Result {
+func (h finalizerHandler) PreWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h finalizerHandler) IsPreActionDone(context handlerspi2.HandlerContext) (bool, result.Result) {
+func (h finalizerHandler) IsPreActionDone(context handlerspi.HandlerContext) (bool, result.Result) {
 	return true, result.NewResult()
 }
 
-func (h finalizerHandler) DoWorkUpdateStatus(context handlerspi2.HandlerContext) result.Result {
+func (h finalizerHandler) DoWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h finalizerHandler) DoWork(context handlerspi2.HandlerContext) result.Result {
+func (h finalizerHandler) DoWork(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h finalizerHandler) IsWorkDone(context handlerspi2.HandlerContext) (bool, result.Result) {
+func (h finalizerHandler) IsWorkDone(context handlerspi.HandlerContext) (bool, result.Result) {
 	return true, result.NewResult()
 }
 
-func (h finalizerHandler) PostWorkUpdateStatus(context handlerspi2.HandlerContext) result.Result {
+func (h finalizerHandler) PostWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h finalizerHandler) PostWork(context handlerspi2.HandlerContext) result.Result {
+func (h finalizerHandler) PostWork(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h finalizerHandler) IsPostActionDone(context handlerspi2.HandlerContext) (bool, result.Result) {
+func (h finalizerHandler) IsPostActionDone(context handlerspi.HandlerContext) (bool, result.Result) {
 	return true, result.NewResult()
 }
 
-func (h finalizerHandler) WorkCompletedUpdateStatus(context handlerspi2.HandlerContext) result.Result {
+func (h finalizerHandler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h finalizerHandler) fakeLoadHelmInfo(cr *moduleapi.Module) (handlerspi2.HelmInfo, error) {
+func (h finalizerHandler) fakeLoadHelmInfo(cr *moduleapi.Module) (handlerspi.HelmInfo, error) {
 	if h.loadHelmInfoErr == "" {
-		return handlerspi2.HelmInfo{}, nil
+		return handlerspi.HelmInfo{}, nil
 	}
-	return handlerspi2.HelmInfo{}, errors.New(h.loadHelmInfoErr)
+	return handlerspi.HelmInfo{}, errors.New(h.loadHelmInfoErr)
 }

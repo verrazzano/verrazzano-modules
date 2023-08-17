@@ -11,7 +11,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/basecontroller"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
-	handlerspi2 "github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,10 +30,10 @@ type handler struct {
 	statemachineRequeue bool
 	statemachineCalled  bool
 	loadHelmInfoErr     string
-	smHandler           handlerspi2.StateMachineHandler
+	smHandler           handlerspi.StateMachineHandler
 }
 
-var _ handlerspi2.StateMachineHandler = &handler{}
+var _ handlerspi.StateMachineHandler = &handler{}
 
 // TestReconcileSuccess tests that the Reconcile implementation works correctly
 // GIVEN a Reconciler
@@ -49,7 +49,7 @@ func TestReconcileSuccess(t *testing.T) {
 		specVersion                string
 		statusVersion              string
 		statusGeneration           int64
-		moduleInfo                 handlerspi2.ModuleHandlerInfo
+		moduleInfo                 handlerspi.ModuleHandlerInfo
 		conditions                 []moduleapi.ModuleCondition
 		expectedStatemachineCalled bool
 		expectedRequeue            bool
@@ -59,7 +59,7 @@ func TestReconcileSuccess(t *testing.T) {
 		{
 			name:              "test-install",
 			statemachineError: false,
-			moduleInfo: handlerspi2.ModuleHandlerInfo{
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				InstallActionHandler: &handler{},
 			},
 			expectedStatemachineCalled: true,
@@ -70,7 +70,7 @@ func TestReconcileSuccess(t *testing.T) {
 			name:                "test-install-started",
 			statemachineError:   false,
 			statemachineRequeue: true,
-			moduleInfo: handlerspi2.ModuleHandlerInfo{
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				InstallActionHandler: &handler{},
 			},
 			conditions: []moduleapi.ModuleCondition{{
@@ -84,7 +84,7 @@ func TestReconcileSuccess(t *testing.T) {
 		{
 			name:              "test-install-failed",
 			statemachineError: false,
-			moduleInfo: handlerspi2.ModuleHandlerInfo{
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				InstallActionHandler: &handler{},
 			},
 			conditions: []moduleapi.ModuleCondition{{
@@ -98,7 +98,7 @@ func TestReconcileSuccess(t *testing.T) {
 		{
 			name:              "test-update",
 			statemachineError: false,
-			moduleInfo: handlerspi2.ModuleHandlerInfo{
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				UpdateActionHandler: &handler{},
 			},
 			conditions: []moduleapi.ModuleCondition{{
@@ -114,7 +114,7 @@ func TestReconcileSuccess(t *testing.T) {
 			statemachineError: false,
 			specVersion:       "1.0.1",
 			statusVersion:     "1.0.0",
-			moduleInfo: handlerspi2.ModuleHandlerInfo{
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				UpgradeActionHandler: &handler{},
 			},
 			conditions: []moduleapi.ModuleCondition{{
@@ -192,7 +192,7 @@ func TestReconcileErrors(t *testing.T) {
 		statusVersion              string
 		statusGeneration           int64
 		loadHelmInfoErr            string
-		moduleInfo                 handlerspi2.ModuleHandlerInfo
+		moduleInfo                 handlerspi.ModuleHandlerInfo
 		conditions                 []moduleapi.ModuleCondition
 		funcUpgradeNeeded          func(desiredVersion, installedVersion string) (bool, error)
 		expectedStatemachineCalled bool
@@ -203,7 +203,7 @@ func TestReconcileErrors(t *testing.T) {
 		{
 			name:              "test-state-machine-error",
 			statemachineError: true,
-			moduleInfo: handlerspi2.ModuleHandlerInfo{
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				InstallActionHandler: &handler{},
 			},
 			expectedStatemachineCalled: true,
@@ -245,7 +245,7 @@ func TestReconcileErrors(t *testing.T) {
 			name:              "test-helm-not-found",
 			statemachineError: false,
 			loadHelmInfoErr:   "FileNotFound",
-			moduleInfo: handlerspi2.ModuleHandlerInfo{
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				InstallActionHandler: &handler{},
 			},
 			expectedStatemachineCalled: false,
@@ -257,7 +257,7 @@ func TestReconcileErrors(t *testing.T) {
 			name:              "test-helm-error",
 			statemachineError: false,
 			loadHelmInfoErr:   "ReadError",
-			moduleInfo: handlerspi2.ModuleHandlerInfo{
+			moduleInfo: handlerspi.ModuleHandlerInfo{
 				InstallActionHandler: &handler{},
 			},
 			expectedStatemachineCalled: false,
@@ -332,7 +332,7 @@ func initScheme() *runtime.Scheme {
 	return scheme
 }
 
-func (h *handler) testExecuteStateMachine(ctx handlerspi2.HandlerContext, sm statemachine.StateMachine) result.Result {
+func (h *handler) testExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) result.Result {
 	h.statemachineCalled = true
 	h.smHandler = sm.Handler
 	if h.statemachineError || h.statemachineRequeue {
@@ -345,55 +345,55 @@ func (h handler) GetWorkName() string {
 	return "install"
 }
 
-func (h handler) IsWorkNeeded(context handlerspi2.HandlerContext) (bool, result.Result) {
+func (h handler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, result.Result) {
 	return true, result.NewResult()
 }
 
-func (h handler) PreWork(context handlerspi2.HandlerContext) result.Result {
+func (h handler) PreWork(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h handler) PreWorkUpdateStatus(context handlerspi2.HandlerContext) result.Result {
+func (h handler) PreWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h handler) IsPreActionDone(context handlerspi2.HandlerContext) (bool, result.Result) {
+func (h handler) IsPreActionDone(context handlerspi.HandlerContext) (bool, result.Result) {
 	return true, result.NewResult()
 }
 
-func (h handler) DoWorkUpdateStatus(context handlerspi2.HandlerContext) result.Result {
+func (h handler) DoWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h handler) DoWork(context handlerspi2.HandlerContext) result.Result {
+func (h handler) DoWork(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h handler) IsWorkDone(context handlerspi2.HandlerContext) (bool, result.Result) {
+func (h handler) IsWorkDone(context handlerspi.HandlerContext) (bool, result.Result) {
 	return true, result.NewResult()
 }
 
-func (h handler) PostWorkUpdateStatus(context handlerspi2.HandlerContext) result.Result {
+func (h handler) PostWorkUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h handler) PostWork(context handlerspi2.HandlerContext) result.Result {
+func (h handler) PostWork(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h handler) IsPostActionDone(context handlerspi2.HandlerContext) (bool, result.Result) {
+func (h handler) IsPostActionDone(context handlerspi.HandlerContext) (bool, result.Result) {
 	return true, result.NewResult()
 }
 
-func (h handler) WorkCompletedUpdateStatus(context handlerspi2.HandlerContext) result.Result {
+func (h handler) WorkCompletedUpdateStatus(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
-func (h handler) fakeLoadHelmInfo(cr *moduleapi.Module) (handlerspi2.HelmInfo, error) {
+func (h handler) fakeLoadHelmInfo(cr *moduleapi.Module) (handlerspi.HelmInfo, error) {
 	if h.loadHelmInfoErr == "" {
-		return handlerspi2.HelmInfo{}, nil
+		return handlerspi.HelmInfo{}, nil
 	}
-	return handlerspi2.HelmInfo{}, errors.New(h.loadHelmInfoErr)
+	return handlerspi.HelmInfo{}, errors.New(h.loadHelmInfoErr)
 }
 
 func fakeIsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {

@@ -8,8 +8,8 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
-	handlerspi2 "github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
-	statemachine2 "github.com/verrazzano/verrazzano-modules/pkg/controller/statemachine"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/statemachine"
 	"github.com/verrazzano/verrazzano-modules/pkg/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -70,7 +70,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 	}
 
 	// Execute the state machine
-	sm := statemachine2.StateMachine{
+	sm := statemachine.StateMachine{
 		Handler: handler,
 		CR:      cr,
 	}
@@ -78,7 +78,7 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 }
 
 // initHandlerCtx initializes the handler context
-func (r Reconciler) initHandlerCtx(spictx controllerspi.ReconcileContext, cr *moduleapi.Module) (handlerspi2.HandlerContext, result.Result) {
+func (r Reconciler) initHandlerCtx(spictx controllerspi.ReconcileContext, cr *moduleapi.Module) (handlerspi.HandlerContext, result.Result) {
 	// Default the target namespace to the cr namespace
 	if cr.Spec.TargetNamespace == "" {
 		cr.Spec.TargetNamespace = cr.Namespace
@@ -86,8 +86,8 @@ func (r Reconciler) initHandlerCtx(spictx controllerspi.ReconcileContext, cr *mo
 
 	// Needed to support VPO integration.  There is no Helm release for VPO module, but status update depends on it
 	// so for now use module name/ns.
-	helmInfo := handlerspi2.HelmInfo{
-		HelmRelease: &handlerspi2.HelmRelease{
+	helmInfo := handlerspi.HelmInfo{
+		HelmRelease: &handlerspi.HelmRelease{
 			Name:      cr.Name,
 			Namespace: cr.Namespace,
 		},
@@ -99,20 +99,20 @@ func (r Reconciler) initHandlerCtx(spictx controllerspi.ReconcileContext, cr *mo
 		if err != nil {
 			if strings.Contains(err.Error(), "FileNotFound") {
 				spictx.Log.Errorf("Failed loading file information: %v", err)
-				return handlerspi2.HandlerContext{}, result.NewResultRequeueDelay(10, 15, time.Second)
+				return handlerspi.HandlerContext{}, result.NewResultRequeueDelay(10, 15, time.Second)
 			}
 			err := spictx.Log.ErrorfNewErr("Failed loading Helm info for %s/%s: %v", cr.Namespace, cr.Name, err)
-			return handlerspi2.HandlerContext{}, result.NewResultShortRequeueDelayIfError(err)
+			return handlerspi.HandlerContext{}, result.NewResultShortRequeueDelayIfError(err)
 		}
 	}
 
 	// Initialize the handler context
-	handlerCtx := handlerspi2.HandlerContext{Client: r.Client, Log: spictx.Log, CR: cr, HelmInfo: helmInfo}
+	handlerCtx := handlerspi.HandlerContext{Client: r.Client, Log: spictx.Log, CR: cr, HelmInfo: helmInfo}
 	return handlerCtx, result.NewResult()
 }
 
 // getActionHandler must return one of the Module action handlers.
-func (r *Reconciler) getActionHandler(handlerCtx handlerspi2.HandlerContext, cr *moduleapi.Module) (handlerspi2.StateMachineHandler, result.Result) {
+func (r *Reconciler) getActionHandler(handlerCtx handlerspi.HandlerContext, cr *moduleapi.Module) (handlerspi.StateMachineHandler, result.Result) {
 	if !status.IsInstalled(cr) {
 		return r.ModuleHandlerInfo.InstallActionHandler, result.NewResult()
 	}
@@ -146,7 +146,7 @@ func IsUpgradeNeeded(desiredVersion, installedVersion string) (bool, error) {
 	return installedSemver.IsLessThan(desiredSemver), nil
 }
 
-func defaultExecuteStateMachine(ctx handlerspi2.HandlerContext, sm statemachine2.StateMachine) result.Result {
+func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.StateMachine) result.Result {
 	return sm.Execute(ctx)
 }
 
@@ -170,7 +170,7 @@ func (r Reconciler) checkIfRequeueNeededWhenGenerationsMatch(module *moduleapi.M
 		return result.NewResult()
 	}
 
-	preInstallTime := statemachine2.GetPreInstallTime(module)
+	preInstallTime := statemachine.GetPreInstallTime(module)
 	if preInstallTime != nil && watchEvent.EventTime.Before(*preInstallTime) {
 		// watch event occurred before pre-install, so we can ignore it
 		// since the pre-install and subsequent actions will use the latest resources
@@ -191,7 +191,7 @@ func (r Reconciler) checkIfRequeueNeededWhenGenerationsMatch(module *moduleapi.M
 	// At this point, there was an event that happened after the last reconcile, so another reconcile needs to be done
 	// Reset the last reconciled generation to zero so that we go through the normal reconcile loop
 	// Also, reset the state machine tracker for this CR generation
-	statemachine2.DeleteTracker(module)
+	statemachine.DeleteTracker(module)
 	module.Status.LastSuccessfulGeneration = 0
 	err := r.Status().Update(context.TODO(), module)
 	if err != nil {
