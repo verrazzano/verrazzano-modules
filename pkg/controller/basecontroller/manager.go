@@ -28,11 +28,13 @@ func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controller
 	if controllerConfig.EventFilter == nil {
 		r.Controller, err = ctrl.NewControllerManagedBy(mgr).
 			For(controllerConfig.Reconciler.GetReconcileObject()).
+			WithOptions(controllerConfig.Options).
 			Build(&r)
 	} else {
 		r.Controller, err = ctrl.NewControllerManagedBy(mgr).
 			For(controllerConfig.Reconciler.GetReconcileObject()).
 			WithEventFilter(r.createPredicateFilter(controllerConfig.EventFilter)).
+			WithOptions(controllerConfig.Options).
 			Build(&r)
 	}
 
