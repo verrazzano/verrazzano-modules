@@ -49,6 +49,11 @@ func TestLoadHelmInfo(t *testing.T) {
 			expectedDir: path.Join(rootDir, "modules/metallb/0.13.10"),
 		},
 		{
+			name:        "test-kubevirt",
+			moduleName:  "kubevirt",
+			expectedDir: path.Join(rootDir, "modules/kubevirt/0.58.0"),
+		},
+		{
 			name:        "test-vz-test",
 			moduleName:  "helm",
 			expectedDir: path.Join(rootDir, "vz-test/0.1.0"),
@@ -170,6 +175,23 @@ func TestLookupChartLeafDirName(t *testing.T) {
 			moduleName:  "metallb",
 			version:     "v0.13.10",
 			expectedDir: "modules/metallb/0.13.10",
+		},
+		{
+			name:        "test-kubevirt",
+			moduleName:  "kubevirt",
+			expectedDir: "modules/kubevirt/0.58.0",
+		},
+		{
+			name:        "test-kubevirt-version",
+			moduleName:  "kubevirt",
+			version:     "0.58.0",
+			expectedDir: "modules/kubevirt/0.58.0",
+		},
+		{
+			name:        "test-kubevirt-version",
+			moduleName:  "kubevirt",
+			version:     "0.59.0",
+			expectedDir: "modules/kubevirt/0.59.0",
 		},
 		{
 			name:        "test-vz-test",

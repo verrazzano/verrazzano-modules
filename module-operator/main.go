@@ -9,6 +9,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module"
 	calicofactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/calico/factory"
 	helmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/helm/factory"
+	kubevirtfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/kubevirt/factory"
 	metallbfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/metallb/factory"
 	multusfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/multus/factory"
 	ccmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/ociccm/factory"
@@ -85,6 +86,16 @@ func main() {
 		ModuleClass:       moduleapi.MetallbModuleClass,
 	}); err != nil {
 		log.Errorf("Failed to start Metallb controller", err)
+		return
+	}
+
+	// init Kubevirt controller
+	if err := module.InitController(module.ModuleControllerConfig{
+		ControllerManager: mgr,
+		ModuleHandlerInfo: kubevirtfactory.NewModuleHandlerInfo(),
+		ModuleClass:       moduleapi.KubevirtModuleClass,
+	}); err != nil {
+		log.Errorf("Failed to start Kubevirt controller", err)
 		return
 	}
 

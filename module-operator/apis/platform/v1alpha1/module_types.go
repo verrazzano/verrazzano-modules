@@ -130,6 +130,9 @@ const (
 
 	// MetallbModuleClass defines the class type used by the Metallb operator.
 	MetallbModuleClass ModuleClassType = "metallb"
+
+	// KubevirtModuleClass defines the class type used by the kubevirt operator.
+	KubevirtModuleClass ModuleClassType = "kubevirt"
 )
 
 // ModuleConditionReason is the reason for the condition type.
