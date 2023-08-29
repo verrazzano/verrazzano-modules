@@ -5,6 +5,7 @@ package module
 
 import (
 	"context"
+	"fmt"
 	"github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/status"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
@@ -35,12 +36,13 @@ func IgnoreHelmInfo() {
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) result.Result {
 	// Make sure controller doesn't call reconcile for the same instance re-entrant
-	if _, ok := instanceMap[u.GetName()]; ok {
+	nsn := fmt.Sprintf("%s-%s", u.GetNamespace(), u.GetName())
+	if _, ok := instanceMap[nsn]; ok {
 		return result.NewResult()
 	}
-	instanceMap[u.GetName()] = true
+	instanceMap[nsn] = true
 	defer func() {
-		delete(instanceMap, u.GetName())
+		delete(instanceMap, nsn)
 	}()
 
 	cr := &moduleapi.Module{}
