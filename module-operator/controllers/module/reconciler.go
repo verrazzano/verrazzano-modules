@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"strings"
+	"sync"
 	"time"
 
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
@@ -27,6 +28,7 @@ var funcIsUpgradeNeeded = IsUpgradeNeeded
 var ignoreHelmInfo bool
 
 var instanceMap = make(map[string]bool)
+var maplock sync.Mutex
 
 // IgnoreHelmInfo allows the module to ignore loading Helm info.  This is used for VPO integration.
 func IgnoreHelmInfo() {
@@ -35,15 +37,11 @@ func IgnoreHelmInfo() {
 
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) result.Result {
-	// Make sure controller doesn't call reconcile for the same instance re-entrant
-	nsn := fmt.Sprintf("%s-%s", u.GetNamespace(), u.GetName())
-	if _, ok := instanceMap[nsn]; ok {
-		return result.NewResult()
+	// Make sure controller doesn't call reconcile for the same instance concurrently
+	if res := checkConcurrent(u); res.ShouldRequeue() {
+		return res
 	}
-	instanceMap[nsn] = true
-	defer func() {
-		delete(instanceMap, nsn)
-	}()
+	defer deleteInstanceFromMap(u)
 
 	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
@@ -211,4 +209,32 @@ func (r Reconciler) checkIfRequeueNeededWhenGenerationsMatch(module *moduleapi.M
 		return result.NewResultShortRequeueDelayWithError(err)
 	}
 	return result.NewResultShortRequeueDelay()
+}
+
+// checkReentrant will prevent controller-runtime from calling reconcile on the same instance
+// concurrently.
+func checkConcurrent(u *unstructured.Unstructured) result.Result {
+	// Make sure controller doesn't call reconcile for the same instance re-entrant
+	maplock.Lock()
+	defer func() { maplock.Unlock() }()
+
+	nsn := getNsn(u)
+	if _, ok := instanceMap[nsn]; ok {
+		// Wait several seconds to requeue
+		return result.NewResultRequeueDelay(5, 7, time.Second)
+	}
+
+	instanceMap[nsn] = true
+	return result.NewResult()
+}
+
+// deleteInstanceFromMap deletes the CR name from the instance map
+func deleteInstanceFromMap(u *unstructured.Unstructured) {
+	maplock.Lock()
+	defer func() { maplock.Unlock() }()
+	delete(instanceMap, getNsn(u))
+}
+
+func getNsn(u *unstructured.Unstructured) string {
+	return fmt.Sprintf("%s-%s", u.GetNamespace(), u.GetName())
 }
