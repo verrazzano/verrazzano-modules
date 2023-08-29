@@ -211,7 +211,7 @@ func (r Reconciler) checkIfRequeueNeededWhenGenerationsMatch(module *moduleapi.M
 	return result.NewResultShortRequeueDelay()
 }
 
-// checkReentrant will prevent controller-runtime from calling reconcile on the same instance
+// checkConcurrent will prevent controller-runtime from calling reconcile on the same instance
 // concurrently.
 func checkConcurrent(u *unstructured.Unstructured) result.Result {
 	// Make sure controller doesn't call reconcile for the same instance re-entrant
