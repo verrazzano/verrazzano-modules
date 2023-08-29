@@ -36,7 +36,7 @@ func IgnoreHelmInfo() {
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) result.Result {
 	// Make sure controller doesn't call reconcile for the same instance re-entrant
 	if _, ok := instanceMap[u.GetName()]; ok {
-		panic(nil)
+		return result.NewResult()
 	}
 	instanceMap[u.GetName()] = true
 	defer func() {
