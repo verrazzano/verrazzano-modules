@@ -25,6 +25,8 @@ var funcLoadHelmInfo = loadHelmInfo
 var funcIsUpgradeNeeded = IsUpgradeNeeded
 var ignoreHelmInfo bool
 
+var instanceMap = make(map[string]bool)
+
 // IgnoreHelmInfo allows the module to ignore loading Helm info.  This is used for VPO integration.
 func IgnoreHelmInfo() {
 	ignoreHelmInfo = true
@@ -32,6 +34,15 @@ func IgnoreHelmInfo() {
 
 // Reconcile reconciles the Module CR
 func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstructured.Unstructured) result.Result {
+	// Make sure controller doesn't call reconcile for the same instance re-entrant
+	if _, ok := instanceMap[u.GetName()]; ok {
+		panic(nil)
+	}
+	instanceMap[u.GetName()] = true
+	defer func() {
+		delete(instanceMap, u.GetName())
+	}()
+
 	cr := &moduleapi.Module{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, cr); err != nil {
 		spictx.Log.ErrorfThrottled(err.Error())
