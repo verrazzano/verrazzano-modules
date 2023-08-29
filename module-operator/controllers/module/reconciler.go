@@ -220,8 +220,8 @@ func checkConcurrent(u *unstructured.Unstructured) result.Result {
 
 	nsn := getNsn(u)
 	if _, ok := instanceMap[nsn]; ok {
-		// Wait several seconds to requeue
-		return result.NewResultRequeueDelay(5, 7, time.Second)
+		// Wait a few seconds to requeue
+		return result.NewResultRequeueDelay(2, 3, time.Second)
 	}
 
 	instanceMap[nsn] = true
