@@ -349,6 +349,10 @@ func (h handler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, result.R
 	return true, result.NewResult()
 }
 
+func (h handler) CheckDependencies(context handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
+}
+
 func (h handler) PreWork(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
