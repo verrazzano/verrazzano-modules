@@ -37,6 +37,9 @@ const (
 	// stateCheckWorkNeeded is the state to check if work is needed
 	stateCheckWorkNeeded state = "stateCheckWorkNeeded"
 
+	// stateCheckDependencies is the state to check if dependencies are met
+	stateCheckDependencies state = "stateCheckDependencies"
+
 	// statePreWorkUpdateStatus is the state when the status is updated to start pre work
 	statePreWorkUpdateStatus state = "statePreWorkUpdateStatus"
 
@@ -100,8 +103,15 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 			if !needed {
 				tracker.state = stateEnd
 			} else {
-				tracker.state = statePreWorkUpdateStatus
+				tracker.state = stateCheckDependencies
 			}
+
+		case stateCheckDependencies:
+			res := s.Handler.CheckDependencies(handlerContext)
+			if res.ShouldRequeue() {
+				return res
+			}
+			tracker.state = statePreWorkUpdateStatus
 
 		case statePreWorkUpdateStatus:
 			res := s.Handler.PreWorkUpdateStatus(handlerContext)

@@ -15,6 +15,9 @@ type StateMachineHandler interface {
 	// IsWorkNeeded returns true if work is needed for the Module
 	IsWorkNeeded(context HandlerContext) (bool, result.Result)
 
+	// CheckDependencies checks if dependencies are ready
+	CheckDependencies(context HandlerContext) result.Result
+
 	// PreWorkUpdateStatus does the pre-work status update
 	PreWorkUpdateStatus(context HandlerContext) result.Result
 
