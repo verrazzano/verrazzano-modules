@@ -65,10 +65,10 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		}
 	}
 
-	// If the spec has already been reconciled, see if something else changed
+	// If the CR has already been reconciled, see if a watch event occurred
 	// that needs to be reconciled
 	if cr.Generation == cr.Status.LastSuccessfulGeneration {
-		return r.checkIfRequeueNeededWhenGenerationsMatch(cr)
+		return r.checkIfWatchEventRequiresReconcile(cr)
 	}
 
 	// Get the action handler
@@ -85,7 +85,16 @@ func (r Reconciler) Reconcile(spictx controllerspi.ReconcileContext, u *unstruct
 		Handler: handler,
 		CR:      cr,
 	}
-	return funcExecuteStateMachine(handlerCtx, sm)
+	res = funcExecuteStateMachine(handlerCtx, sm)
+	if res.ShouldRequeue() {
+		return res
+	}
+
+	// The normal state machine reconciliation has completed, meaning
+	// the module has been installed, updated, or upgraded.
+	// However, a watch may have occurred during the reconciliation,
+	// maybe a watched component got installed.  Check if we need to re-reconcile.
+	return r.checkIfWatchEventRequiresReconcile(cr)
 }
 
 // initHandlerCtx initializes the handler context
@@ -161,7 +170,7 @@ func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.S
 	return sm.Execute(ctx)
 }
 
-// checkIfRequeueNeededWhenGenerationsMatch determines if reconcile should be done
+// checkIfWatchEventRequiresReconcile determines if reconcile should be done
 // when the cr.Generation matches the status generation, which means a previous
 // reconcile successfully completed and updated the status generation.
 // However, even if the reconciliation (e.g. install) finishes,
@@ -174,7 +183,7 @@ func defaultExecuteStateMachine(ctx handlerspi.HandlerContext, sm statemachine.S
 // Therefore, we only re-reconcile if a watch triggered reconcile because
 // something changed (the watched resource).  Determine if we need to reconcile
 // based on the watch event timestamps.
-func (r Reconciler) checkIfRequeueNeededWhenGenerationsMatch(module *moduleapi.Module) result.Result {
+func (r Reconciler) checkIfWatchEventRequiresReconcile(module *moduleapi.Module) result.Result {
 	watchEvent := r.BaseReconciler.GetLastWatchEvent(types.NamespacedName{Namespace: module.Namespace, Name: module.Name})
 	if watchEvent == nil {
 		// no watch events occurred
