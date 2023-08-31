@@ -31,6 +31,7 @@ type handler struct {
 const (
 	getWorkName               = "GetWorkName"
 	isWorkNeeded              = "isWorkNeeded"
+	checkDependencies         = "checkDependencies"
 	preWorkUpdateStatus       = "preWorkUpdateStatus"
 	preWork                   = "preWork"
 	workUpdateStatus          = "DoWorkUpdateStatus"
@@ -46,6 +47,7 @@ func getStatesInOrder() []string {
 	return []string{
 		getWorkName,
 		isWorkNeeded,
+		checkDependencies,
 		preWorkUpdateStatus,
 		preWork,
 		workUpdateStatus,
@@ -227,6 +229,10 @@ func (h handler) GetWorkName() string {
 
 func (h handler) IsWorkNeeded(context handlerspi.HandlerContext) (bool, result.Result) {
 	return h.procHandlerBool(isWorkNeeded)
+}
+
+func (h handler) CheckDependencies(context handlerspi.HandlerContext) result.Result {
+	return h.procHandlerCall(checkDependencies)
 }
 
 func (h handler) PreWork(context handlerspi.HandlerContext) result.Result {

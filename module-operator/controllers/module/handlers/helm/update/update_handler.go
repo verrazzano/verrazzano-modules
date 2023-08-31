@@ -43,6 +43,10 @@ func (h HelmHandler) PreWork(ctx handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 
+func (h HelmHandler)CheckDependencies(context handlerspi.HandlerContext) result.Result {
+	return result.NewResult()
+}
+
 // DoWorkUpdateStatus updates the status for the work state
 func (h HelmHandler) DoWorkUpdateStatus(ctx handlerspi.HandlerContext) result.Result {
 	module := ctx.CR.(*moduleapi.Module)
