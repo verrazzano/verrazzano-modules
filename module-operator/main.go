@@ -13,6 +13,7 @@ import (
 	metallbfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/metallb/factory"
 	multusfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/multus/factory"
 	ccmfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/ociccm/factory"
+	rookfactory "github.com/verrazzano/verrazzano-modules/module-operator/controllers/module/handlers/rook/factory"
 	internalconfig "github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
 	"github.com/verrazzano/verrazzano-modules/pkg/k8sutil"
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
@@ -96,6 +97,16 @@ func main() {
 		ModuleClass:       moduleapi.KubevirtModuleClass,
 	}); err != nil {
 		log.Errorf("Failed to start Kubevirt controller", err)
+		return
+	}
+
+	// init Rook controller
+	if err := module.InitController(module.ModuleControllerConfig{
+		ControllerManager: mgr,
+		ModuleHandlerInfo: rookfactory.NewModuleHandlerInfo(),
+		ModuleClass:       moduleapi.RookModuleClass,
+	}); err != nil {
+		log.Errorf("Failed to start Rook controller", err)
 		return
 	}
 
