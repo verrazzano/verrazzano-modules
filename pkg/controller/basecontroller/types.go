@@ -8,6 +8,7 @@ import (
 	"github.com/verrazzano/verrazzano-modules/pkg/vzlog"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sync"
@@ -47,6 +48,9 @@ type BaseReconciler struct {
 
 	// WatchMutex is used to control concurrent access the maps
 	watchMutex sync.Mutex
+
+	// Cache used for watches
+	Cache cache.Cache
 }
 
 // WatchContext provides context to a watcher

@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type configType string
@@ -25,11 +24,11 @@ const (
 func (r *Reconciler) GetDefaultWatchDescriptors() []controllerspi.WatchDescriptor {
 	return []controllerspi.WatchDescriptor{
 		{
-			WatchedResourceKind: source.Kind{Type: &corev1.Secret{}},
+			WatchedResourceKind: &corev1.Secret{},
 			FuncShouldReconcile: r.ShouldSecretTriggerReconcile,
 		},
 		{
-			WatchedResourceKind: source.Kind{Type: &corev1.ConfigMap{}},
+			WatchedResourceKind: &corev1.ConfigMap{},
 			FuncShouldReconcile: r.ShouldConfigMapTriggerReconcile,
 		},
 	}

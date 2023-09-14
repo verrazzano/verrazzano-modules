@@ -18,6 +18,7 @@ func CreateControllerAndAddItToManager(mgr controllerruntime.Manager, controller
 	r := BaseReconciler{
 		Client:                  mgr.GetClient(),
 		Scheme:                  mgr.GetScheme(),
+		Cache:                   mgr.GetCache(),
 		layeredControllerConfig: controllerConfig,
 		watcherInitMap:          make(map[types.NamespacedName]bool),
 		watchEvents:             make(map[types.NamespacedName]*controllerspi.WatchEvent),
