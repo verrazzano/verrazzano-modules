@@ -21,11 +21,7 @@ func TestAnalyzePackages(t *testing.T) {
 	assert := assert.New(t)
 
 	// load the packages from the unit test data directory
-	getwd, err := os.Getwd()
-	if err != nil {
-		return
-	}
-	fset, pkgs, err := loadPackages(getwd + "/testdata")
+	fset, pkgs, err := loadPackages("./testdata")
 	if err != nil {
 		assert.NoError(err)
 	}
