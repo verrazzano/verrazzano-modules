@@ -174,7 +174,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 			if res.ShouldRequeue() {
 				return res
 			}
-			handlerContext.Log.Info("Finished %s for %s", workName, nsn)
+			handlerContext.Log.Infof("Finished %s for %s", workName, nsn)
 			tracker.state = stateEnd
 		}
 	}
