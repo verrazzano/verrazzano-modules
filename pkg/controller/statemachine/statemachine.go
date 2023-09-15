@@ -20,7 +20,6 @@
 package statemachine
 
 import (
-	"fmt"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/result"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,7 +87,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 	tracker := ensureTracker(s.CR, stateInit)
 
 	workName := s.Handler.GetWorkName()
-	nsn := fmt.Sprintf("%s/%s", s.CR.GetNamespace(), s.CR.GetName())
+	moduleName := s.CR.GetName()
 
 	for tracker.state != stateEnd {
 		switch tracker.state {
@@ -122,7 +121,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 
 		case statePreWork:
 			tracker.preInstallTime = time.Now()
-			handlerContext.Log.Progressf("Doing pre-%s for %s", workName, nsn)
+			handlerContext.Log.Progressf("Doing pre-%s for %s", workName, moduleName)
 			res := s.Handler.PreWork(handlerContext)
 			if res.ShouldRequeue() {
 				return res
@@ -137,7 +136,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 			tracker.state = stateWork
 
 		case stateWork:
-			handlerContext.Log.Progressf("Doing %s for %s", workName, nsn)
+			handlerContext.Log.Progressf("Doing %s for %s", workName, moduleName)
 			res := s.Handler.DoWork(handlerContext)
 			if res.ShouldRequeue() {
 				return res
@@ -162,7 +161,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 			tracker.state = statePostWork
 
 		case statePostWork:
-			handlerContext.Log.Progressf("Doing post-%s for %s", workName, nsn)
+			handlerContext.Log.Progressf("Doing post-%s for %s", workName, moduleName)
 			res := s.Handler.PostWork(handlerContext)
 			if res.ShouldRequeue() {
 				return res
@@ -174,7 +173,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 			if res.ShouldRequeue() {
 				return res
 			}
-			handlerContext.Log.Infof("Finished %s for %s", workName, nsn)
+			handlerContext.Log.Infof("Finished %s for %s", workName, moduleName)
 			tracker.state = stateEnd
 		}
 	}
