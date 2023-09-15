@@ -87,7 +87,7 @@ type StateMachine struct {
 func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.Result {
 	tracker := ensureTracker(s.CR, stateInit)
 
-	workerName := s.Handler.GetWorkName()
+	workName := s.Handler.GetWorkName()
 	nsn := fmt.Sprintf("%s/%s", s.CR.GetNamespace(), s.CR.GetName())
 
 	for tracker.state != stateEnd {
@@ -122,7 +122,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 
 		case statePreWork:
 			tracker.preInstallTime = time.Now()
-			handlerContext.Log.Progressf("Doing pre-%s for %s", workerName, nsn)
+			handlerContext.Log.Progressf("Doing pre-%s for %s", workName, nsn)
 			res := s.Handler.PreWork(handlerContext)
 			if res.ShouldRequeue() {
 				return res
@@ -137,7 +137,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 			tracker.state = stateWork
 
 		case stateWork:
-			handlerContext.Log.Progressf("Doing %s for %s", workerName, nsn)
+			handlerContext.Log.Progressf("Doing %s for %s", workName, nsn)
 			res := s.Handler.DoWork(handlerContext)
 			if res.ShouldRequeue() {
 				return res
@@ -162,7 +162,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 			tracker.state = statePostWork
 
 		case statePostWork:
-			handlerContext.Log.Progressf("Doing post-%s for %s", workerName, nsn)
+			handlerContext.Log.Progressf("Doing post-%s for %s", workName, nsn)
 			res := s.Handler.PostWork(handlerContext)
 			if res.ShouldRequeue() {
 				return res
@@ -174,6 +174,7 @@ func (s *StateMachine) Execute(handlerContext handlerspi.HandlerContext) result.
 			if res.ShouldRequeue() {
 				return res
 			}
+			handlerContext.Log.Info("Finished %s for %s", workName, nsn)
 			tracker.state = stateEnd
 		}
 	}
