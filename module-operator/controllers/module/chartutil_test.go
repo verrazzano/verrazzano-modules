@@ -54,6 +54,11 @@ func TestLoadHelmInfo(t *testing.T) {
 			expectedDir: path.Join(rootDir, "modules/kubevirt/0.58.0"),
 		},
 		{
+			name:        "test-rook",
+			moduleName:  "rook",
+			expectedDir: path.Join(rootDir, "modules/rook/1.12.3"),
+		},
+		{
 			name:        "test-vz-test",
 			moduleName:  "helm",
 			expectedDir: path.Join(rootDir, "vz-test/0.1.0"),
@@ -173,7 +178,7 @@ func TestLookupChartLeafDirName(t *testing.T) {
 		{
 			name:        "test-metallb-version",
 			moduleName:  "metallb",
-			version:     "v0.13.10",
+			version:     "0.13.10",
 			expectedDir: "modules/metallb/0.13.10",
 		},
 		{
@@ -192,6 +197,17 @@ func TestLookupChartLeafDirName(t *testing.T) {
 			moduleName:  "kubevirt",
 			version:     "0.59.0",
 			expectedDir: "modules/kubevirt/0.59.0",
+		},
+		{
+			name:        "test-rook",
+			moduleName:  "rook",
+			expectedDir: "modules/rook/1.12.3",
+		},
+		{
+			name:        "test-rook-version",
+			moduleName:  "rook",
+			version:     "1.12.3",
+			expectedDir: "modules/rook/1.12.3",
 		},
 		{
 			name:        "test-vz-test",

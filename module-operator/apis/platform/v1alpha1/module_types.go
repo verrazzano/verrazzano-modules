@@ -133,6 +133,9 @@ const (
 
 	// KubevirtModuleClass defines the class type used by the kubevirt operator.
 	KubevirtModuleClass ModuleClassType = "kubevirt"
+
+	// RookModuleClass defines the class type used by the rook operator.
+	RookModuleClass ModuleClassType = "rook"
 )
 
 // ModuleConditionReason is the reason for the condition type.

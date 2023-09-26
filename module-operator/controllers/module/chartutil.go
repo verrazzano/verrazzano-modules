@@ -78,6 +78,11 @@ func lookupChartLeafDirName(mod *moduleapi.Module) string {
 			version = "0.58.0"
 		}
 		dir = filepath.Join("modules/kubevirt", version)
+	case string(moduleapi.RookModuleClass):
+		if version == "" {
+			version = "1.12.3"
+		}
+		dir = filepath.Join("modules/rook", version)
 	case string(moduleapi.HelmModuleClass):
 		if version == "" {
 			version = "0.1.0"
