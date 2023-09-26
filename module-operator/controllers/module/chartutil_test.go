@@ -210,12 +210,6 @@ func TestLookupChartLeafDirName(t *testing.T) {
 			expectedDir: "modules/rook/1.12.3",
 		},
 		{
-			name:        "test-rook-version",
-			moduleName:  "rook",
-			version:     "1.11.6",
-			expectedDir: "modules/rook/1.11.6",
-		},
-		{
 			name:        "test-vz-test",
 			moduleName:  "helm",
 			expectedDir: "vz-test/0.1.0",
