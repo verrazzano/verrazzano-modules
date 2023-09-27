@@ -75,7 +75,7 @@ func lookupChartLeafDirName(mod *moduleapi.Module) string {
 		dir = filepath.Join("modules/multus", version)
 	case string(moduleapi.KubevirtModuleClass):
 		if version == "" {
-			version = "0.58.0"
+			version = "0.59.0"
 		}
 		dir = filepath.Join("modules/kubevirt", version)
 	case string(moduleapi.RookModuleClass):
