@@ -84,7 +84,7 @@ func TestWatch(t *testing.T) {
 				resourceBeingReconciled: nsn,
 				reconciler:              newReconciler(nil, ControllerConfig{}),
 				watchDescriptor: controllerspi.WatchDescriptor{
-					WatchedResourceKind: source.Kind{Type: &moduleapi.Module{}},
+					WatchedResourceKind: &moduleapi.Module{},
 					FuncShouldReconcile: c.shouldReconcile,
 				},
 			}
@@ -108,7 +108,7 @@ func (w watchController) Watch(src source.Source, eventhandler handler.EventHand
 
 	// Call event handler directly to get requests
 	q := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	eventhandler.Create(event.CreateEvent{Object: cr}, q)
+	eventhandler.Create(context.TODO(), event.CreateEvent{Object: cr}, q)
 	asserts.Equal(1, q.Len())
 	return nil
 }

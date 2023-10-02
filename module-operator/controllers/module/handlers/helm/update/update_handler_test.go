@@ -109,7 +109,7 @@ func TestDoWorkUpdateStatus(t *testing.T) {
 		},
 	}
 
-	cli := fake.NewClientBuilder().WithScheme(newScheme()).WithObjects(module).Build()
+	cli := fake.NewClientBuilder().WithScheme(newScheme()).WithObjects(module).WithStatusSubresource(module).Build()
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,
@@ -327,7 +327,7 @@ func TestWorkCompletedUpdateStatus(t *testing.T) {
 		},
 	}
 
-	cli := fake.NewClientBuilder().WithScheme(newScheme()).WithObjects(module).Build()
+	cli := fake.NewClientBuilder().WithScheme(newScheme()).WithObjects(module).WithStatusSubresource(module).Build()
 	ctx := handlerspi.HandlerContext{
 		Log:    vzlog.DefaultLogger(),
 		Client: cli,

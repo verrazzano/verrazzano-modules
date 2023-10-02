@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 )
 
@@ -38,7 +37,7 @@ const (
 // WatchDescriptor described an object being watched
 type WatchDescriptor struct {
 	// WatchedResourceKind is the kind of resource being watched
-	WatchedResourceKind source.Kind
+	WatchedResourceKind client.Object
 
 	// FuncShouldReconcile is called when watch event occurs to determine if CR should be reconciled
 	FuncShouldReconcile

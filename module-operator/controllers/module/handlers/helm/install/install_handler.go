@@ -89,7 +89,7 @@ func (h HelmHandler) DoWork(ctx handlerspi.HandlerContext) result.Result {
 	return h.HelmUpgradeOrInstall(ctx)
 }
 
-func (h HelmHandler)CheckDependencies(context handlerspi.HandlerContext) result.Result {
+func (h HelmHandler) CheckDependencies(context handlerspi.HandlerContext) result.Result {
 	return result.NewResult()
 }
 

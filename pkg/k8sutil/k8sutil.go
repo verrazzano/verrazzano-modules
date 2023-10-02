@@ -266,7 +266,7 @@ func ExecPod(client kubernetes.Interface, cfg *rest.Config, pod *v1.Pod, contain
 	if err != nil {
 		return "", "", err
 	}
-	err = executor.Stream(remotecommand.StreamOptions{
+	err = executor.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
 		Stdout: stdout,
 		Stderr: stderr,
 	})
@@ -301,7 +301,7 @@ func ExecPodNoTty(client kubernetes.Interface, cfg *rest.Config, pod *v1.Pod, co
 	if err != nil {
 		return "", "", err
 	}
-	err = executor.Stream(remotecommand.StreamOptions{
+	err = executor.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
 		Stdout: stdout,
 		Stderr: stderr,
 	})

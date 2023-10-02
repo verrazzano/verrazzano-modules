@@ -4,6 +4,7 @@
 package basecontroller
 
 import (
+	"context"
 	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/controllerspi"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -11,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 )
 
@@ -41,7 +43,7 @@ func (w *WatchContext) Watch() error {
 	// return a Watch with the predicate that is called in the future when a resource
 	// event occurs.  If the predicate returns true. then the reconciler loop will be called
 	return w.controller.Watch(
-		&w.watchDescriptor.WatchedResourceKind,
+		source.Kind(w.reconciler.Cache, w.watchDescriptor.WatchedResourceKind),
 		w.createReconcileEventHandler(),
 		p)
 }
@@ -53,12 +55,13 @@ func (w *WatchContext) Watch() error {
 // to call Reconcile for that resource.
 func (w *WatchContext) createReconcileEventHandler() handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(
-		func(a client.Object) []reconcile.Request {
+		func(ctx context.Context, object client.Object) []reconcile.Request {
 			requests := []reconcile.Request{}
 			requests = append(requests, reconcile.Request{
 				NamespacedName: w.resourceBeingReconciled})
 			return requests
-		})
+		},
+	)
 }
 
 // If the watched resource event should cause reconcile then return true

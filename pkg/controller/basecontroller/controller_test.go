@@ -406,7 +406,7 @@ func (r *ReconcilerImpl) Reconcile(spictx controllerspi.ReconcileContext, u *uns
 func (r *WatcherImpl) GetWatchDescriptors() []controllerspi.WatchDescriptor {
 	r.called = true
 	return []controllerspi.WatchDescriptor{{
-		WatchedResourceKind: source.Kind{Type: &moduleapi.Module{}},
+		WatchedResourceKind: &moduleapi.Module{},
 		FuncShouldReconcile: nil,
 	}}
 }
