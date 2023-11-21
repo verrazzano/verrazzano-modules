@@ -9,7 +9,8 @@ WORKDIR /root/go/src/github.com/verrazzano/verrazzano-modules
 COPY . .
 
 # Build the operator binary
-RUN go build -o /usr/local/bin/verrazzano-module-operator ./module-operator/main.go
+RUN CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-s -w" \
+    -o /usr/local/bin/verrazzano-module-operator ./module-operator/main.go
 RUN chmod 500 /usr/local/bin/verrazzano-module-operator
 
 # Create the verrazzano-module-operator image
