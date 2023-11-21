@@ -5,4 +5,4 @@
 #
 
 # Run the operator
-/usr/local/bin/verrazzano-module-operator $*
+VZ_ROOT_DIR=/ /usr/local/bin/verrazzano-module-operator $*
