@@ -1,6 +1,6 @@
 # Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-ARG BASE_IMAGE=ghcr.io/oracle/oraclelinux:8-slim
+ARG BASE_IMAGE=ghcr.io/oracle/oraclelinux:9-slim
 
 FROM ghcr.io/verrazzano/golang:v1.20.10 AS build_base
 
@@ -9,8 +9,7 @@ WORKDIR /root/go/src/github.com/verrazzano/verrazzano-modules
 COPY . .
 
 # Build the operator binary
-RUN CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-s -w" \
-    -o /usr/local/bin/verrazzano-module-operator ./module-operator/main.go
+RUN go build -o /usr/local/bin/verrazzano-module-operator ./module-operator/main.go
 RUN chmod 500 /usr/local/bin/verrazzano-module-operator
 
 # Create the verrazzano-module-operator image
