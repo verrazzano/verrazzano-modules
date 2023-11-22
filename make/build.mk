@@ -63,7 +63,7 @@ run: ## Run a controller from your host.
 .PHONY: docker-build
 docker-build: docker-build-common
 
-docker-build-common: BASE_IMAGE ?= ghcr.io/oracle/oraclelinux:9-slim
+docker-build-common: BASE_IMAGE ?= ghcr.io/verrazzano/verrazzano-base:v1.0.0-20230529051534-037adf4-4653b27@sha256:73c0b081e13228fbbe5fb87b46cde1781cba25bdf9cf6489daa56460e5e1435b
 .PHONY: docker-build-common
 docker-build-common:
 	@echo Building ${NAME} image ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
@@ -74,7 +74,7 @@ docker-build-common:
 		-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ..
 
 # Cannot use verrazzano-base here until it supports both arm and amd
-docker-build-and-push-multi-arch: BASE_IMAGE ?= ghcr.io/oracle/oraclelinux:9-slim
+docker-build-and-push-multi-arch: BASE_IMAGE ?= ghcr.io/oracle/oraclelinux:8-slim
 .PHONY: docker-build-and-push-multi-arch
 docker-build-and-push-multi-arch: docker-login
 	@echo Building and pushing ${NAME} multi arch image ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
