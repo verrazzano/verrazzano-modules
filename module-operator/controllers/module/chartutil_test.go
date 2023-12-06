@@ -5,11 +5,12 @@ package module
 
 import (
 	"fmt"
+	"path"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
-	"path"
-	"testing"
 )
 
 // TestLoadHelmInfo tests the loadHelmInfo function
@@ -31,7 +32,7 @@ func TestLoadHelmInfo(t *testing.T) {
 		{
 			name:        "test-ccm",
 			moduleName:  "oci-ccm",
-			expectedDir: path.Join(rootDir, "modules/oci-ccm/1.25.0"),
+			expectedDir: path.Join(rootDir, "modules/oci-ccm/1.27.0"),
 		},
 		{
 			name:        "test-calico",
@@ -120,9 +121,15 @@ func TestLookupChartLeafDirName(t *testing.T) {
 		version     string
 	}{
 		{
+			name:        "test-ccm-1.25.0",
+			moduleName:  "oci-ccm",
+			version:     "1.25.0",
+			expectedDir: "modules/oci-ccm/1.25.0",
+		},
+		{
 			name:        "test-ccm",
 			moduleName:  "oci-ccm",
-			expectedDir: "modules/oci-ccm/1.25.0",
+			expectedDir: "modules/oci-ccm/1.27.0",
 		},
 		{
 			name:        "test-calico-default",

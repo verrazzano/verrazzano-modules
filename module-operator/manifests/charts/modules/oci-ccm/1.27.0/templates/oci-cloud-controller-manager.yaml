@@ -51,7 +51,8 @@ spec:
           args:
             - --cloud-config=/etc/oci/cloud-provider.yaml
             - --cloud-provider=oci
-            - --leader-elect-resource-lock=configmapsleases
+            - --leader-elect-resource-lock=leases
+            - --concurrent-service-syncs=3
             - --v=2
           volumeMounts:
             - name: cfg

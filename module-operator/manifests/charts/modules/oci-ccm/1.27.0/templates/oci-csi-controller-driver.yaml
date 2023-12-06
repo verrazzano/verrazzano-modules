@@ -75,6 +75,15 @@ spec:
           volumeMounts:
             - mountPath: /var/run/shared-tmpfs
               name: shared-tmpfs
+        - name: csi-snapshotter
+          image: {{ .Values.global.csi.registry }}/csi-snapshotter:{{ index .Values "csi-snapshotter" }}
+          args:
+            - --csi-address=/var/run/shared-tmpfs/csi.sock
+            - --leader-election
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - mountPath: /var/run/shared-tmpfs
+              name: shared-tmpfs
         - name: oci-csi-controller-driver
           args:
             - --endpoint=unix://var/run/shared-tmpfs/csi.sock
@@ -103,8 +112,6 @@ spec:
           emptyDir: {}
       dnsPolicy: ClusterFirst
       hostNetwork: true
-      imagePullSecrets:
-        - name: image-pull-secret
       restartPolicy: Always
       schedulerName: default-scheduler
       serviceAccount: csi-oci-node-sa

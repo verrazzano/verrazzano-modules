@@ -131,6 +131,7 @@ spec:
             - mountPath: /dev
               name: device-dir
             - mountPath: /host
+              mountPropagation: HostToContainer
               name: host-root
             - mountPath: /sbin/iscsiadm
               name: chroot-iscsiadm
