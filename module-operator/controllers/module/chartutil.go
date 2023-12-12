@@ -5,13 +5,13 @@ package module
 
 import (
 	"fmt"
-	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"os"
 	"path/filepath"
 	"strings"
 
 	moduleapi "github.com/verrazzano/verrazzano-modules/module-operator/apis/platform/v1alpha1"
 	"github.com/verrazzano/verrazzano-modules/module-operator/internal/config"
+	"github.com/verrazzano/verrazzano-modules/pkg/controller/spi/handlerspi"
 	"github.com/verrazzano/verrazzano-modules/pkg/helm"
 )
 
@@ -65,7 +65,7 @@ func lookupChartLeafDirName(mod *moduleapi.Module) string {
 		dir = filepath.Join("modules/calico", version)
 	case string(moduleapi.CCMModuleClass):
 		if version == "" {
-			version = "1.25.0"
+			version = "1.27.0"
 		}
 		dir = filepath.Join("modules/oci-ccm", version)
 	case string(moduleapi.MultusModuleClass):
