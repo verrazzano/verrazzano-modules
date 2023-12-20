@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 ARG BASE_IMAGE=ghcr.io/oracle/oraclelinux:9-slim
 
-FROM ghcr.io/verrazzano/golang:v1.20.12 AS build_base
+FROM ghcr.io/verrazzano/oraclelinux-golang:v1.20.12 AS build_base
 
 # Need to use specific WORKDIR to match source packages
 WORKDIR /root/go/src/github.com/verrazzano/verrazzano-modules
