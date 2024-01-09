@@ -1,8 +1,8 @@
 # Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-ARG BASE_IMAGE=ghcr.io/oracle/oraclelinux:8-slim
+ARG BASE_IMAGE=ghcr.io/oracle/oraclelinux:9-slim
 
-FROM ghcr.io/oracle/oraclelinux:8 AS build_base
+FROM ghcr.io/verrazzano/oraclelinux-golang:v1.20.12 AS build_base
 
 # Need to use specific WORKDIR to match source packages
 WORKDIR /root/go/src/github.com/verrazzano/verrazzano-modules
@@ -10,8 +10,8 @@ COPY . .
 
 RUN dnf install -y oraclelinux-developer-release-el8 && \
     dnf config-manager --enable ol8_developer && \
-    dnf update -y && \
-    dnf install -y go-toolset-1.19.6
+    dnf update -y
+    #dnf install -y go-toolset-1.19.6
 
 # Build the operator binary
 RUN go build -o /usr/local/bin/verrazzano-module-operator ./module-operator/main.go

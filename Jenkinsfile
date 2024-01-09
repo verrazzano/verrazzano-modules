@@ -9,7 +9,7 @@ def VERRAZZANO_DEV_VERSION = ""
 def tarfilePrefix=""
 def storeLocation=""
 
-def agentLabel = env.JOB_NAME.contains('main') ? "phx-large" : "large"
+def agentLabel = env.JOB_NAME.contains('main') ? "2.0-phx-large" : "2.0-large"
 
 pipeline {
     options {
