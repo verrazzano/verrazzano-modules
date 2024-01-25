@@ -1,7 +1,7 @@
-# Copyright (C) 2023, Oracle and/or its affiliates.
+# Copyright (C) 2023, 2024, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-export DOCKER_CMD ?= docker
+export DOCKER_CMD ?= sudo podman
 ##@ Development
 
 .PHONY: fmt
@@ -78,10 +78,15 @@ docker-build-and-push-multi-arch: BASE_IMAGE ?= ghcr.io/oracle/oraclelinux:9-sli
 .PHONY: docker-build-and-push-multi-arch
 docker-build-and-push-multi-arch: docker-login
 	@echo Building and pushing ${NAME} multi arch image ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
-	DOCKER_CLI_EXPERIMENTAL=enabled ${DOCKER_CMD} buildx create --use --platform linux/arm64,linux/amd64
-	DOCKER_CLI_EXPERIMENTAL=enabled ${DOCKER_CMD} buildx build --push --platform linux/arm64,linux/amd64 -f Dockerfile \
+	# DOCKER_CLI_EXPERIMENTAL=enabled ${DOCKER_CMD} buildx create --use --platform linux/arm64,linux/amd64
+	# DOCKER_CLI_EXPERIMENTAL=enabled ${DOCKER_CMD} buildx build --push --platform linux/arm64,linux/amd64 -f Dockerfile \
+	# 	--build-arg BASE_IMAGE=${BASE_IMAGE} \
+	# 	-t ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG} ..
+	${DOCKER_CMD} manifest create ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
+	${DOCKER_CMD} build --platform linux/arm64,linux/amd64 --manifest ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG} -f Dockerfile \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		-t ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG} ..
+	${DOCKER_CMD} manifest push ${DOCKER_IMAGE_FULLNAME}:${DOCKER_IMAGE_TAG}
 
 # Multi architecture images must be pushed (or saved) when building
 .PHONY: docker-build-multi-arch

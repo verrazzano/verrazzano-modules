@@ -30,7 +30,7 @@ pipeline {
 
     parameters {
         booleanParam (description: 'Whether to perform a scan of the built images', name: 'PERFORM_SCAN', defaultValue: false)
-        booleanParam (description: 'Whether to build multi architecture images. Always true for main and release branch builds. Defaults to false for branch builds.', name: 'BUILD_MULTI_ARCH_IMAGES', defaultValue: false)
+        booleanParam (description: 'Whether to build multi architecture images. Always true for main and release branch builds. Defaults to false for branch builds.', name: 'BUILD_MULTI_ARCH_IMAGES', defaultValue: true)
     }
 
     environment {
@@ -314,6 +314,7 @@ def checkRepoClean() {
 // Builds and pushes the module-operator images
 def buildImages(dockerImageTag) {
     sh """
+        sudo yum install -y podman
         cd ${GO_REPO_PATH}/${GIT_REPO_DIR}
 
         # Release and main branches build multi architecture images, branch builds are amd unless the multi arch box is checked
