@@ -37,7 +37,7 @@ func TestLoadHelmInfo(t *testing.T) {
 		{
 			name:        "test-calico",
 			moduleName:  "calico",
-			expectedDir: path.Join(rootDir, "modules/calico/3.25.1"),
+			expectedDir: path.Join(rootDir, "modules/calico/3.27.0"),
 		},
 		{
 			name:        "test-multus",
