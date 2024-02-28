@@ -52,7 +52,7 @@ func TestLoadHelmInfo(t *testing.T) {
 		{
 			name:        "test-kubevirt",
 			moduleName:  "kubevirt",
-			expectedDir: path.Join(rootDir, "modules/kubevirt/0.59.0"),
+			expectedDir: path.Join(rootDir, "modules/kubevirt/1.1.1"),
 		},
 		{
 			name:        "test-rook",
@@ -191,7 +191,7 @@ func TestLookupChartLeafDirName(t *testing.T) {
 		{
 			name:        "test-kubevirt",
 			moduleName:  "kubevirt",
-			expectedDir: "modules/kubevirt/0.59.0",
+			expectedDir: "modules/kubevirt/1.1.1",
 		},
 		{
 			name:        "test-kubevirt-version",
@@ -204,6 +204,12 @@ func TestLookupChartLeafDirName(t *testing.T) {
 			moduleName:  "kubevirt",
 			version:     "0.59.0",
 			expectedDir: "modules/kubevirt/0.59.0",
+		},
+		{
+			name:        "test-kubevirt-version",
+			moduleName:  "kubevirt",
+			version:     "1.1.1",
+			expectedDir: "modules/kubevirt/1.1.1",
 		},
 		{
 			name:        "test-rook",
