@@ -208,6 +208,12 @@ func TestLookupChartLeafDirName(t *testing.T) {
 		{
 			name:        "test-kubevirt-version",
 			moduleName:  "kubevirt",
+			version:     "1.0.1",
+			expectedDir: "modules/kubevirt/1.0.1",
+		},
+		{
+			name:        "test-kubevirt-version",
+			moduleName:  "kubevirt",
 			version:     "1.1.1",
 			expectedDir: "modules/kubevirt/1.1.1",
 		},
